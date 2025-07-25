@@ -1,3 +1,5 @@
+<h2>Demo</h2>
+[<a href="(http://skypirates.uk/dcs-stats/">Open Demo Webpage</a>](http://skypirates.uk/DCS-Stats-Demo/dcs-stats/)
 <h2>Requirements</h2>
 <ul>
   <li>
