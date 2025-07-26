@@ -1,93 +1,103 @@
-
-<?php include 'header.php'; ?>
-<?php include 'nav.php'; ?>
+<?php include "header.php"; include "nav.php"; ?>
 
 <main class="container">
-  <h2>Leaderboard</h2>
+  <h1>Leaderboard</h1>
+  <div id="leaderboard-loading">Loading leaderboard...</div>
 
-  <div class="search-container">
-    <input type="text" id="searchInput" placeholder="Search for a player...">
-  </div>
+  <div class="search-bar" style="text-align: center;">
+  <input type="text" id="searchInput" placeholder="Search by name..." style="margin: 0 auto; width: 50%;">
+</div>
 
   <div class="table-responsive">
     <table id="leaderboardTable">
       <thead>
         <tr>
           <th>Rank</th>
-          <th>Pilot</th>
+          <th>Name</th>
           <th>Kills</th>
-          <th>Deaths</th>
-          <th>K/D Ratio</th>
+          <th>Sorties</th>
+          <th>Flight Hours</th>
+                    <th>Takeoffs</th>
+          <th>Landings</th>
+          <th>Crashes</th>
+          <th>Ejections</th>
+          <th>Most Used Aircraft</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
   </div>
 
-  <div id="pagination" class="pagination-controls"></div>
+  <div id="pagination" class="pagination-container" style="text-align: center;"></div>
 </main>
-
-<?php include 'footer.php'; ?>
 
 <script>
 let leaderboardData = [];
+const rowsPerPage = 20;
 let currentPage = 1;
-const resultsPerPage = 20;
-
-fetch('get_missionstats.php')
-  .then(response => response.json())
-  .then(data => {
-    leaderboardData = data.sort((a, b) => b.kills - a.kills);
-    renderTable();
-  })
-  .catch(error => {
-    console.error("Error fetching mission stats:", error);
-  });
 
 function renderTable() {
+  const tbody = document.querySelector("#leaderboardTable tbody");
   const searchQuery = document.getElementById("searchInput").value.toLowerCase();
-  const filteredData = leaderboardData.filter(player =>
-    player.name.toLowerCase().includes(searchQuery)
-  );
+  const start = (currentPage - 1) * rowsPerPage;
+  const filteredData = leaderboardData.filter(p => p.name.toLowerCase().includes(searchQuery));
+  const paginatedData = filteredData.slice(start, start + rowsPerPage);
 
-  const tableBody = document.querySelector("#leaderboardTable tbody");
-  tableBody.innerHTML = "";
-
-  const start = (currentPage - 1) * resultsPerPage;
-  const paginatedItems = filteredData.slice(start, start + resultsPerPage);
-
-  paginatedItems.forEach((player, index) => {
+  tbody.innerHTML = "";
+  paginatedData.forEach(player => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${start + index + 1}</td>
+      <td>${player.rank}</td>
       <td>${player.name}</td>
       <td>${player.kills}</td>
-      <td>${player.deaths}</td>
-      <td>${(player.kills / (player.deaths || 1)).toFixed(2)}</td>
+      <td>${player.sorties}</td>
+      <td>${player.flight_hours}</td>
+            <td>${player.takeoffs}</td>
+      <td>${player.landings}</td>
+      <td>${player.crashes}</td>
+      <td>${player.ejections}</td>
+      <td>${player.most_used_aircraft}</td>
     `;
-    tableBody.appendChild(row);
+    tbody.appendChild(row);
   });
-
-  renderPagination(filteredData.length);
 }
 
-function renderPagination(totalItems) {
-  const totalPages = Math.ceil(totalItems / resultsPerPage);
-  const pagination = document.getElementById("pagination");
-  pagination.innerHTML = `
-    <button onclick="changePage(-1)" ${currentPage === 1 ? "disabled" : ""}>Previous</button>
-    <span>Page ${currentPage} of ${totalPages}</span>
-    <button onclick="changePage(1)" ${currentPage === totalPages ? "disabled" : ""}>Next</button>
-  `;
+function renderPagination() {
+  const container = document.getElementById("pagination");
+  const totalPages = Math.ceil(
+    leaderboardData.filter(p => p.name.toLowerCase().includes(document.getElementById("searchInput").value.toLowerCase())).length / rowsPerPage
+  );
+  let html = '';
+  html += `<button onclick="goToPage(${Math.max(currentPage - 1, 1)})">Prev</button>`;
+  html += ` Page ${currentPage} of ${totalPages} `;
+  html += `<button onclick="goToPage(${Math.min(currentPage + 1, totalPages)})">Next</button>`;
+  container.innerHTML = html;
 }
 
-function changePage(delta) {
-  currentPage += delta;
+function goToPage(page) {
+  currentPage = page;
   renderTable();
+  renderPagination();
 }
 
 document.getElementById("searchInput").addEventListener("input", () => {
   currentPage = 1;
   renderTable();
+  renderPagination();
 });
+
+fetch('get_leaderboard.php')
+  .then(response => response.json())
+  .then(data => {
+    leaderboardData = data;
+    document.getElementById("leaderboard-loading").style.display = "none";
+    renderTable();
+    renderPagination();
+  })
+  .catch(error => {
+    document.getElementById("leaderboard-loading").innerText = "Failed to load leaderboard data.";
+    console.error("Error:", error);
+  });
 </script>
+
+<?php include "footer.php"; ?>
