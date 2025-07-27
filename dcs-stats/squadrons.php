@@ -5,6 +5,11 @@ include 'nav.php';
 
 <main>
     <h1>Squadrons</h1>
+
+    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+        <input type="text" id="searchInput" placeholder="Search squadrons, members, or credits..." style="width: 60%; padding: 10px; font-size: 16px;">
+    </div>
+
     <div class="table-responsive">
         <table id="squadronsTable" style="width: 100%;">
             <thead>
@@ -51,6 +56,8 @@ include 'nav.php';
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+    const searchInput = document.getElementById('searchInput');
+
     Promise.all([
         fetch('data/squadrons.json').then(res => res.text()),
         fetch('data/squadron_members.json').then(res => res.text()),
@@ -63,82 +70,99 @@ document.addEventListener("DOMContentLoaded", () => {
         const players = playerText.trim().split('\n').map(line => JSON.parse(line));
         const credits = creditText.trim().split('\n').map(line => JSON.parse(line));
 
-        const squadronsById = {};
-        squadrons.forEach(sq => squadronsById[sq.id] = sq);
+        const squadronsById = Object.fromEntries(squadrons.map(sq => [sq.id, sq]));
+        const playersByUcid = Object.fromEntries(players.map(p => [p.ucid, p]));
 
-        const playersByUcid = {};
-        players.forEach(p => playersByUcid[p.ucid] = p);
-
-        // === Populate Squadron Table ===
         const squadronBody = document.querySelector('#squadronsTable tbody');
-        squadrons.forEach(sq => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><img src="${sq.image_url}" alt="${sq.name}" style="width: 80px;"></td>
-                <td>${sq.name}</td>
-                <td>${sq.description}</td>
-            `;
-            squadronBody.appendChild(row);
-        });
-
-        // === Populate Squadron Members Table (grouped with expand/collapse) ===
         const membersBody = document.querySelector('#membersTable tbody');
-        squadrons.forEach((sq, index) => {
-            const relevantMembers = members.filter(m => m.squadron_id === sq.id);
-            const groupId = "group-" + index;
-
-            const headerRow = document.createElement('tr');
-            headerRow.classList.add('toggle-header');
-            headerRow.style.cursor = "pointer";
-            headerRow.innerHTML = `
-                <td><img src="${sq.image_url}" alt="${sq.name}" style="width: 60px;"></td>
-                <td>${sq.name}</td>
-                <td><em>Click to show/hide members</em></td>
-            `;
-            membersBody.appendChild(headerRow);
-
-            relevantMembers.forEach(member => {
-                const player = playersByUcid[member.player_ucid];
-                if (!player) return;
-
-                const row = document.createElement('tr');
-                row.classList.add(groupId);
-                row.style.display = "none";
-                row.innerHTML = `
-                    <td></td>
-                    <td></td>
-                    <td>${player.name}</td>
-                `;
-                membersBody.appendChild(row);
-            });
-
-            headerRow.addEventListener('click', () => {
-                const groupRows = document.querySelectorAll('.' + groupId);
-                groupRows.forEach(r => {
-                    r.style.display = (r.style.display === 'none') ? 'table-row' : 'none';
-                });
-            });
-        });
-
-        // === Populate Squadron Leaderboard Table with medals ===
         const leaderboardBody = document.querySelector('#leaderboardTable tbody');
+
         const medals = ['🥇', '🥈', '🥉'];
 
-        credits
-            .sort((a, b) => b.points - a.points)
-            .forEach((entry, index) => {
-                const squadron = squadronsById[entry.squadron_id];
-                if (!squadron) return;
+        function renderTables(filter = '') {
+            squadronBody.innerHTML = '';
+            membersBody.innerHTML = '';
+            leaderboardBody.innerHTML = '';
 
-                const medal = medals[index] || '';
+            // === Squadrons Table ===
+            squadrons.forEach(sq => {
+                if (!sq.name.toLowerCase().includes(filter) && !sq.description.toLowerCase().includes(filter)) return;
+
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td><img src="${squadron.image_url}" alt="${squadron.name}" style="width: 60px;"></td>
-                    <td>${medal} ${squadron.name}</td>
-                    <td>${entry.points}</td>
+                    <td><img src="${sq.image_url}" alt="${sq.name}" style="width: 80px;"></td>
+                    <td>${sq.name}</td>
+                    <td>${sq.description}</td>
                 `;
-                leaderboardBody.appendChild(row);
+                squadronBody.appendChild(row);
             });
+
+            // === Members Table ===
+            squadrons.forEach((sq, index) => {
+                const relevantMembers = members.filter(m => m.squadron_id === sq.id);
+                const groupId = "group-" + index;
+                const lowerName = sq.name.toLowerCase();
+                const matchFound = lowerName.includes(filter) || relevantMembers.some(m => playersByUcid[m.player_ucid]?.name.toLowerCase().includes(filter));
+                if (!matchFound) return;
+
+                const headerRow = document.createElement('tr');
+                headerRow.classList.add('toggle-header');
+                headerRow.style.cursor = "pointer";
+                headerRow.innerHTML = `
+                    <td><img src="${sq.image_url}" alt="${sq.name}" style="width: 60px;"></td>
+                    <td>${sq.name}</td>
+                    <td><em>Click to show/hide members</em></td>
+                `;
+                membersBody.appendChild(headerRow);
+
+                relevantMembers.forEach(member => {
+                    const player = playersByUcid[member.player_ucid];
+                    if (!player || !player.name.toLowerCase().includes(filter) && !lowerName.includes(filter)) return;
+
+                    const row = document.createElement('tr');
+                    row.classList.add(groupId);
+                    row.style.display = "none";
+                    row.innerHTML = `
+                        <td></td>
+                        <td></td>
+                        <td>${player.name}</td>
+                    `;
+                    membersBody.appendChild(row);
+                });
+
+                headerRow.addEventListener('click', () => {
+                    const groupRows = document.querySelectorAll('.' + groupId);
+                    groupRows.forEach(r => {
+                        r.style.display = (r.style.display === 'none') ? 'table-row' : 'none';
+                    });
+                });
+            });
+
+            // === Leaderboard Table ===
+            credits
+                .sort((a, b) => b.points - a.points)
+                .forEach((entry, index) => {
+                    const squadron = squadronsById[entry.squadron_id];
+                    if (!squadron) return;
+                    if (!squadron.name.toLowerCase().includes(filter)) return;
+
+                    const medal = medals[index] || '';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><img src="${squadron.image_url}" alt="${squadron.name}" style="width: 60px;"></td>
+                        <td>${medal} ${squadron.name}</td>
+                        <td>${entry.points}</td>
+                    `;
+                    leaderboardBody.appendChild(row);
+                });
+        }
+
+        searchInput.addEventListener('input', () => {
+            const filter = searchInput.value.toLowerCase().trim();
+            renderTables(filter);
+        });
+
+        renderTables(); // Initial load
     })
     .catch(err => {
         document.getElementById('error-message').textContent = "Error loading data: " + err.message;
