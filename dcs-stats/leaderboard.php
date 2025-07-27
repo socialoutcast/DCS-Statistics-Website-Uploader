@@ -16,8 +16,7 @@
           <th>Name</th>
           <th>Kills</th>
           <th>Sorties</th>
-          <th>Flight Hours</th>
-                    <th>Takeoffs</th>
+          <th>Takeoffs</th>
           <th>Landings</th>
           <th>Crashes</th>
           <th>Ejections</th>
@@ -51,8 +50,7 @@ function renderTable() {
       <td>${player.name}</td>
       <td>${player.kills}</td>
       <td>${player.sorties}</td>
-      <td>${player.flight_hours}</td>
-            <td>${player.takeoffs}</td>
+      <td>${player.takeoffs}</td>
       <td>${player.landings}</td>
       <td>${player.crashes}</td>
       <td>${player.ejections}</td>

@@ -89,7 +89,7 @@ if (file_exists($missionStatsFile)) {
 
 // Finalize stats
 foreach ($stats as $id => &$s) {
-    $s['flight_hours'] = round($s['flight_seconds'] / 3600, 2);
+    $s[''] = round($s['flight_seconds'] / 3600, 2);
     unset($s['flight_seconds']);
     if (!empty($s['airframes'])) {
         arsort($s['airframes']);
