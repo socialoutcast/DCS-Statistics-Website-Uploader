@@ -408,3 +408,35 @@ tr:hover {
   gap: 20px;
   flex-wrap: wrap;
 }
+.server-boxes {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 30px;
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.server-box {
+    background-color: #2c2c2c;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    color: #fff;
+    font-weight: bold;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    min-width: 300px;
+    max-width: 400px;
+    flex: 1 1 300px;
+    transition: transform 0.2s ease;
+}
+
+.server-box:hover {
+    transform: scale(1.02);
+}
+
+.server-icon {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
