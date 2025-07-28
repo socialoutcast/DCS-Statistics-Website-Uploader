@@ -39,6 +39,10 @@
                             <span class="stat-value" id="pilot-landings">0</span>
                         </div>
                         <div class="stat-item">
+                            <span class="stat-label">Carrier Traps:</span>
+                            <span class="stat-value" id="pilot-traps">0</span>
+                        </div>
+                        <div class="stat-item">
                             <span class="stat-label">Crashes:</span>
                             <span class="stat-value" id="pilot-crashes">0</span>
                         </div>
@@ -226,6 +230,7 @@ async function loadPilotStats(playerName) {
         document.getElementById('pilot-sorties').textContent = statsData.sorties || 0;
         document.getElementById('pilot-takeoffs').textContent = statsData.takeoffs || 0;
         document.getElementById('pilot-landings').textContent = statsData.landings || 0;
+        document.getElementById('pilot-traps').textContent = statsData.traps || 0;
         document.getElementById('pilot-crashes').textContent = statsData.crashes || 0;
         document.getElementById('pilot-ejections').textContent = statsData.ejections || 0;
         document.getElementById('pilot-credits').textContent = credits;
@@ -297,6 +302,15 @@ const chartOptions = {
             grid: {
                 color: '#333',
                 borderColor: '#444'
+            },
+            title: {
+                display: true,
+                text: 'Statistics',
+                color: '#4CAF50',
+                font: {
+                    size: 14,
+                    weight: 'bold'
+                }
             }
         },
         y: {
@@ -306,6 +320,15 @@ const chartOptions = {
             grid: {
                 color: '#333',
                 borderColor: '#444'
+            },
+            title: {
+                display: true,
+                text: 'Count',
+                color: '#4CAF50',
+                font: {
+                    size: 14,
+                    weight: 'bold'
+                }
             }
         }
     }
@@ -344,6 +367,33 @@ function createCombatChart(statsData) {
                 legend: {
                     display: false
                 }
+            },
+            scales: {
+                ...chartOptions.scales,
+                x: {
+                    ...chartOptions.scales.x,
+                    title: {
+                        display: true,
+                        text: 'Combat Metrics',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    ...chartOptions.scales.y,
+                    title: {
+                        display: true,
+                        text: 'Number of Events',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                }
             }
         }
     });
@@ -361,30 +411,62 @@ function createFlightChart(statsData) {
     const landings = statsData.landings || 0;
     const crashes = statsData.crashes || 0;
     const ejections = statsData.ejections || 0;
+    const traps = statsData.traps || 0;
+    
+    // Adjust labels and data based on whether pilot has traps
+    const labels = traps > 0 
+        ? ['Land Landings', 'Carrier Traps', 'Crashes', 'Ejections', 'In Flight']
+        : ['Successful Landings', 'Crashes', 'Ejections', 'In Flight'];
+    
+    const data = traps > 0
+        ? [
+            landings - traps,  // Land landings (total landings minus traps)
+            traps,             // Carrier traps
+            crashes,
+            ejections,
+            Math.max(0, takeoffs - landings - crashes - ejections)
+          ]
+        : [
+            landings,
+            crashes,
+            ejections,
+            Math.max(0, takeoffs - landings - crashes - ejections)
+          ];
     
     flightChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Successful Landings', 'Crashes', 'Ejections', 'In Flight'],
+            labels: labels,
             datasets: [{
-                data: [
-                    landings,
-                    crashes,
-                    ejections,
-                    Math.max(0, takeoffs - landings - crashes - ejections)
-                ],
-                backgroundColor: [
-                    'rgba(76, 175, 80, 0.6)',
-                    'rgba(244, 67, 54, 0.6)',
-                    'rgba(255, 152, 0, 0.6)',
-                    'rgba(158, 158, 158, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(76, 175, 80, 1)',
-                    'rgba(244, 67, 54, 1)',
-                    'rgba(255, 152, 0, 1)',
-                    'rgba(158, 158, 158, 1)'
-                ],
+                data: data,
+                backgroundColor: traps > 0 
+                    ? [
+                        'rgba(76, 175, 80, 0.6)',     // Land landings - green
+                        'rgba(33, 150, 243, 0.6)',     // Carrier traps - blue
+                        'rgba(244, 67, 54, 0.6)',      // Crashes - red
+                        'rgba(255, 152, 0, 0.6)',      // Ejections - orange
+                        'rgba(158, 158, 158, 0.6)'     // In flight - gray
+                      ]
+                    : [
+                        'rgba(76, 175, 80, 0.6)',      // Landings - green
+                        'rgba(244, 67, 54, 0.6)',      // Crashes - red
+                        'rgba(255, 152, 0, 0.6)',      // Ejections - orange
+                        'rgba(158, 158, 158, 0.6)'     // In flight - gray
+                      ],
+                borderColor: traps > 0
+                    ? [
+                        'rgba(76, 175, 80, 1)',
+                        'rgba(33, 150, 243, 1)',
+                        'rgba(244, 67, 54, 1)',
+                        'rgba(255, 152, 0, 1)',
+                        'rgba(158, 158, 158, 1)'
+                      ]
+                    : [
+                        'rgba(76, 175, 80, 1)',
+                        'rgba(244, 67, 54, 1)',
+                        'rgba(255, 152, 0, 1)',
+                        'rgba(158, 158, 158, 1)'
+                      ],
                 borderWidth: 1
             }]
         },
@@ -449,6 +531,27 @@ function createAircraftChart(aircraftData) {
                     ticks: {
                         ...chartOptions.scales.x.ticks,
                         stepSize: 1
+                    },
+                    title: {
+                        display: true,
+                        text: 'Times Used',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    ...chartOptions.scales.y,
+                    title: {
+                        display: true,
+                        text: 'Aircraft Type',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
                     }
                 }
             }

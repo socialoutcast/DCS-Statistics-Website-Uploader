@@ -4,6 +4,71 @@ All notable changes to the DCS Statistics Website Uploader project.
 
 ## [Unreleased] - 2025-07-28
 
+### 🎯 Server Dashboard Transformation
+
+#### Interactive Statistics Dashboard
+**What Changed:** Transformed index.php from a simple welcome page into a comprehensive server statistics dashboard
+**Why:** Users needed immediate visibility into server health and activity metrics. A dashboard provides at-a-glance insights into server performance and player engagement without navigating through multiple pages.
+
+**Dashboard Features:**
+- **4 Animated Stat Cards**
+  - Total Players with counting animation
+  - Server Kills with live updates
+  - Server Deaths tracking
+  - K/D Ratio calculation
+- **Loading overlay** with spinner for initial data fetch
+- **Auto-refresh** every 30 seconds for real-time updates
+- **Pop-in animations** for visual appeal
+
+#### Dashboard Charts Implementation
+**What Changed:** Added 4 interactive Chart.js visualizations to the dashboard
+**Why:** Raw numbers are difficult to interpret. Visual charts provide immediate understanding of server trends and player activity patterns.
+
+**Charts Added:**
+1. **Top 5 Most Active Pilots**
+   - Vertical bar chart with gradient fills
+   - Bounce animation on load
+   - Shows pilot names and visit counts
+   
+2. **Server Combat Statistics**
+   - Doughnut chart comparing kills vs deaths
+   - Percentage calculations in tooltips
+   - Visual K/D ratio representation
+
+3. **Top 3 Most Active Squadrons**
+   - Horizontal bar chart with golden gradient
+   - Aggregates squadron member visits
+   - Only displays if squadron data available
+
+4. **Player Activity Overview**
+   - Line chart with filled area
+   - Shows total registered vs active players
+   - Smooth curve animation
+
+**Technical Enhancements:**
+- Created `get_server_stats.php` endpoint for aggregated statistics
+- Gradient color schemes for visual hierarchy
+- Responsive grid layout (2 columns desktop, 1 mobile)
+- Enhanced tooltips with formatted numbers
+- Axis titles for clarity on all charts
+
+### 🛬 Carrier Operations Tracking
+
+#### Carrier Trap Statistics
+**What Changed:** Added carrier trap tracking to pilot statistics
+**Why:** Naval aviators need recognition for successful carrier landings (traps). This metric is crucial for pilots flying carrier-based aircraft and adds depth to flight statistics.
+
+**Implementation:**
+- Reads trap data from `traps.json` file
+- Displays "Carrier Traps" statistic between Landings and Crashes
+- Enhanced Flight Statistics chart:
+  - Dynamically shows separate slices for land vs carrier landings
+  - Land landings (green), Carrier traps (blue)
+  - Adjusts labels based on pilot data
+- Maintains backward compatibility for pilots without traps
+
+## [1.1.0] - 2025-07-28
+
 ### 🔍 Pilot Search Improvements
 
 #### Partial Name Search Implementation
@@ -65,6 +130,15 @@ All notable changes to the DCS Statistics Website Uploader project.
 - Returns up to 20 results sorted by relevance
 - Includes security validation and rate limiting
 - Properly sanitizes output to prevent XSS attacks
+
+#### get_server_stats.php
+**Purpose:** Server-wide statistics aggregation endpoint
+**Features:**
+- Calculates total players, kills, and deaths
+- Identifies top 5 most active pilots by visits
+- Aggregates top 3 squadrons by combined member activity
+- Includes rate limiting and security validation
+- Returns JSON formatted statistics for dashboard
 
 ## [1.1.0] - 2025-07-28
 
