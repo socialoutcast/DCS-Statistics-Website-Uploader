@@ -98,7 +98,7 @@
     </div>
     
     <div id="no-results" style="display: none; text-align: center; color: #ccc; margin-top: 30px;">
-        <p>No pilot found with that name. Please check the spelling and try again.</p>
+        <p id="no-results-message">No pilot found with that name. Please check the spelling and try again.</p>
     </div>
     
     <div id="loading" style="display: none; text-align: center; color: #ccc; margin-top: 30px;">
@@ -130,6 +130,8 @@ async function searchForPlayers() {
         document.getElementById('loading').style.display = 'none';
         
         if (searchData.error || searchData.count === 0) {
+            document.getElementById('no-results-message').textContent = 
+                'No pilots with recorded statistics found matching that name.';
             document.getElementById('no-results').style.display = 'block';
             return;
         }
