@@ -125,7 +125,7 @@ The system uses **28 different data files** from DCSServerBot. **Default uploads
 | `squadron_credits.json` | Squadron Statistics | Credits Earned by squadron |
 | `squadron_members.json` | Squadron Statistics | Members of squadron |
 
-**📁 Optional data sources:** squadrons, missions, server stats, and 25+ other data types available.
+**📁 Optional data sources: 20+ other data types available.
 
 ## 🔧 Customization
 
