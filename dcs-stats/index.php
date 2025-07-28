@@ -53,6 +53,11 @@
             <canvas id="combatStatsChart"></canvas>
         </div>
         
+        <div class="chart-container">
+            <h2>Top 3 Most Active Squadrons</h2>
+            <canvas id="topSquadronsChart"></canvas>
+        </div>
+        
         <div class="chart-container full-width">
             <h2>Player Activity Overview</h2>
             <canvas id="playerActivityChart"></canvas>
@@ -70,6 +75,7 @@
 let topPilotsChart = null;
 let combatStatsChart = null;
 let playerActivityChart = null;
+let topSquadronsChart = null;
 
 // Chart configuration with enhanced dark theme
 const chartColors = {
@@ -113,6 +119,9 @@ async function loadServerStats() {
         // Create charts
         createTopPilotsChart(data.top5Pilots);
         createCombatStatsChart(data.totalKills, data.totalDeaths);
+        if (data.top3Squadrons && data.top3Squadrons.length > 0) {
+            createTopSquadronsChart(data.top3Squadrons);
+        }
         createPlayerActivityChart(data.totalPlayers, data.top5Pilots);
         
         // Hide loading overlay
@@ -336,6 +345,115 @@ function createCombatStatsChart(kills, deaths) {
                 animateRotate: true,
                 animateScale: true,
                 duration: 1500
+            }
+        }
+    });
+}
+
+// Top 3 squadrons chart
+function createTopSquadronsChart(squadrons) {
+    const ctx = document.getElementById('topSquadronsChart').getContext('2d');
+    
+    if (topSquadronsChart) {
+        topSquadronsChart.destroy();
+    }
+    
+    const gradient = createGradient(ctx, gradientColors.warning);
+    
+    topSquadronsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: squadrons.map(s => s.name),
+            datasets: [{
+                label: 'Squadron Visits',
+                data: squadrons.map(s => s.visits),
+                backgroundColor: gradient,
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 2,
+                borderRadius: 8,
+                barThickness: 50
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    titleColor: '#FFD700',
+                    bodyColor: '#fff',
+                    borderColor: '#FFD700',
+                    borderWidth: 1,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    padding: 12,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `Total Visits: ${context.parsed.y.toLocaleString()}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#ccc',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Squadron Names',
+                        color: '#FFD700',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)',
+                        borderDash: [5, 5]
+                    },
+                    ticks: {
+                        color: '#ccc',
+                        font: {
+                            size: 11
+                        },
+                        callback: function(value) {
+                            return value.toLocaleString();
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Combined Member Visits',
+                        color: '#FFD700',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeOutBounce'
             }
         }
     });
