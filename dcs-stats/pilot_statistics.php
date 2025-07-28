@@ -697,6 +697,12 @@ document.getElementById('playerSearchInput').addEventListener('keypress', functi
 </script>
 
 <style>
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
 .pilot-card {
     background-color: #2c2c2c;
     border-radius: 12px;
