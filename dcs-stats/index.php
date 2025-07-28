@@ -598,6 +598,12 @@ setInterval(loadServerStats, 30000);
 </script>
 
 <style>
+main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
 .dashboard-header {
     text-align: center;
     margin-bottom: 40px;
