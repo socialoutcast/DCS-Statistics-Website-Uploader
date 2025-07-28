@@ -52,6 +52,7 @@ if (!file_exists($playersFile) || !file_exists($missionsFile)) {
 
 // Search for UCID in players.json (line-by-line NDJSON)
 $ucid = null;
+$exactName = null;
 $handle = fopen($playersFile, 'r');
 if ($handle) {
     while (($line = fgets($handle)) !== false) {
@@ -59,6 +60,7 @@ if ($handle) {
         if (!$entry) continue;
         if (trim(strtolower($entry['name'])) === $playerName) {
             $ucid = $entry['ucid'];
+            $exactName = $entry['name'];
             break;
         }
     }
@@ -114,7 +116,7 @@ $mostUsedAircraft = key($aircraftUsage);
 
 // Sanitize data before sending to prevent XSS
 echo json_encode([
-    "name" => htmlspecialchars($playerName, ENT_QUOTES, 'UTF-8'),
+    "name" => htmlspecialchars($exactName ?? $playerName, ENT_QUOTES, 'UTF-8'),
     "ucid" => htmlspecialchars($ucid, ENT_QUOTES, 'UTF-8'),
     "kills" => $kills,
     "sorties" => $sorties,

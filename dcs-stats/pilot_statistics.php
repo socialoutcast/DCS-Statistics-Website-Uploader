@@ -6,7 +6,12 @@
     
     <div class="search-container">
         <input type="text" id="playerSearchInput" placeholder="Search for a pilot..." />
-        <button onclick="searchPilot()">Search</button>
+        <button onclick="searchForPlayers()">Search</button>
+    </div>
+    
+    <div id="multiple-results" style="display: none;">
+        <h3 style="text-align: center; color: #ccc;">Multiple pilots found. Please select one:</h3>
+        <div id="results-list" class="results-list"></div>
     </div>
     
     <div id="search-results" style="display: none;">
@@ -74,6 +79,150 @@
 </main>
 
 <script>
+async function searchForPlayers() {
+    const searchInput = document.getElementById('playerSearchInput');
+    const searchTerm = searchInput.value.trim();
+    
+    if (!searchTerm) {
+        alert('Please enter a pilot name to search.');
+        return;
+    }
+    
+    // Hide all sections
+    document.getElementById('search-results').style.display = 'none';
+    document.getElementById('multiple-results').style.display = 'none';
+    document.getElementById('no-results').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    
+    try {
+        // Search for players
+        const searchResponse = await fetch(`search_players.php?search=${encodeURIComponent(searchTerm)}`);
+        const searchData = await searchResponse.json();
+        
+        document.getElementById('loading').style.display = 'none';
+        
+        if (searchData.error || searchData.count === 0) {
+            document.getElementById('no-results').style.display = 'block';
+            return;
+        }
+        
+        if (searchData.count === 1) {
+            // Single result - load directly
+            await loadPilotStats(searchData.results[0].name);
+        } else {
+            // Multiple results - show selection
+            showMultipleResults(searchData.results);
+        }
+        
+    } catch (error) {
+        console.error('Error searching for pilots:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('no-results').style.display = 'block';
+    }
+}
+
+function showMultipleResults(results) {
+    const resultsList = document.getElementById('results-list');
+    resultsList.innerHTML = '';
+    
+    results.forEach(pilot => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'result-item';
+        resultItem.textContent = pilot.name;
+        resultItem.onclick = () => {
+            document.getElementById('multiple-results').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            loadPilotStats(pilot.name);
+        };
+        resultsList.appendChild(resultItem);
+    });
+    
+    document.getElementById('multiple-results').style.display = 'block';
+}
+
+async function loadPilotStats(playerName) {
+    document.getElementById('multiple-results').style.display = 'none';
+    
+    try {
+        // Get player stats
+        const statsResponse = await fetch(`get_player_stats.php?name=${encodeURIComponent(playerName)}`);
+        const statsData = await statsResponse.json();
+        
+        if (statsData.error) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('no-results').style.display = 'block';
+            return;
+        }
+        
+        // Get credits data
+        let credits = 0;
+        try {
+            const creditsResponse = await fetch('get_credits.php');
+            const creditsData = await creditsResponse.json();
+            const playerCredits = creditsData.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+            credits = playerCredits ? playerCredits.credits : 0;
+        } catch (e) {
+            console.warn('Could not load credits data:', e);
+        }
+        
+        // Get squadron data
+        let squadron = 'None';
+        try {
+            // Try to get squadron data from squadrons endpoint
+            const squadronResponse = await fetch('data/squadron_members.json');
+            if (squadronResponse.ok) {
+                const squadronText = await squadronResponse.text();
+                const squadronMembers = squadronText.trim().split('\n').map(line => JSON.parse(line));
+                
+                // Get player UCID to match with squadron
+                const playersResponse = await fetch('data/players.json');
+                if (playersResponse.ok) {
+                    const playersText = await playersResponse.text();
+                    const players = playersText.trim().split('\n').map(line => JSON.parse(line));
+                    const player = players.find(p => p.name.toLowerCase() === playerName.toLowerCase());
+                    
+                    if (player) {
+                        const memberData = squadronMembers.find(m => m.player_ucid === player.ucid);
+                        if (memberData) {
+                            // Get squadron name
+                            const squadronsResponse = await fetch('data/squadrons.json');
+                            if (squadronsResponse.ok) {
+                                const squadronsText = await squadronsResponse.text();
+                                const squadrons = squadronsText.trim().split('\n').map(line => JSON.parse(line));
+                                const squadronInfo = squadrons.find(s => s.id === memberData.squadron_id);
+                                squadron = squadronInfo ? squadronInfo.name : 'Unknown Squadron';
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Could not load squadron data:', e);
+        }
+        
+        // Populate the results
+        document.getElementById('pilot-name').textContent = statsData.name;
+        document.getElementById('pilot-kills').textContent = statsData.kills || 0;
+        document.getElementById('pilot-sorties').textContent = statsData.sorties || 0;
+        document.getElementById('pilot-takeoffs').textContent = statsData.takeoffs || 0;
+        document.getElementById('pilot-landings').textContent = statsData.landings || 0;
+        document.getElementById('pilot-crashes').textContent = statsData.crashes || 0;
+        document.getElementById('pilot-ejections').textContent = statsData.ejections || 0;
+        document.getElementById('pilot-credits').textContent = credits;
+        document.getElementById('pilot-aircraft').textContent = statsData.mostUsedAircraft || 'Unknown';
+        document.getElementById('pilot-squadron').textContent = squadron;
+        
+        // Show results
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('search-results').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error loading pilot stats:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('no-results').style.display = 'block';
+    }
+}
+
 async function searchPilot() {
     const searchInput = document.getElementById('playerSearchInput');
     const playerName = searchInput.value.trim();
@@ -171,7 +320,7 @@ async function searchPilot() {
 // Allow Enter key to trigger search
 document.getElementById('playerSearchInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
-        searchPilot();
+        searchForPlayers();
     }
 });
 </script>
@@ -258,6 +407,31 @@ document.getElementById('playerSearchInput').addEventListener('keypress', functi
 
 .search-container button:hover {
     background-color: #45a049;
+}
+
+.results-list {
+    max-width: 600px;
+    margin: 20px auto;
+    background-color: #2c2c2c;
+    border-radius: 8px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.result-item {
+    padding: 12px 20px;
+    margin: 5px;
+    background-color: #1e1e1e;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #fff;
+    transition: background-color 0.3s;
+}
+
+.result-item:hover {
+    background-color: #3a3a3a;
+    color: #4CAF50;
 }
 </style>
 
