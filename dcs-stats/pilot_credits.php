@@ -4,7 +4,9 @@
 <main>
     <h2>Pilot Credits</h2>
 
-    <div class="top-3-container" id="top3"></div>
+    <div id="top3-wrapper">
+        <div class="top-3-container" id="top3"></div>
+    </div>
 
     <div class="search-container">
         <input type="text" id="searchBox" placeholder="Search player name...">

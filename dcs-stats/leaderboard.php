@@ -4,9 +4,13 @@
   <h1>Leaderboard</h1>
   <div id="leaderboard-loading">Loading leaderboard...</div>
 
+  <div id="top3-wrapper">
+    <div class="top-3-container" id="top3-leaderboard"></div>
+  </div>
+
   <div class="search-bar" style="text-align: center;">
-  <input type="text" id="searchInput" placeholder="Search by name..." style="margin: 0 auto; width: 50%;">
-</div>
+    <input type="text" id="searchInput" placeholder="Search by name..." style="margin: 0 auto; width: 50%;">
+  </div>
 
   <div class="table-responsive">
     <table id="leaderboardTable">
@@ -93,6 +97,17 @@ async function loadLeaderboardFromMissionstats() {
     const data = await response.json();
     leaderboardData = data;
     document.getElementById("leaderboard-loading").style.display = "none";
+    
+    // Populate top 3 leaderboard
+    const top3Container = document.getElementById("top3-leaderboard");
+    const trophies = ['🥇', '🥈', '🥉'];
+    data.slice(0, 3).forEach((player, i) => {
+        const box = document.createElement("div");
+        box.className = "trophy-box";
+        box.innerHTML = `<span class="trophy">${trophies[i]}</span><strong>${escapeHtml(player.name || '')}</strong><br>${escapeHtml(String(player.kills || 0))} kills`;
+        top3Container.appendChild(box);
+    });
+    
     renderTable();
     renderPagination();
   } catch (error) {
