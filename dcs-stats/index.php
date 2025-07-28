@@ -46,6 +46,7 @@
         <div class="chart-container">
             <h2>Top 5 Most Active Pilots</h2>
             <canvas id="topPilotsChart"></canvas>
+            <p class="no-data-message" id="topPilotsNoData" style="display: none;">No mission data available yet</p>
         </div>
         
         <div class="chart-container">
@@ -56,6 +57,7 @@
         <div class="chart-container">
             <h2>Top 3 Most Active Squadrons</h2>
             <canvas id="topSquadronsChart"></canvas>
+            <p class="no-data-message" id="squadronsNoData" style="display: none;">No squadron data available yet</p>
         </div>
         
         <div class="chart-container full-width">
@@ -116,13 +118,26 @@ async function loadServerStats() {
         const kdRatio = data.totalDeaths > 0 ? (data.totalKills / data.totalDeaths).toFixed(2) : data.totalKills;
         document.getElementById('kdRatio').textContent = kdRatio;
         
-        // Create charts
-        createTopPilotsChart(data.top5Pilots);
-        createCombatStatsChart(data.totalKills, data.totalDeaths);
+        // Create charts with empty data handling
+        if (data.top5Pilots && data.top5Pilots.length > 0) {
+            createTopPilotsChart(data.top5Pilots);
+            document.getElementById('topPilotsNoData').style.display = 'none';
+        } else {
+            document.getElementById('topPilotsChart').style.display = 'none';
+            document.getElementById('topPilotsNoData').style.display = 'block';
+        }
+        
+        createCombatStatsChart(data.totalKills || 0, data.totalDeaths || 0);
+        
         if (data.top3Squadrons && data.top3Squadrons.length > 0) {
             createTopSquadronsChart(data.top3Squadrons);
+            document.getElementById('squadronsNoData').style.display = 'none';
+        } else {
+            document.getElementById('topSquadronsChart').style.display = 'none';
+            document.getElementById('squadronsNoData').style.display = 'block';
         }
-        createPlayerActivityChart(data.totalPlayers, data.top5Pilots);
+        
+        createPlayerActivityChart(data.totalPlayers || 0, data.top5Pilots || []);
         
         // Hide loading overlay
         document.getElementById('loading-overlay').style.display = 'none';
@@ -656,9 +671,17 @@ setInterval(loadServerStats, 30000);
 
 .charts-dashboard {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 30px;
-    margin-top: 40px;
+    margin: 40px auto;
+    max-width: 1200px;
+    padding: 0 20px;
+}
+
+@media (max-width: 968px) {
+    .charts-dashboard {
+        grid-template-columns: 1fr;
+    }
 }
 
 .chart-container {
@@ -748,6 +771,14 @@ setInterval(loadServerStats, 30000);
     to {
         transform: rotate(360deg);
     }
+}
+
+.no-data-message {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+    margin-top: 20px;
+    font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {
