@@ -59,7 +59,7 @@
                             <span class="stat-label">Most Used Aircraft:</span>
                             <span class="stat-value" id="pilot-aircraft">Unknown</span>
                         </div>
-                        <div class="stat-item">
+                        <div class="stat-item" id="squadron-info">
                             <span class="stat-label">Squadron:</span>
                             <span class="stat-value" id="pilot-squadron">None</span>
                         </div>
@@ -167,6 +167,7 @@ async function loadPilotStats(playerName) {
         
         // Get squadron data
         let squadron = 'None';
+        let squadronLogo = null;
         try {
             // Try to get squadron data from squadrons endpoint
             const squadronResponse = await fetch('data/squadron_members.json');
@@ -184,13 +185,16 @@ async function loadPilotStats(playerName) {
                     if (player) {
                         const memberData = squadronMembers.find(m => m.player_ucid === player.ucid);
                         if (memberData) {
-                            // Get squadron name
+                            // Get squadron name and logo
                             const squadronsResponse = await fetch('data/squadrons.json');
                             if (squadronsResponse.ok) {
                                 const squadronsText = await squadronsResponse.text();
                                 const squadrons = squadronsText.trim().split('\n').map(line => JSON.parse(line));
                                 const squadronInfo = squadrons.find(s => s.id === memberData.squadron_id);
-                                squadron = squadronInfo ? squadronInfo.name : 'Unknown Squadron';
+                                if (squadronInfo) {
+                                    squadron = squadronInfo.name || 'Unknown Squadron';
+                                    squadronLogo = squadronInfo.image_url || null;
+                                }
                             }
                         }
                     }
@@ -210,7 +214,20 @@ async function loadPilotStats(playerName) {
         document.getElementById('pilot-ejections').textContent = statsData.ejections || 0;
         document.getElementById('pilot-credits').textContent = credits;
         document.getElementById('pilot-aircraft').textContent = statsData.mostUsedAircraft || 'Unknown';
-        document.getElementById('pilot-squadron').textContent = squadron;
+        
+        // Update squadron info with logo if available
+        const squadronInfoDiv = document.getElementById('squadron-info');
+        if (squadronLogo && squadron !== 'None') {
+            squadronInfoDiv.innerHTML = `
+                <span class="stat-label">Squadron:</span>
+                <div class="squadron-display">
+                    <img src="${squadronLogo}" alt="${squadron}" class="squadron-logo">
+                    <span class="stat-value">${squadron}</span>
+                </div>
+            `;
+        } else {
+            document.getElementById('pilot-squadron').textContent = squadron;
+        }
         
         // Show results
         document.getElementById('loading').style.display = 'none';
@@ -218,100 +235,6 @@ async function loadPilotStats(playerName) {
         
     } catch (error) {
         console.error('Error loading pilot stats:', error);
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('no-results').style.display = 'block';
-    }
-}
-
-async function searchPilot() {
-    const searchInput = document.getElementById('playerSearchInput');
-    const playerName = searchInput.value.trim();
-    
-    if (!playerName) {
-        alert('Please enter a pilot name to search.');
-        return;
-    }
-    
-    // Show loading state
-    document.getElementById('search-results').style.display = 'none';
-    document.getElementById('no-results').style.display = 'none';
-    document.getElementById('loading').style.display = 'block';
-    
-    try {
-        // Get player stats
-        const statsResponse = await fetch(`get_player_stats.php?name=${encodeURIComponent(playerName)}`);
-        const statsData = await statsResponse.json();
-        
-        if (statsData.error) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('no-results').style.display = 'block';
-            return;
-        }
-        
-        // Get credits data
-        let credits = 0;
-        try {
-            const creditsResponse = await fetch('get_credits.php');
-            const creditsData = await creditsResponse.json();
-            const playerCredits = creditsData.find(p => p.name.toLowerCase() === playerName.toLowerCase());
-            credits = playerCredits ? playerCredits.credits : 0;
-        } catch (e) {
-            console.warn('Could not load credits data:', e);
-        }
-        
-        // Get squadron data
-        let squadron = 'None';
-        try {
-            // Try to get squadron data from squadrons endpoint
-            const squadronResponse = await fetch('data/squadron_members.json');
-            if (squadronResponse.ok) {
-                const squadronText = await squadronResponse.text();
-                const squadronMembers = squadronText.trim().split('\n').map(line => JSON.parse(line));
-                
-                // Get player UCID to match with squadron
-                const playersResponse = await fetch('data/players.json');
-                if (playersResponse.ok) {
-                    const playersText = await playersResponse.text();
-                    const players = playersText.trim().split('\n').map(line => JSON.parse(line));
-                    const player = players.find(p => p.name.toLowerCase() === playerName.toLowerCase());
-                    
-                    if (player) {
-                        const memberData = squadronMembers.find(m => m.player_ucid === player.ucid);
-                        if (memberData) {
-                            // Get squadron name
-                            const squadronsResponse = await fetch('data/squadrons.json');
-                            if (squadronsResponse.ok) {
-                                const squadronsText = await squadronsResponse.text();
-                                const squadrons = squadronsText.trim().split('\n').map(line => JSON.parse(line));
-                                const squadronInfo = squadrons.find(s => s.id === memberData.squadron_id);
-                                squadron = squadronInfo ? squadronInfo.name : 'Unknown Squadron';
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn('Could not load squadron data:', e);
-        }
-        
-        // Populate the results
-        document.getElementById('pilot-name').textContent = statsData.name;
-        document.getElementById('pilot-kills').textContent = statsData.kills || 0;
-        document.getElementById('pilot-sorties').textContent = statsData.sorties || 0;
-        document.getElementById('pilot-takeoffs').textContent = statsData.takeoffs || 0;
-        document.getElementById('pilot-landings').textContent = statsData.landings || 0;
-        document.getElementById('pilot-crashes').textContent = statsData.crashes || 0;
-        document.getElementById('pilot-ejections').textContent = statsData.ejections || 0;
-        document.getElementById('pilot-credits').textContent = credits;
-        document.getElementById('pilot-aircraft').textContent = statsData.mostUsedAircraft || 'Unknown';
-        document.getElementById('pilot-squadron').textContent = squadron;
-        
-        // Show results
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('search-results').style.display = 'block';
-        
-    } catch (error) {
-        console.error('Error searching for pilot:', error);
         document.getElementById('loading').style.display = 'none';
         document.getElementById('no-results').style.display = 'block';
     }
@@ -432,6 +355,19 @@ document.getElementById('playerSearchInput').addEventListener('keypress', functi
 .result-item:hover {
     background-color: #3a3a3a;
     color: #4CAF50;
+}
+
+.squadron-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.squadron-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 4px;
 }
 </style>
 
