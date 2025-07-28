@@ -80,6 +80,7 @@ $takeoffs = 0;
 $landings = 0;
 $crashes = 0;
 $ejections = 0;
+$traps = 0;
 $aircraftUsage = [];
 
 // Parse missionstats.json
@@ -114,6 +115,23 @@ if ($handle) {
 arsort($aircraftUsage);
 $mostUsedAircraft = key($aircraftUsage);
 
+// Get traps from traps.json
+$trapsFile = validatePath($dataDir . '/traps.json', $dataDir);
+if ($trapsFile && file_exists($trapsFile)) {
+    $handle = fopen($trapsFile, 'r');
+    if ($handle) {
+        while (($line = fgets($handle)) !== false) {
+            $entry = validateJsonLine($line, ['ucid']);
+            if (!$entry) continue;
+            
+            if ($entry['ucid'] === $ucid) {
+                $traps++;
+            }
+        }
+        fclose($handle);
+    }
+}
+
 // Get top 5 aircraft for chart
 $topAircraft = array_slice($aircraftUsage, 0, 5, true);
 $aircraftData = [];
@@ -134,6 +152,7 @@ echo json_encode([
     "landings" => $landings,
     "crashes" => $crashes,
     "ejections" => $ejections,
+    "traps" => $traps,
     "mostUsedAircraft" => htmlspecialchars($mostUsedAircraft ?? "Unknown", ENT_QUOTES, 'UTF-8'),
     "aircraftUsage" => $aircraftData
 ]);
