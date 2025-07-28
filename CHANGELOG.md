@@ -20,6 +20,16 @@ All notable changes to the DCS Statistics Website Uploader project.
   - S_EVENT_KILL (when target is an airplane)
 - Removed artificial fallback logic that was inflating visit counts
 
+#### Chart Alignment Fixes
+**What Changed:** Fixed left-aligned charts on dashboard and pilot statistics pages
+**Why:** Charts and content were aligned to the left side of the page instead of being properly centered, affecting the visual presentation.
+
+**Technical Fixes:**
+- Added proper centering to main element on both pages
+- Set max-width: 1400px for index.php to accommodate wider dashboard layout
+- Set max-width: 1200px for pilot_statistics.php for optimal readability
+- Maintains responsive design with proper centering on all screen sizes
+
 #### Carrier Trap Tracking Fixes
 **What Changed:** Fixed carrier trap statistics showing 0 for pilots with actual traps
 **Why:** The system was looking for incorrect field names in traps.json, causing all trap counts to show as zero even for pilots with multiple carrier landings.
