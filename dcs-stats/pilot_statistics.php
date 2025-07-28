@@ -589,33 +589,33 @@ function createTrapScoresChart(trapScores) {
         trapScoresChart.destroy();
     }
     
-    // Create histogram data for trap scores
+    // Create histogram data for trap scores with carrier-specific grading
     const scoreBuckets = {
-        'Perfect (4.0)': 0,
-        'Excellent (3.0-3.9)': 0,
-        'Good (2.0-2.9)': 0,
-        'Fair (1.0-1.9)': 0,
-        'Poor (0-0.9)': 0
+        'OK (4.0)': 0,
+        'Fair (3.0-3.9)': 0,
+        'No Grade (2.0-2.9)': 0,
+        'Cut (1.0-1.9)': 0,
+        'Wave Off (0-0.9)': 0
     };
     
     trapScores.forEach(score => {
-        if (score >= 4) scoreBuckets['Perfect (4.0)']++;
-        else if (score >= 3) scoreBuckets['Excellent (3.0-3.9)']++;
-        else if (score >= 2) scoreBuckets['Good (2.0-2.9)']++;
-        else if (score >= 1) scoreBuckets['Fair (1.0-1.9)']++;
-        else scoreBuckets['Poor (0-0.9)']++;
+        if (score >= 4) scoreBuckets['OK (4.0)']++;
+        else if (score >= 3) scoreBuckets['Fair (3.0-3.9)']++;
+        else if (score >= 2) scoreBuckets['No Grade (2.0-2.9)']++;
+        else if (score >= 1) scoreBuckets['Cut (1.0-1.9)']++;
+        else scoreBuckets['Wave Off (0-0.9)']++;
     });
     
     const labels = Object.keys(scoreBuckets);
     const data = Object.values(scoreBuckets);
     
-    // Generate colors from green (perfect) to red (poor)
+    // Generate colors matching carrier grading standards
     const colors = [
-        'rgba(76, 175, 80, 0.6)',   // Perfect - green
-        'rgba(139, 195, 74, 0.6)',  // Excellent - light green
-        'rgba(255, 193, 7, 0.6)',   // Good - yellow
-        'rgba(255, 152, 0, 0.6)',   // Fair - orange
-        'rgba(244, 67, 54, 0.6)'    // Poor - red
+        'rgba(76, 175, 80, 0.6)',   // OK - green (perfect)
+        'rgba(255, 193, 7, 0.6)',   // Fair - yellow
+        'rgba(158, 158, 158, 0.6)', // No Grade - gray
+        'rgba(255, 152, 0, 0.6)',   // Cut - orange (dangerous)
+        'rgba(244, 67, 54, 0.6)'    // Wave Off - red
     ];
     
     const borderColors = colors.map(c => c.replace('0.6', '1'));

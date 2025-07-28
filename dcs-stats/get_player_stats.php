@@ -135,23 +135,36 @@ if ($trapsFile && file_exists($trapsFile)) {
             }
             
             // Check if this trap belongs to the current player
-            // Try multiple possible field names for UCID
-            $trapUcid = $entry['ucid'] ?? $entry['player_ucid'] ?? $entry['pilot_ucid'] ?? null;
-            
-            if ($trapUcid && $trapUcid === $ucid) {
+            if (isset($entry['player_ucid']) && $entry['player_ucid'] === $ucid) {
                 $traps++;
                 
-                // Collect trap scores if available
-                if (isset($entry['score'])) {
-                    $trapScores[] = $entry['score'];
+                // Use the points field directly, or calculate based on grade
+                if (isset($entry['points'])) {
+                    // Points seem to be 0 (good) or 1 (wave off), so invert for scoring
+                    $score = $entry['points'] === 0 ? 4 : 1;
+                    $trapScores[] = $score;
                 } elseif (isset($entry['grade'])) {
-                    // Convert letter grades to numeric scores if needed
-                    $gradeMap = ['OK' => 3, 'Fair' => 2, 'No Grade' => 1, 'Cut' => 0, 'Bolter' => 0];
-                    $trapScores[] = $gradeMap[$entry['grade']] ?? 1;
-                } elseif (isset($entry['wire'])) {
-                    // Score based on wire (3-wire is perfect)
-                    $wireScores = [1 => 2, 2 => 3, 3 => 4, 4 => 3];
-                    $trapScores[] = $wireScores[$entry['wire']] ?? 2;
+                    // Map carrier landing grades to scores
+                    // Based on real carrier grading: OK (perfect), (OK), Fair, No Grade, Cut, Bolter, Wave Off
+                    $gradeMap = [
+                        'OK' => 4,      // Perfect pass
+                        '(OK)' => 3.5,  // OK with deviations
+                        'Fair' => 3,    // Fair pass
+                        'No Grade' => 2, // No grade
+                        'C' => 1.5,     // Cut pass (dangerous)
+                        'B' => 1,       // Bolter
+                        'WO' => 0.5     // Wave off
+                    ];
+                    $trapScores[] = $gradeMap[$entry['grade']] ?? 2;
+                }
+                
+                // Additional scoring based on wire if available
+                if (isset($entry['wire']) && $entry['wire'] !== null) {
+                    // 3-wire is perfect, adjust last score
+                    $wireBonus = [1 => -0.5, 2 => -0.25, 3 => 0, 4 => -0.25];
+                    if (count($trapScores) > 0 && isset($wireBonus[$entry['wire']])) {
+                        $trapScores[count($trapScores) - 1] += $wireBonus[$entry['wire']];
+                    }
                 }
             }
         }
