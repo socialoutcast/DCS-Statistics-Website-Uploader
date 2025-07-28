@@ -4,6 +4,65 @@ All notable changes to the DCS Statistics Website Uploader project.
 
 ## [Unreleased] - 2025-07-28
 
+### 🐛 Bug Fixes & Improvements
+
+#### Carrier Trap Tracking Fixes
+**What Changed:** Fixed carrier trap statistics showing 0 for pilots with actual traps
+**Why:** The system was looking for incorrect field names in traps.json, causing all trap counts to show as zero even for pilots with multiple carrier landings.
+
+**Technical Fixes:**
+- Corrected UCID field lookup to use `player_ucid` from actual data format
+- Implemented proper Navy grading system mapping:
+  - OK = 4.0 (Perfect pass)
+  - Fair = 3.0-3.9
+  - No Grade = 2.0-2.9
+  - C (Cut) = 1.0-1.9 (Dangerous approach)
+  - WO (Wave Off) = 0-0.9
+- Added wire-based score adjustments (3-wire is perfect, others get deductions)
+- Inverted points field logic (0 = good trap, 1 = wave off)
+
+#### Carrier Landing Performance Chart
+**What Changed:** Added new performance distribution chart for carrier landings
+**Why:** Pilots need to track their carrier landing proficiency over time. Visual representation helps identify areas for improvement.
+
+**Features Added:**
+- Bar chart showing distribution of landing grades
+- Color-coded grades matching Navy standards (green to red)
+- Percentage breakdown in tooltips
+- Average trap score display
+- Only shows for pilots with carrier operations
+
+#### Dashboard Data Display Fixes
+**What Changed:** Fixed empty charts for top pilots and squadrons on main dashboard
+**Why:** Charts were showing blank when no "S_EVENT_MISSION_START" events existed, making the dashboard appear broken.
+
+**Improvements:**
+- Fallback to count any player activity as a visit when no mission starts exist
+- Show "No mission data available yet" message instead of empty charts
+- Graceful handling of empty squadron data
+- Proper null/zero value handling in all calculations
+
+#### Layout & Centering Improvements
+**What Changed:** Centered all graphs and improved responsive layouts
+**Why:** Charts were left-aligned and looked unbalanced on larger screens. Mobile layouts were breaking on some devices.
+
+**Visual Improvements:**
+- Centered graph containers with max-width constraints
+- Index dashboard: 1200px max-width, 2-column grid
+- Pilot statistics: 1000px max-width, 2-column grid
+- Improved mobile breakpoints (collapses to 1 column below 768px)
+- Better spacing and padding for visual hierarchy
+
+#### Search Result Filtering
+**What Changed:** Filter out players with no statistics from search results
+**Why:** Search was returning all players in the database, including those who never flew, cluttering results with irrelevant entries.
+
+**Implementation:**
+- Only returns players with mission events or trap data
+- Checks both missionstats.json and traps.json for activity
+- Updated message: "No pilots with recorded statistics found"
+- Significantly cleaner and more relevant search results
+
 ### 🎯 Server Dashboard Transformation
 
 #### Interactive Statistics Dashboard
