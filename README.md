@@ -118,6 +118,12 @@ The system uses **28 different data files** from DCSServerBot. **Default uploads
 | `players.json` | Player database | Names, UCIDs, identification |
 | `missionstats.json` | Combat events | Kills, takeoffs, landings, crashes |
 | `credits.json` | Points system | Player credits/points earned |
+| `instances.json` | Server Statistics | DCS servers |
+| `missions.json` | Server Statistics | map/theatre used|
+| `mm_packages.json` | Server Statistics | Modules installed on DCS server |
+| `squadrons.json` | Squadron Statistics | Registered squadrons |
+| `squadron_credits.json` | Squadron Statistics | Credits Earned by squadron |
+| `squadron_members.json` | Squadron Statistics | Members of squadron |
 
 **📁 Optional data sources:** squadrons, missions, server stats, and 25+ other data types available.
 
