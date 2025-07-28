@@ -221,6 +221,15 @@ function createTopPilotsChart(pilots) {
                             size: 12,
                             weight: 'bold'
                         }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Pilot Names',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
                     }
                 },
                 y: {
@@ -236,6 +245,15 @@ function createTopPilotsChart(pilots) {
                         },
                         callback: function(value) {
                             return value.toLocaleString();
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Server Visits',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
                         }
                     }
                 }
@@ -394,6 +412,15 @@ function createPlayerActivityChart(totalPlayers, top5Pilots) {
                             size: 12,
                             weight: 'bold'
                         }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Player Categories',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
                     }
                 },
                 y: {
@@ -409,6 +436,15 @@ function createPlayerActivityChart(totalPlayers, top5Pilots) {
                         },
                         callback: function(value) {
                             return value.toLocaleString();
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Players',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
                         }
                     }
                 }

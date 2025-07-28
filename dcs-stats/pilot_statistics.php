@@ -297,6 +297,15 @@ const chartOptions = {
             grid: {
                 color: '#333',
                 borderColor: '#444'
+            },
+            title: {
+                display: true,
+                text: 'Statistics',
+                color: '#4CAF50',
+                font: {
+                    size: 14,
+                    weight: 'bold'
+                }
             }
         },
         y: {
@@ -306,6 +315,15 @@ const chartOptions = {
             grid: {
                 color: '#333',
                 borderColor: '#444'
+            },
+            title: {
+                display: true,
+                text: 'Count',
+                color: '#4CAF50',
+                font: {
+                    size: 14,
+                    weight: 'bold'
+                }
             }
         }
     }
@@ -343,6 +361,33 @@ function createCombatChart(statsData) {
                 ...chartOptions.plugins,
                 legend: {
                     display: false
+                }
+            },
+            scales: {
+                ...chartOptions.scales,
+                x: {
+                    ...chartOptions.scales.x,
+                    title: {
+                        display: true,
+                        text: 'Combat Metrics',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    ...chartOptions.scales.y,
+                    title: {
+                        display: true,
+                        text: 'Number of Events',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
                 }
             }
         }
@@ -449,6 +494,27 @@ function createAircraftChart(aircraftData) {
                     ticks: {
                         ...chartOptions.scales.x.ticks,
                         stepSize: 1
+                    },
+                    title: {
+                        display: true,
+                        text: 'Times Used',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    ...chartOptions.scales.y,
+                    title: {
+                        display: true,
+                        text: 'Aircraft Type',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
                     }
                 }
             }
