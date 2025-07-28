@@ -52,6 +52,7 @@ if (!file_exists($playersFile) || !file_exists($missionsFile)) {
 
 // Search for UCID in players.json (line-by-line NDJSON)
 $ucid = null;
+$exactName = null;
 $handle = fopen($playersFile, 'r');
 if ($handle) {
     while (($line = fgets($handle)) !== false) {
@@ -59,6 +60,7 @@ if ($handle) {
         if (!$entry) continue;
         if (trim(strtolower($entry['name'])) === $playerName) {
             $ucid = $entry['ucid'];
+            $exactName = $entry['name'];
             break;
         }
     }
@@ -112,9 +114,19 @@ if ($handle) {
 arsort($aircraftUsage);
 $mostUsedAircraft = key($aircraftUsage);
 
+// Get top 5 aircraft for chart
+$topAircraft = array_slice($aircraftUsage, 0, 5, true);
+$aircraftData = [];
+foreach ($topAircraft as $aircraft => $count) {
+    $aircraftData[] = [
+        'name' => htmlspecialchars($aircraft, ENT_QUOTES, 'UTF-8'),
+        'count' => $count
+    ];
+}
+
 // Sanitize data before sending to prevent XSS
 echo json_encode([
-    "name" => htmlspecialchars($playerName, ENT_QUOTES, 'UTF-8'),
+    "name" => htmlspecialchars($exactName ?? $playerName, ENT_QUOTES, 'UTF-8'),
     "ucid" => htmlspecialchars($ucid, ENT_QUOTES, 'UTF-8'),
     "kills" => $kills,
     "sorties" => $sorties,
@@ -122,5 +134,6 @@ echo json_encode([
     "landings" => $landings,
     "crashes" => $crashes,
     "ejections" => $ejections,
-    "mostUsedAircraft" => htmlspecialchars($mostUsedAircraft ?? "Unknown", ENT_QUOTES, 'UTF-8')
+    "mostUsedAircraft" => htmlspecialchars($mostUsedAircraft ?? "Unknown", ENT_QUOTES, 'UTF-8'),
+    "aircraftUsage" => $aircraftData
 ]);

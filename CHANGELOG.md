@@ -4,6 +4,70 @@ All notable changes to the DCS Statistics Website Uploader project.
 
 ## [Unreleased] - 2025-07-28
 
+### 🔍 Pilot Search Improvements
+
+#### Partial Name Search Implementation
+**What Changed:** Upgraded pilot search from exact match to partial name matching with multi-result selection
+**Why:** Requiring exact pilot names made it difficult for users to find players, especially with complex usernames. Partial search allows finding pilots with just part of their name, improving user experience significantly.
+
+**Key Features:**
+- Case-insensitive partial name matching
+- Multiple results display when search matches several pilots
+- Clickable selection interface for choosing the correct pilot
+- Results sorted by relevance (exact match first, then starts with, then contains)
+- Limited to 20 results to prevent performance issues
+
+#### Squadron Logo Display
+**What Changed:** Added squadron logo display next to squadron names in pilot statistics
+**Why:** Visual identification improves user engagement and squadron pride. Logos make it easier to identify squadron affiliations at a glance and create a more professional appearance.
+
+**Implementation Details:**
+- Automatically displays squadron logos when available
+- 40x40px responsive sizing with rounded corners
+- Graceful fallback to text-only display for squadrons without logos
+- Integrated with existing squadron data fetching
+
+### 📊 Data Visualization Features
+
+#### Interactive Charts Integration
+**What Changed:** Added Chart.js powered interactive charts to pilot statistics page
+**Why:** Raw numbers are difficult to interpret quickly. Visual charts provide immediate understanding of pilot performance, making statistics more engaging and accessible to all users.
+
+**Charts Added:**
+1. **Combat Performance Chart**
+   - Bar chart displaying kills and sorties
+   - Green and blue color scheme for visual distinction
+   - Responsive sizing and tooltips
+
+2. **Flight Statistics Chart**
+   - Doughnut chart showing flight outcomes
+   - Visualizes successful landings, crashes, ejections, and in-flight status
+   - Color-coded for quick understanding (green=success, red=crashes, orange=ejections)
+
+3. **Aircraft Usage Chart**
+   - Horizontal bar chart showing top 5 most used aircraft
+   - Dynamic display only when aircraft data is available
+   - Helps identify pilot preferences and specializations
+
+**Technical Implementation:**
+- Chart.js CDN integration with CSP updates
+- Dark theme styling matching site design
+- Responsive grid layout adapting to screen size
+- Chart instances properly managed to prevent memory leaks
+- Backend API enhanced to provide aircraft usage data
+
+### 🆕 New Files Added
+
+#### search_players.php
+**Purpose:** New API endpoint for partial name search functionality
+**Features:** 
+- Supports partial name matching with case-insensitive search
+- Returns up to 20 results sorted by relevance
+- Includes security validation and rate limiting
+- Properly sanitizes output to prevent XSS attacks
+
+## [1.1.0] - 2025-07-28
+
 ### 🔒 Security Enhancements
 
 #### Environment Variable Configuration System

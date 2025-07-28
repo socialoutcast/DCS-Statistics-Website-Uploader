@@ -1,4 +1,5 @@
 <?php include 'header.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php include 'nav.php'; ?>
 
 <main>
@@ -6,7 +7,12 @@
     
     <div class="search-container">
         <input type="text" id="playerSearchInput" placeholder="Search for a pilot..." />
-        <button onclick="searchPilot()">Search</button>
+        <button onclick="searchForPlayers()">Search</button>
+    </div>
+    
+    <div id="multiple-results" style="display: none;">
+        <h3 style="text-align: center; color: #ccc;">Multiple pilots found. Please select one:</h3>
+        <div id="results-list" class="results-list"></div>
     </div>
     
     <div id="search-results" style="display: none;">
@@ -54,11 +60,26 @@
                             <span class="stat-label">Most Used Aircraft:</span>
                             <span class="stat-value" id="pilot-aircraft">Unknown</span>
                         </div>
-                        <div class="stat-item">
+                        <div class="stat-item" id="squadron-info">
                             <span class="stat-label">Squadron:</span>
                             <span class="stat-value" id="pilot-squadron">None</span>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <h4>Combat Performance</h4>
+                    <canvas id="combatChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <h4>Flight Statistics</h4>
+                    <canvas id="flightChart"></canvas>
+                </div>
+                <div class="chart-wrapper" id="aircraftChartWrapper" style="display: none;">
+                    <h4>Aircraft Usage</h4>
+                    <canvas id="aircraftChart"></canvas>
                 </div>
             </div>
         </div>
@@ -74,19 +95,69 @@
 </main>
 
 <script>
-async function searchPilot() {
+async function searchForPlayers() {
     const searchInput = document.getElementById('playerSearchInput');
-    const playerName = searchInput.value.trim();
+    const searchTerm = searchInput.value.trim();
     
-    if (!playerName) {
+    if (!searchTerm) {
         alert('Please enter a pilot name to search.');
         return;
     }
     
-    // Show loading state
+    // Hide all sections
     document.getElementById('search-results').style.display = 'none';
+    document.getElementById('multiple-results').style.display = 'none';
     document.getElementById('no-results').style.display = 'none';
     document.getElementById('loading').style.display = 'block';
+    
+    try {
+        // Search for players
+        const searchResponse = await fetch(`search_players.php?search=${encodeURIComponent(searchTerm)}`);
+        const searchData = await searchResponse.json();
+        
+        document.getElementById('loading').style.display = 'none';
+        
+        if (searchData.error || searchData.count === 0) {
+            document.getElementById('no-results').style.display = 'block';
+            return;
+        }
+        
+        if (searchData.count === 1) {
+            // Single result - load directly
+            await loadPilotStats(searchData.results[0].name);
+        } else {
+            // Multiple results - show selection
+            showMultipleResults(searchData.results);
+        }
+        
+    } catch (error) {
+        console.error('Error searching for pilots:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('no-results').style.display = 'block';
+    }
+}
+
+function showMultipleResults(results) {
+    const resultsList = document.getElementById('results-list');
+    resultsList.innerHTML = '';
+    
+    results.forEach(pilot => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'result-item';
+        resultItem.textContent = pilot.name;
+        resultItem.onclick = () => {
+            document.getElementById('multiple-results').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            loadPilotStats(pilot.name);
+        };
+        resultsList.appendChild(resultItem);
+    });
+    
+    document.getElementById('multiple-results').style.display = 'block';
+}
+
+async function loadPilotStats(playerName) {
+    document.getElementById('multiple-results').style.display = 'none';
     
     try {
         // Get player stats
@@ -112,6 +183,7 @@ async function searchPilot() {
         
         // Get squadron data
         let squadron = 'None';
+        let squadronLogo = null;
         try {
             // Try to get squadron data from squadrons endpoint
             const squadronResponse = await fetch('data/squadron_members.json');
@@ -129,13 +201,16 @@ async function searchPilot() {
                     if (player) {
                         const memberData = squadronMembers.find(m => m.player_ucid === player.ucid);
                         if (memberData) {
-                            // Get squadron name
+                            // Get squadron name and logo
                             const squadronsResponse = await fetch('data/squadrons.json');
                             if (squadronsResponse.ok) {
                                 const squadronsText = await squadronsResponse.text();
                                 const squadrons = squadronsText.trim().split('\n').map(line => JSON.parse(line));
                                 const squadronInfo = squadrons.find(s => s.id === memberData.squadron_id);
-                                squadron = squadronInfo ? squadronInfo.name : 'Unknown Squadron';
+                                if (squadronInfo) {
+                                    squadron = squadronInfo.name || 'Unknown Squadron';
+                                    squadronLogo = squadronInfo.image_url || null;
+                                }
                             }
                         }
                     }
@@ -155,23 +230,236 @@ async function searchPilot() {
         document.getElementById('pilot-ejections').textContent = statsData.ejections || 0;
         document.getElementById('pilot-credits').textContent = credits;
         document.getElementById('pilot-aircraft').textContent = statsData.mostUsedAircraft || 'Unknown';
-        document.getElementById('pilot-squadron').textContent = squadron;
+        
+        // Update squadron info with logo if available
+        const squadronInfoDiv = document.getElementById('squadron-info');
+        if (squadronLogo && squadron !== 'None') {
+            squadronInfoDiv.innerHTML = `
+                <span class="stat-label">Squadron:</span>
+                <div class="squadron-display">
+                    <img src="${squadronLogo}" alt="${squadron}" class="squadron-logo">
+                    <span class="stat-value">${squadron}</span>
+                </div>
+            `;
+        } else {
+            document.getElementById('pilot-squadron').textContent = squadron;
+        }
         
         // Show results
         document.getElementById('loading').style.display = 'none';
         document.getElementById('search-results').style.display = 'block';
         
+        // Create charts
+        createCombatChart(statsData);
+        createFlightChart(statsData);
+        if (statsData.aircraftUsage && statsData.aircraftUsage.length > 0) {
+            createAircraftChart(statsData.aircraftUsage);
+        }
+        
     } catch (error) {
-        console.error('Error searching for pilot:', error);
+        console.error('Error loading pilot stats:', error);
         document.getElementById('loading').style.display = 'none';
         document.getElementById('no-results').style.display = 'block';
     }
 }
 
+// Chart instances
+let combatChart = null;
+let flightChart = null;
+let aircraftChart = null;
+
+// Chart configuration with dark theme
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            labels: {
+                color: '#ccc',
+                font: {
+                    size: 12
+                }
+            }
+        },
+        tooltip: {
+            backgroundColor: '#1e1e1e',
+            titleColor: '#4CAF50',
+            bodyColor: '#ccc',
+            borderColor: '#444',
+            borderWidth: 1
+        }
+    },
+    scales: {
+        x: {
+            ticks: {
+                color: '#ccc'
+            },
+            grid: {
+                color: '#333',
+                borderColor: '#444'
+            }
+        },
+        y: {
+            ticks: {
+                color: '#ccc'
+            },
+            grid: {
+                color: '#333',
+                borderColor: '#444'
+            }
+        }
+    }
+};
+
+function createCombatChart(statsData) {
+    const ctx = document.getElementById('combatChart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (combatChart) {
+        combatChart.destroy();
+    }
+    
+    combatChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Kills', 'Sorties'],
+            datasets: [{
+                label: 'Combat Stats',
+                data: [statsData.kills || 0, statsData.sorties || 0],
+                backgroundColor: [
+                    'rgba(76, 175, 80, 0.6)',
+                    'rgba(33, 150, 243, 0.6)'
+                ],
+                borderColor: [
+                    'rgba(76, 175, 80, 1)',
+                    'rgba(33, 150, 243, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...chartOptions,
+            plugins: {
+                ...chartOptions.plugins,
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+function createFlightChart(statsData) {
+    const ctx = document.getElementById('flightChart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (flightChart) {
+        flightChart.destroy();
+    }
+    
+    const takeoffs = statsData.takeoffs || 0;
+    const landings = statsData.landings || 0;
+    const crashes = statsData.crashes || 0;
+    const ejections = statsData.ejections || 0;
+    
+    flightChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Successful Landings', 'Crashes', 'Ejections', 'In Flight'],
+            datasets: [{
+                data: [
+                    landings,
+                    crashes,
+                    ejections,
+                    Math.max(0, takeoffs - landings - crashes - ejections)
+                ],
+                backgroundColor: [
+                    'rgba(76, 175, 80, 0.6)',
+                    'rgba(244, 67, 54, 0.6)',
+                    'rgba(255, 152, 0, 0.6)',
+                    'rgba(158, 158, 158, 0.6)'
+                ],
+                borderColor: [
+                    'rgba(76, 175, 80, 1)',
+                    'rgba(244, 67, 54, 1)',
+                    'rgba(255, 152, 0, 1)',
+                    'rgba(158, 158, 158, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...chartOptions,
+            scales: {} // Remove scales for doughnut chart
+        }
+    });
+}
+
+function createAircraftChart(aircraftData) {
+    const ctx = document.getElementById('aircraftChart').getContext('2d');
+    
+    // Show the wrapper
+    document.getElementById('aircraftChartWrapper').style.display = 'block';
+    
+    // Destroy existing chart if it exists
+    if (aircraftChart) {
+        aircraftChart.destroy();
+    }
+    
+    const labels = aircraftData.map(a => a.name);
+    const data = aircraftData.map(a => a.count);
+    
+    // Generate colors for each aircraft
+    const colors = [
+        'rgba(76, 175, 80, 0.6)',
+        'rgba(33, 150, 243, 0.6)',
+        'rgba(255, 193, 7, 0.6)',
+        'rgba(233, 30, 99, 0.6)',
+        'rgba(156, 39, 176, 0.6)'
+    ];
+    
+    const borderColors = colors.map(c => c.replace('0.6', '1'));
+    
+    aircraftChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Times Used',
+                data: data,
+                backgroundColor: colors.slice(0, data.length),
+                borderColor: borderColors.slice(0, data.length),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...chartOptions,
+            indexAxis: 'y', // Horizontal bar chart
+            plugins: {
+                ...chartOptions.plugins,
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                ...chartOptions.scales,
+                x: {
+                    ...chartOptions.scales.x,
+                    beginAtZero: true,
+                    ticks: {
+                        ...chartOptions.scales.x.ticks,
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+}
+
 // Allow Enter key to trigger search
 document.getElementById('playerSearchInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
-        searchPilot();
+        searchForPlayers();
     }
 });
 </script>
@@ -258,6 +546,69 @@ document.getElementById('playerSearchInput').addEventListener('keypress', functi
 
 .search-container button:hover {
     background-color: #45a049;
+}
+
+.results-list {
+    max-width: 600px;
+    margin: 20px auto;
+    background-color: #2c2c2c;
+    border-radius: 8px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.result-item {
+    padding: 12px 20px;
+    margin: 5px;
+    background-color: #1e1e1e;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #fff;
+    transition: background-color 0.3s;
+}
+
+.result-item:hover {
+    background-color: #3a3a3a;
+    color: #4CAF50;
+}
+
+.squadron-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.squadron-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-top: 40px;
+}
+
+.chart-wrapper {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.chart-wrapper h4 {
+    color: #4CAF50;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+.chart-wrapper canvas {
+    max-height: 250px;
 }
 </style>
 
