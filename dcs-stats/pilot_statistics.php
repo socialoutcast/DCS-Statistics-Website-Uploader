@@ -1,4 +1,5 @@
 <?php include 'header.php'; ?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php include 'nav.php'; ?>
 
 <main>
@@ -64,6 +65,21 @@
                             <span class="stat-value" id="pilot-squadron">None</span>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <h4>Combat Performance</h4>
+                    <canvas id="combatChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <h4>Flight Statistics</h4>
+                    <canvas id="flightChart"></canvas>
+                </div>
+                <div class="chart-wrapper" id="aircraftChartWrapper" style="display: none;">
+                    <h4>Aircraft Usage</h4>
+                    <canvas id="aircraftChart"></canvas>
                 </div>
             </div>
         </div>
@@ -233,11 +249,211 @@ async function loadPilotStats(playerName) {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('search-results').style.display = 'block';
         
+        // Create charts
+        createCombatChart(statsData);
+        createFlightChart(statsData);
+        if (statsData.aircraftUsage && statsData.aircraftUsage.length > 0) {
+            createAircraftChart(statsData.aircraftUsage);
+        }
+        
     } catch (error) {
         console.error('Error loading pilot stats:', error);
         document.getElementById('loading').style.display = 'none';
         document.getElementById('no-results').style.display = 'block';
     }
+}
+
+// Chart instances
+let combatChart = null;
+let flightChart = null;
+let aircraftChart = null;
+
+// Chart configuration with dark theme
+const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            labels: {
+                color: '#ccc',
+                font: {
+                    size: 12
+                }
+            }
+        },
+        tooltip: {
+            backgroundColor: '#1e1e1e',
+            titleColor: '#4CAF50',
+            bodyColor: '#ccc',
+            borderColor: '#444',
+            borderWidth: 1
+        }
+    },
+    scales: {
+        x: {
+            ticks: {
+                color: '#ccc'
+            },
+            grid: {
+                color: '#333',
+                borderColor: '#444'
+            }
+        },
+        y: {
+            ticks: {
+                color: '#ccc'
+            },
+            grid: {
+                color: '#333',
+                borderColor: '#444'
+            }
+        }
+    }
+};
+
+function createCombatChart(statsData) {
+    const ctx = document.getElementById('combatChart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (combatChart) {
+        combatChart.destroy();
+    }
+    
+    combatChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Kills', 'Sorties'],
+            datasets: [{
+                label: 'Combat Stats',
+                data: [statsData.kills || 0, statsData.sorties || 0],
+                backgroundColor: [
+                    'rgba(76, 175, 80, 0.6)',
+                    'rgba(33, 150, 243, 0.6)'
+                ],
+                borderColor: [
+                    'rgba(76, 175, 80, 1)',
+                    'rgba(33, 150, 243, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...chartOptions,
+            plugins: {
+                ...chartOptions.plugins,
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+function createFlightChart(statsData) {
+    const ctx = document.getElementById('flightChart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (flightChart) {
+        flightChart.destroy();
+    }
+    
+    const takeoffs = statsData.takeoffs || 0;
+    const landings = statsData.landings || 0;
+    const crashes = statsData.crashes || 0;
+    const ejections = statsData.ejections || 0;
+    
+    flightChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Successful Landings', 'Crashes', 'Ejections', 'In Flight'],
+            datasets: [{
+                data: [
+                    landings,
+                    crashes,
+                    ejections,
+                    Math.max(0, takeoffs - landings - crashes - ejections)
+                ],
+                backgroundColor: [
+                    'rgba(76, 175, 80, 0.6)',
+                    'rgba(244, 67, 54, 0.6)',
+                    'rgba(255, 152, 0, 0.6)',
+                    'rgba(158, 158, 158, 0.6)'
+                ],
+                borderColor: [
+                    'rgba(76, 175, 80, 1)',
+                    'rgba(244, 67, 54, 1)',
+                    'rgba(255, 152, 0, 1)',
+                    'rgba(158, 158, 158, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...chartOptions,
+            scales: {} // Remove scales for doughnut chart
+        }
+    });
+}
+
+function createAircraftChart(aircraftData) {
+    const ctx = document.getElementById('aircraftChart').getContext('2d');
+    
+    // Show the wrapper
+    document.getElementById('aircraftChartWrapper').style.display = 'block';
+    
+    // Destroy existing chart if it exists
+    if (aircraftChart) {
+        aircraftChart.destroy();
+    }
+    
+    const labels = aircraftData.map(a => a.name);
+    const data = aircraftData.map(a => a.count);
+    
+    // Generate colors for each aircraft
+    const colors = [
+        'rgba(76, 175, 80, 0.6)',
+        'rgba(33, 150, 243, 0.6)',
+        'rgba(255, 193, 7, 0.6)',
+        'rgba(233, 30, 99, 0.6)',
+        'rgba(156, 39, 176, 0.6)'
+    ];
+    
+    const borderColors = colors.map(c => c.replace('0.6', '1'));
+    
+    aircraftChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Times Used',
+                data: data,
+                backgroundColor: colors.slice(0, data.length),
+                borderColor: borderColors.slice(0, data.length),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...chartOptions,
+            indexAxis: 'y', // Horizontal bar chart
+            plugins: {
+                ...chartOptions.plugins,
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                ...chartOptions.scales,
+                x: {
+                    ...chartOptions.scales.x,
+                    beginAtZero: true,
+                    ticks: {
+                        ...chartOptions.scales.x.ticks,
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
 }
 
 // Allow Enter key to trigger search
@@ -368,6 +584,31 @@ document.getElementById('playerSearchInput').addEventListener('keypress', functi
     height: 40px;
     object-fit: contain;
     border-radius: 4px;
+}
+
+.charts-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-top: 40px;
+}
+
+.chart-wrapper {
+    background-color: #1e1e1e;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.chart-wrapper h4 {
+    color: #4CAF50;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+.chart-wrapper canvas {
+    max-height: 250px;
 }
 </style>
 
