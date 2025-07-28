@@ -2,7 +2,7 @@
 
 All notable changes to the DCS Statistics Website Uploader project.
 
-## [Unreleased] - 2025-01-28
+## [Unreleased] - 2025-07-28
 
 ### 🔒 Security Enhancements
 
