@@ -117,20 +117,50 @@ $mostUsedAircraft = key($aircraftUsage);
 
 // Get traps from traps.json
 $trapsFile = validatePath($dataDir . '/traps.json', $dataDir);
+$trapScores = [];
+$debugInfo = [];
+
 if ($trapsFile && file_exists($trapsFile)) {
     $handle = fopen($trapsFile, 'r');
     if ($handle) {
+        $lineCount = 0;
         while (($line = fgets($handle)) !== false) {
-            $entry = validateJsonLine($line, ['ucid']);
+            $lineCount++;
+            $entry = json_decode(trim($line), true);
             if (!$entry) continue;
             
-            if ($entry['ucid'] === $ucid) {
+            // Debug: Store first few entries to understand structure
+            if ($lineCount <= 3) {
+                $debugInfo[] = array_keys($entry);
+            }
+            
+            // Check if this trap belongs to the current player
+            // Try multiple possible field names for UCID
+            $trapUcid = $entry['ucid'] ?? $entry['player_ucid'] ?? $entry['pilot_ucid'] ?? null;
+            
+            if ($trapUcid && $trapUcid === $ucid) {
                 $traps++;
+                
+                // Collect trap scores if available
+                if (isset($entry['score'])) {
+                    $trapScores[] = $entry['score'];
+                } elseif (isset($entry['grade'])) {
+                    // Convert letter grades to numeric scores if needed
+                    $gradeMap = ['OK' => 3, 'Fair' => 2, 'No Grade' => 1, 'Cut' => 0, 'Bolter' => 0];
+                    $trapScores[] = $gradeMap[$entry['grade']] ?? 1;
+                } elseif (isset($entry['wire'])) {
+                    // Score based on wire (3-wire is perfect)
+                    $wireScores = [1 => 2, 2 => 3, 3 => 4, 4 => 3];
+                    $trapScores[] = $wireScores[$entry['wire']] ?? 2;
+                }
             }
         }
         fclose($handle);
     }
 }
+
+// Calculate average trap score
+$avgTrapScore = count($trapScores) > 0 ? round(array_sum($trapScores) / count($trapScores), 2) : 0;
 
 // Get top 5 aircraft for chart
 $topAircraft = array_slice($aircraftUsage, 0, 5, true);
@@ -153,6 +183,8 @@ echo json_encode([
     "crashes" => $crashes,
     "ejections" => $ejections,
     "traps" => $traps,
+    "avgTrapScore" => $avgTrapScore,
+    "trapScores" => $trapScores,
     "mostUsedAircraft" => htmlspecialchars($mostUsedAircraft ?? "Unknown", ENT_QUOTES, 'UTF-8'),
     "aircraftUsage" => $aircraftData
 ]);
