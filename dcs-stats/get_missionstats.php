@@ -1,5 +1,15 @@
 <?php
 header('Content-Type: application/json');
+ini_set('display_errors', 0);
+error_reporting(0);
+
+// Include security functions
+require_once __DIR__ . '/security_functions.php';
+
+// Rate limiting: 60 requests per minute
+if (!checkRateLimit(60, 60)) {
+    exit;
+}
 
 $playersFile = 'data/players.json';
 $statsFile = 'data/missionstats.json';
@@ -68,6 +78,11 @@ fclose($handle);
 usort($stats, function($a, $b) {
     return $b['points'] <=> $a['points'];
 });
+
+// Sanitize data before sending to prevent XSS
+foreach ($stats as &$stat) {
+    $stat['name'] = htmlspecialchars($stat['name'], ENT_QUOTES, 'UTF-8');
+}
 
 echo json_encode(array_values($stats));
 ?>
