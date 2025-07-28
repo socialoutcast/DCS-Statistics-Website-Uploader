@@ -46,15 +46,15 @@ function renderTable() {
   paginatedData.forEach(player => {
     const row = document.createElement("tr");
     row.innerHTML = `
-      <td>${player.rank}</td>
-      <td>${player.name}</td>
-      <td>${player.kills}</td>
-      <td>${player.sorties}</td>
-      <td>${player.takeoffs}</td>
-      <td>${player.landings}</td>
-      <td>${player.crashes}</td>
-      <td>${player.ejections}</td>
-      <td>${player.most_used_aircraft}</td>
+      <td>${escapeHtml(String(player.rank))}</td>
+      <td>${escapeHtml(player.name || '')}</td>
+      <td>${escapeHtml(String(player.kills || 0))}</td>
+      <td>${escapeHtml(String(player.sorties || 0))}</td>
+      <td>${escapeHtml(String(player.takeoffs || 0))}</td>
+      <td>${escapeHtml(String(player.landings || 0))}</td>
+      <td>${escapeHtml(String(player.crashes || 0))}</td>
+      <td>${escapeHtml(String(player.ejections || 0))}</td>
+      <td>${escapeHtml(player.most_used_aircraft || '')}</td>
     `;
     tbody.appendChild(row);
   });
@@ -84,18 +84,25 @@ document.getElementById("searchInput").addEventListener("input", () => {
   renderPagination();
 });
 
-fetch('get_leaderboard.php')
-  .then(response => response.json())
-  .then(data => {
+async function loadLeaderboardFromMissionstats() {
+  try {
+    const response = await fetch('get_leaderboard.php');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
     leaderboardData = data;
     document.getElementById("leaderboard-loading").style.display = "none";
     renderTable();
     renderPagination();
-  })
-  .catch(error => {
-    document.getElementById("leaderboard-loading").innerText = "Failed to load leaderboard data.";
-    console.error("Error:", error);
-  });
+  } catch (error) {
+    document.getElementById("leaderboard-loading").innerText = "Failed to load leaderboard data. Please try again later.";
+    console.error("Error loading leaderboard:", error);
+  }
+}
+
+// Load the leaderboard
+loadLeaderboardFromMissionstats();
 </script>
 
 <?php include "footer.php"; ?>

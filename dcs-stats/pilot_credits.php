@@ -39,7 +39,7 @@ function renderPage(data, page) {
 
     pageData.forEach(player => {
         const row = document.createElement("tr");
-        row.innerHTML = `<td>${player.name}</td><td>${player.credits}</td>`;
+        row.innerHTML = `<td>${escapeHtml(player.name || '')}</td><td>${escapeHtml(String(player.credits || 0))}</td>`;
         tableBody.appendChild(row);
     });
 
@@ -71,9 +71,13 @@ document.getElementById("nextBtn").addEventListener("click", () => {
 
 document.getElementById("searchBox").addEventListener("input", updateSearch);
 
-fetch('get_credits.php')
-  .then(response => response.json())
-  .then(data => {
+async function loadCreditsData() {
+  try {
+    const response = await fetch('get_credits.php');
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
     allData = data;
     filteredData = data;
 
@@ -82,12 +86,20 @@ fetch('get_credits.php')
     data.slice(0, 3).forEach((player, i) => {
         const box = document.createElement("div");
         box.className = "trophy-box";
-        box.innerHTML = `<span class="trophy">${trophies[i]}</span><strong>${player.name}</strong><br>${player.credits} credits`;
+        box.innerHTML = `<span class="trophy">${trophies[i]}</span><strong>${escapeHtml(player.name || '')}</strong><br>${escapeHtml(String(player.credits || 0))} credits`;
         top3Container.appendChild(box);
     });
 
     renderPage(filteredData, currentPage);
-  });
+  } catch (error) {
+    console.error("Error loading credits data:", error);
+    const top3Container = document.getElementById("top3");
+    top3Container.innerHTML = "<p>Failed to load credits data. Please try again later.</p>";
+  }
+}
+
+// Load credits data
+loadCreditsData();
 </script>
 
 <?php include 'footer.php'; ?>

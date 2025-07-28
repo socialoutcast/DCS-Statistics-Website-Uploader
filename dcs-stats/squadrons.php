@@ -90,9 +90,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td><img src="${sq.image_url}" alt="${sq.name}" style="width: 80px;"></td>
-                    <td>${sq.name}</td>
-                    <td>${sq.description}</td>
+                    <td><img src="${escapeHtml(sq.image_url || '')}" alt="${escapeHtml(sq.name || '')}" style="width: 80px;"></td>
+                    <td>${escapeHtml(sq.name || '')}</td>
+                    <td>${escapeHtml(sq.description || '')}</td>
                 `;
                 squadronBody.appendChild(row);
             });
@@ -109,8 +109,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 headerRow.classList.add('toggle-header');
                 headerRow.style.cursor = "pointer";
                 headerRow.innerHTML = `
-                    <td><img src="${sq.image_url}" alt="${sq.name}" style="width: 60px;"></td>
-                    <td>${sq.name}</td>
+                    <td><img src="${escapeHtml(sq.image_url || '')}" alt="${escapeHtml(sq.name || '')}" style="width: 60px;"></td>
+                    <td>${escapeHtml(sq.name || '')}</td>
                     <td><em>Click to show/hide members</em></td>
                 `;
                 membersBody.appendChild(headerRow);
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     row.innerHTML = `
                         <td></td>
                         <td></td>
-                        <td>${player.name}</td>
+                        <td>${escapeHtml(player.name || '')}</td>
                     `;
                     membersBody.appendChild(row);
                 });
@@ -149,9 +149,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     const medal = medals[index] || '';
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td><img src="${squadron.image_url}" alt="${squadron.name}" style="width: 60px;"></td>
-                        <td>${medal} ${squadron.name}</td>
-                        <td>${entry.points}</td>
+                        <td><img src="${escapeHtml(squadron.image_url || '')}" alt="${escapeHtml(squadron.name || '')}" style="width: 60px;"></td>
+                        <td>${medal} ${escapeHtml(squadron.name || '')}</td>
+                        <td>${escapeHtml(String(entry.points || 0))}</td>
                     `;
                     leaderboardBody.appendChild(row);
                 });
