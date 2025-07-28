@@ -54,6 +54,7 @@ if (file_exists($playersFile)) {
 }
 
 // Process mission stats
+$playerActivityTracker = []; // Track unique activities per player
 if (file_exists($missionsFile)) {
     $handle = fopen($missionsFile, 'r');
     if ($handle) {
@@ -61,9 +62,14 @@ if (file_exists($missionsFile)) {
             $entry = validateJsonLine($line, ['event']);
             if (!$entry) continue;
             
-            // Count visits (mission starts)
+            // Count visits (mission starts or any activity if no mission starts)
             if ($entry['event'] === "S_EVENT_MISSION_START" && isset($entry['init_id']) && isset($pilotStats[$entry['init_id']])) {
                 $pilotStats[$entry['init_id']]['visits']++;
+            }
+            
+            // Track any player activity
+            if (isset($entry['init_id']) && isset($pilotStats[$entry['init_id']])) {
+                $playerActivityTracker[$entry['init_id']] = true;
             }
             
             // Count kills
@@ -80,6 +86,23 @@ if (file_exists($missionsFile)) {
             }
         }
         fclose($handle);
+    }
+}
+
+// If no mission starts were found, count any player with activity as having 1 visit
+$hasVisits = false;
+foreach ($pilotStats as $ucid => $stats) {
+    if ($stats['visits'] > 0) {
+        $hasVisits = true;
+        break;
+    }
+}
+
+if (!$hasVisits) {
+    foreach ($playerActivityTracker as $ucid => $active) {
+        if (isset($pilotStats[$ucid])) {
+            $pilotStats[$ucid]['visits'] = 1;
+        }
     }
 }
 

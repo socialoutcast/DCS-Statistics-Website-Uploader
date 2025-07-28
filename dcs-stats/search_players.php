@@ -25,14 +25,48 @@ if ($searchTerm === false) {
 
 $searchTerm = strtolower($searchTerm);
 
-// Validate file path
+// Validate file paths
 $dataDir = __DIR__ . '/data';
 $playersFile = validatePath($dataDir . '/players.json', $dataDir);
+$missionsFile = validatePath($dataDir . '/missionstats.json', $dataDir);
 
 if (!$playersFile || !file_exists($playersFile)) {
     logSecurityEvent('DATA_UNAVAILABLE', 'Players file not found');
     echo json_encode(["error" => "Service temporarily unavailable"]);
     exit;
+}
+
+// Build a map of players with stats
+$playersWithStats = [];
+if ($missionsFile && file_exists($missionsFile)) {
+    $handle = fopen($missionsFile, 'r');
+    if ($handle) {
+        while (($line = fgets($handle)) !== false) {
+            $entry = validateJsonLine($line, ['event']);
+            if (!$entry) continue;
+            
+            // Track any player with events
+            if (isset($entry['init_id'])) {
+                $playersWithStats[$entry['init_id']] = true;
+            }
+        }
+        fclose($handle);
+    }
+}
+
+// Also check traps file for players with stats
+$trapsFile = validatePath($dataDir . '/traps.json', $dataDir);
+if ($trapsFile && file_exists($trapsFile)) {
+    $handle = fopen($trapsFile, 'r');
+    if ($handle) {
+        while (($line = fgets($handle)) !== false) {
+            $entry = json_decode(trim($line), true);
+            if ($entry && isset($entry['player_ucid'])) {
+                $playersWithStats[$entry['player_ucid']] = true;
+            }
+        }
+        fclose($handle);
+    }
 }
 
 $matches = [];
@@ -44,14 +78,17 @@ if ($handle) {
         
         // Partial match search
         if (stripos($entry['name'], $searchTerm) !== false) {
-            $matches[] = [
-                'name' => htmlspecialchars($entry['name'], ENT_QUOTES, 'UTF-8'),
-                'ucid' => htmlspecialchars($entry['ucid'], ENT_QUOTES, 'UTF-8')
-            ];
-            
-            // Limit results to prevent abuse
-            if (count($matches) >= 20) {
-                break;
+            // Only include players who have stats
+            if (isset($playersWithStats[$entry['ucid']])) {
+                $matches[] = [
+                    'name' => htmlspecialchars($entry['name'], ENT_QUOTES, 'UTF-8'),
+                    'ucid' => htmlspecialchars($entry['ucid'], ENT_QUOTES, 'UTF-8')
+                ];
+                
+                // Limit results to prevent abuse
+                if (count($matches) >= 20) {
+                    break;
+                }
             }
         }
     }

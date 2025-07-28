@@ -117,20 +117,63 @@ $mostUsedAircraft = key($aircraftUsage);
 
 // Get traps from traps.json
 $trapsFile = validatePath($dataDir . '/traps.json', $dataDir);
+$trapScores = [];
+$debugInfo = [];
+
 if ($trapsFile && file_exists($trapsFile)) {
     $handle = fopen($trapsFile, 'r');
     if ($handle) {
+        $lineCount = 0;
         while (($line = fgets($handle)) !== false) {
-            $entry = validateJsonLine($line, ['ucid']);
+            $lineCount++;
+            $entry = json_decode(trim($line), true);
             if (!$entry) continue;
             
-            if ($entry['ucid'] === $ucid) {
+            // Debug: Store first few entries to understand structure
+            if ($lineCount <= 3) {
+                $debugInfo[] = array_keys($entry);
+            }
+            
+            // Check if this trap belongs to the current player
+            if (isset($entry['player_ucid']) && $entry['player_ucid'] === $ucid) {
                 $traps++;
+                
+                // Use the points field directly, or calculate based on grade
+                if (isset($entry['points'])) {
+                    // Points seem to be 0 (good) or 1 (wave off), so invert for scoring
+                    $score = $entry['points'] === 0 ? 4 : 1;
+                    $trapScores[] = $score;
+                } elseif (isset($entry['grade'])) {
+                    // Map carrier landing grades to scores
+                    // Based on real carrier grading: OK (perfect), (OK), Fair, No Grade, Cut, Bolter, Wave Off
+                    $gradeMap = [
+                        'OK' => 4,      // Perfect pass
+                        '(OK)' => 3.5,  // OK with deviations
+                        'Fair' => 3,    // Fair pass
+                        'No Grade' => 2, // No grade
+                        'C' => 1.5,     // Cut pass (dangerous)
+                        'B' => 1,       // Bolter
+                        'WO' => 0.5     // Wave off
+                    ];
+                    $trapScores[] = $gradeMap[$entry['grade']] ?? 2;
+                }
+                
+                // Additional scoring based on wire if available
+                if (isset($entry['wire']) && $entry['wire'] !== null) {
+                    // 3-wire is perfect, adjust last score
+                    $wireBonus = [1 => -0.5, 2 => -0.25, 3 => 0, 4 => -0.25];
+                    if (count($trapScores) > 0 && isset($wireBonus[$entry['wire']])) {
+                        $trapScores[count($trapScores) - 1] += $wireBonus[$entry['wire']];
+                    }
+                }
             }
         }
         fclose($handle);
     }
 }
+
+// Calculate average trap score
+$avgTrapScore = count($trapScores) > 0 ? round(array_sum($trapScores) / count($trapScores), 2) : 0;
 
 // Get top 5 aircraft for chart
 $topAircraft = array_slice($aircraftUsage, 0, 5, true);
@@ -153,6 +196,8 @@ echo json_encode([
     "crashes" => $crashes,
     "ejections" => $ejections,
     "traps" => $traps,
+    "avgTrapScore" => $avgTrapScore,
+    "trapScores" => $trapScores,
     "mostUsedAircraft" => htmlspecialchars($mostUsedAircraft ?? "Unknown", ENT_QUOTES, 'UTF-8'),
     "aircraftUsage" => $aircraftData
 ]);

@@ -42,6 +42,10 @@
                             <span class="stat-label">Carrier Traps:</span>
                             <span class="stat-value" id="pilot-traps">0</span>
                         </div>
+                        <div class="stat-item" id="trap-score-item" style="display: none;">
+                            <span class="stat-label">Avg Trap Score:</span>
+                            <span class="stat-value" id="pilot-trap-score">0</span>
+                        </div>
                         <div class="stat-item">
                             <span class="stat-label">Crashes:</span>
                             <span class="stat-value" id="pilot-crashes">0</span>
@@ -85,12 +89,16 @@
                     <h4>Aircraft Usage</h4>
                     <canvas id="aircraftChart"></canvas>
                 </div>
+                <div class="chart-wrapper" id="trapScoresChartWrapper" style="display: none;">
+                    <h4>Carrier Landing Performance</h4>
+                    <canvas id="trapScoresChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
     
     <div id="no-results" style="display: none; text-align: center; color: #ccc; margin-top: 30px;">
-        <p>No pilot found with that name. Please check the spelling and try again.</p>
+        <p id="no-results-message">No pilot found with that name. Please check the spelling and try again.</p>
     </div>
     
     <div id="loading" style="display: none; text-align: center; color: #ccc; margin-top: 30px;">
@@ -122,6 +130,8 @@ async function searchForPlayers() {
         document.getElementById('loading').style.display = 'none';
         
         if (searchData.error || searchData.count === 0) {
+            document.getElementById('no-results-message').textContent = 
+                'No pilots with recorded statistics found matching that name.';
             document.getElementById('no-results').style.display = 'block';
             return;
         }
@@ -231,6 +241,13 @@ async function loadPilotStats(playerName) {
         document.getElementById('pilot-takeoffs').textContent = statsData.takeoffs || 0;
         document.getElementById('pilot-landings').textContent = statsData.landings || 0;
         document.getElementById('pilot-traps').textContent = statsData.traps || 0;
+        
+        // Show average trap score if there are traps
+        if (statsData.traps > 0 && statsData.avgTrapScore !== undefined) {
+            document.getElementById('trap-score-item').style.display = 'flex';
+            document.getElementById('pilot-trap-score').textContent = statsData.avgTrapScore.toFixed(2);
+        }
+        
         document.getElementById('pilot-crashes').textContent = statsData.crashes || 0;
         document.getElementById('pilot-ejections').textContent = statsData.ejections || 0;
         document.getElementById('pilot-credits').textContent = credits;
@@ -260,6 +277,9 @@ async function loadPilotStats(playerName) {
         if (statsData.aircraftUsage && statsData.aircraftUsage.length > 0) {
             createAircraftChart(statsData.aircraftUsage);
         }
+        if (statsData.trapScores && statsData.trapScores.length > 0) {
+            createTrapScoresChart(statsData.trapScores);
+        }
         
     } catch (error) {
         console.error('Error loading pilot stats:', error);
@@ -272,6 +292,7 @@ async function loadPilotStats(playerName) {
 let combatChart = null;
 let flightChart = null;
 let aircraftChart = null;
+let trapScoresChart = null;
 
 // Chart configuration with dark theme
 const chartOptions = {
@@ -559,6 +580,114 @@ function createAircraftChart(aircraftData) {
     });
 }
 
+function createTrapScoresChart(trapScores) {
+    const ctx = document.getElementById('trapScoresChart').getContext('2d');
+    
+    // Show the wrapper
+    document.getElementById('trapScoresChartWrapper').style.display = 'block';
+    
+    // Destroy existing chart if it exists
+    if (trapScoresChart) {
+        trapScoresChart.destroy();
+    }
+    
+    // Create histogram data for trap scores with carrier-specific grading
+    const scoreBuckets = {
+        'OK (4.0)': 0,
+        'Fair (3.0-3.9)': 0,
+        'No Grade (2.0-2.9)': 0,
+        'Cut (1.0-1.9)': 0,
+        'Wave Off (0-0.9)': 0
+    };
+    
+    trapScores.forEach(score => {
+        if (score >= 4) scoreBuckets['OK (4.0)']++;
+        else if (score >= 3) scoreBuckets['Fair (3.0-3.9)']++;
+        else if (score >= 2) scoreBuckets['No Grade (2.0-2.9)']++;
+        else if (score >= 1) scoreBuckets['Cut (1.0-1.9)']++;
+        else scoreBuckets['Wave Off (0-0.9)']++;
+    });
+    
+    const labels = Object.keys(scoreBuckets);
+    const data = Object.values(scoreBuckets);
+    
+    // Generate colors matching carrier grading standards
+    const colors = [
+        'rgba(76, 175, 80, 0.6)',   // OK - green (perfect)
+        'rgba(255, 193, 7, 0.6)',   // Fair - yellow
+        'rgba(158, 158, 158, 0.6)', // No Grade - gray
+        'rgba(255, 152, 0, 0.6)',   // Cut - orange (dangerous)
+        'rgba(244, 67, 54, 0.6)'    // Wave Off - red
+    ];
+    
+    const borderColors = colors.map(c => c.replace('0.6', '1'));
+    
+    trapScoresChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Number of Traps',
+                data: data,
+                backgroundColor: colors,
+                borderColor: borderColors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...chartOptions,
+            plugins: {
+                ...chartOptions.plugins,
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    ...chartOptions.plugins.tooltip,
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const total = trapScores.length;
+                            const percentage = ((context.parsed.y / total) * 100).toFixed(1);
+                            return `${percentage}% of total traps`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                ...chartOptions.scales,
+                x: {
+                    ...chartOptions.scales.x,
+                    title: {
+                        display: true,
+                        text: 'Landing Grade',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    ...chartOptions.scales.y,
+                    beginAtZero: true,
+                    ticks: {
+                        ...chartOptions.scales.y.ticks,
+                        stepSize: 1
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Carrier Traps',
+                        color: '#4CAF50',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 // Allow Enter key to trigger search
 document.getElementById('playerSearchInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
@@ -691,9 +820,16 @@ document.getElementById('playerSearchInput').addEventListener('keypress', functi
 
 .charts-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 25px;
-    margin-top: 40px;
+    margin: 40px auto 0;
+    max-width: 1000px;
+}
+
+@media (max-width: 768px) {
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
 }
 
 .chart-wrapper {
