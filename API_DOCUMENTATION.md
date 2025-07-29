@@ -12,7 +12,7 @@ This document provides comprehensive information about the REST API integration 
    Edit `api_config.json`:
    ```json
    {
-       "api_base_url": "http://dcs1.skypirates.uk:9876/api",
+       "api_base_url": "http://localhost:8080/api",
        "api_key": null,
        "timeout": 30,
        "cache_ttl": 300,
@@ -132,7 +132,7 @@ All endpoints return data with metadata:
 
 ### Environment Variables
 ```bash
-export DCSBOT_API_URL=http://dcs1.skypirates.uk:9876/api
+export DCSBOT_API_URL=http://localhost:8080/api
 export DCSBOT_API_KEY=your_api_key_here
 ```
 

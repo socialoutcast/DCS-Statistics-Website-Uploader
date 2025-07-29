@@ -28,7 +28,7 @@ All notable changes to the DCS Statistics Website Uploader project.
 **Configuration:**
 ```json
 {
-    "api_base_url": "http://dcs1.skypirates.uk:9876/api",
+    "api_base_url": "http://localhost:8080/api",
     "use_api": true,
     "enabled_endpoints": [
         "get_leaderboard.php",

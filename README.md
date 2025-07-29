@@ -110,7 +110,7 @@ Enable real-time data access without file uploads! The website now supports dire
 3. **Edit `api_config.json`**
    ```json
    {
-       "api_base_url": "http://your-dcsserverbot:8080/api",
+       "api_base_url": "http://localhost:8080/api",
        "use_api": true,
        "enabled_endpoints": [
            "get_leaderboard.php",
