@@ -91,6 +91,50 @@ python Stats-Uploader/uploader.py
 
 **🎉 That's it!** Your website will update automatically every hour with fresh data.
 
+## 🚀 NEW: REST API Integration
+
+Enable real-time data access without file uploads! The website now supports direct integration with DCSServerBot's REST API.
+
+### API Setup (Optional but Recommended)
+
+1. **Enable REST API in DCSServerBot**
+   - Ensure the `restapi` plugin is enabled in your DCSServerBot configuration
+   - Default API URL: `http://localhost:8080/api`
+
+2. **Configure Website for API**
+   ```bash
+   # Copy the API configuration template
+   cp dcs-stats/api_config.json.example dcs-stats/api_config.json
+   ```
+
+3. **Edit `api_config.json`**
+   ```json
+   {
+       "api_base_url": "http://localhost:8080/api",
+       "use_api": true,
+       "enabled_endpoints": [
+           "get_leaderboard.php",
+           "get_player_stats.php",
+           "search_players.php"
+       ]
+   }
+   ```
+
+4. **Benefits of API Mode**
+   - ✅ Real-time data updates
+   - ✅ No file upload delays
+   - ✅ Player search functionality
+   - ✅ Reduced server load
+   - ✅ Automatic fallback to JSON if API is unavailable
+
+5. **What Works with API**
+   - Player search by name
+   - Leaderboards (top 10 by kills or K/D)
+   - Player combat statistics
+   - Weapon effectiveness data
+   
+   **Note:** Some features (credits, squadrons, flight hours) still require JSON files.
+
 ## 🌟 Website Features
 
 ### 🏠 **Dashboard Pages**
@@ -126,6 +170,28 @@ The system uses **28 different data files** from DCSServerBot. **Default uploads
 | `squadron_members.json` | Squadron Statistics | Members of squadron |
 
 **📁 Optional data sources: 20+ other data types available.
+
+## 🔄 Choosing Between API and JSON Mode
+
+### **Use API Mode When:**
+- Your DCSServerBot and website are on the same network
+- You want real-time data updates
+- You need player search functionality
+- You want to reduce FTP bandwidth usage
+
+### **Use JSON Mode When:**
+- Your website is on a different network/hosting provider
+- DCSServerBot REST API is not accessible from your web server
+- You need all features (credits, squadrons, flight hours)
+- You prefer the traditional file-based approach
+
+### **Hybrid Mode (Recommended)**
+The system automatically falls back to JSON files when:
+- API is unreachable
+- API doesn't have the requested data
+- Specific features require JSON data
+
+Simply enable API in the config and keep the uploader running for the best of both worlds!
 
 ## 🔧 Customization
 

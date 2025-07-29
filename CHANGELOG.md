@@ -2,6 +2,55 @@
 
 All notable changes to the DCS Statistics Website Uploader project.
 
+## [Unreleased] - 2025-07-29
+
+### 🚀 New Features
+
+#### DCSServerBot REST API Integration
+**What's New:** Added full REST API support for real-time data access
+**Why:** Enables live data updates without manual JSON file uploads, improving data freshness and reducing server load.
+
+**Features Added:**
+- **API Client** (`api_client.php`) - Handles all REST API communications
+- **Smart Routing** - Automatically uses API when available, falls back to JSON files
+- **Player Search** - Full search functionality via `/getuser` endpoint
+- **Enhanced Leaderboards** - Support for both kills and K/D ratio sorting
+- **Weapon Statistics** - Missile effectiveness data from `/missilepk` endpoint
+- **Configuration System** - Easy enable/disable of API features
+
+**Technical Implementation:**
+- Created `*_api.php` versions for all supported endpoints
+- Renamed original files to `*_json.php` for backwards compatibility
+- Added router files that check configuration and include appropriate version
+- Response format unified between API and JSON sources
+- Proper error handling and fallback mechanisms
+
+**Configuration:**
+```json
+{
+    "api_base_url": "http://localhost:8080/api",
+    "use_api": true,
+    "enabled_endpoints": [
+        "get_leaderboard.php",
+        "get_player_stats.php",
+        "search_players.php"
+    ]
+}
+```
+
+**API Endpoints Integrated:**
+- `/topkills` - Top 10 players by kills
+- `/topkdr` - Top 10 players by K/D ratio
+- `/getuser` - Player search by name
+- `/stats` - Detailed player statistics
+- `/missilepk` - Weapon effectiveness data
+
+**Limitations:**
+- Flight activity data (takeoffs, landings, flight hours) not available via API
+- Credits/points system still requires JSON files
+- Squadron features still require JSON files
+- Server status still requires JSON files
+
 ## [Unreleased] - 2025-07-28
 
 ### 🐛 Bug Fixes & Improvements
