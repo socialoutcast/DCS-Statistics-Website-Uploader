@@ -94,7 +94,17 @@ async function loadLeaderboardFromMissionstats() {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const data = await response.json();
+    const result = await response.json();
+    
+    // Handle both direct array response and wrapped response
+    let data = result;
+    if (result.data && Array.isArray(result.data)) {
+        data = result.data;
+        // Show data source if available
+        if (result.source) {
+            console.log(`Leaderboard data source: ${result.source}`);
+        }
+    }
     leaderboardData = data;
     document.getElementById("leaderboard-loading").style.display = "none";
     

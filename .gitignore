@@ -31,3 +31,6 @@ upload_log.txt
 # IDE
 .vscode/
 .idea/
+
+# API Configuration
+dcs-stats/api_config.json
