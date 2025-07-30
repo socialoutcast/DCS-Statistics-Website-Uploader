@@ -110,7 +110,7 @@ document.getElementById("searchInput").addEventListener("input", () => {
 
 async function loadLeaderboardFromMissionstats() {
   try {
-    const response = await fetch('/get_leaderboard');
+    const response = await fetch('get_leaderboard.php');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

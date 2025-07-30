@@ -22,14 +22,14 @@ if (!isset($currentAdmin)) {
     <nav class="admin-nav">
         <ul>
             <li>
-                <a href="/admin/" <?= basename($_SERVER['PHP_SELF']) === 'index.php' ? 'class="active"' : '' ?>>
+                <a href="index.php" <?= basename($_SERVER['PHP_SELF']) === 'index.php' ? 'class="active"' : '' ?>>
                     <span class="nav-icon">📊</span>
                     Dashboard
                 </a>
             </li>
             <?php if (hasPermission('manage_players')): ?>
             <li>
-                <a href="/admin/players" <?= basename($_SERVER['PHP_SELF']) === 'players.php' || basename($_SERVER['PHP_SELF']) === 'player_details.php' ? 'class="active"' : '' ?>>
+                <a href="players.php" <?= basename($_SERVER['PHP_SELF']) === 'players.php' || basename($_SERVER['PHP_SELF']) === 'player_details.php' ? 'class="active"' : '' ?>>
                     <span class="nav-icon">👥</span>
                     Players
                 </a>
@@ -37,7 +37,7 @@ if (!isset($currentAdmin)) {
             <?php endif; ?>
             <?php if (hasPermission('manage_servers')): ?>
             <li>
-                <a href="/admin/servers" <?= basename($_SERVER['PHP_SELF']) === 'servers.php' ? 'class="active"' : '' ?>>
+                <a href="servers.php" <?= basename($_SERVER['PHP_SELF']) === 'servers.php' ? 'class="active"' : '' ?>>
                     <span class="nav-icon">🖥️</span>
                     Servers
                 </a>
@@ -45,7 +45,7 @@ if (!isset($currentAdmin)) {
             <?php endif; ?>
             <?php if (hasPermission('view_logs')): ?>
             <li>
-                <a href="/admin/logs" <?= basename($_SERVER['PHP_SELF']) === 'logs.php' ? 'class="active"' : '' ?>>
+                <a href="logs.php" <?= basename($_SERVER['PHP_SELF']) === 'logs.php' ? 'class="active"' : '' ?>>
                     <span class="nav-icon">📋</span>
                     Activity Logs
                 </a>
@@ -53,7 +53,7 @@ if (!isset($currentAdmin)) {
             <?php endif; ?>
             <?php if (hasPermission('export_data')): ?>
             <li>
-                <a href="/admin/export" <?= basename($_SERVER['PHP_SELF']) === 'export.php' ? 'class="active"' : '' ?>>
+                <a href="export.php" <?= basename($_SERVER['PHP_SELF']) === 'export.php' ? 'class="active"' : '' ?>>
                     <span class="nav-icon">📤</span>
                     Export Data
                 </a>
@@ -70,7 +70,7 @@ if (!isset($currentAdmin)) {
                 <ul class="nav-dropdown-menu <?= $isSettingsPage ? 'open' : '' ?>">
                     <?php if (hasPermission('manage_admins')): ?>
                     <li>
-                        <a href="/admin/admins" <?= basename($_SERVER['PHP_SELF']) === 'admins.php' ? 'class="active"' : '' ?>>
+                        <a href="admins.php" <?= basename($_SERVER['PHP_SELF']) === 'admins.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🔐</span>
                             Admins
                         </a>
@@ -78,34 +78,34 @@ if (!isset($currentAdmin)) {
                     <?php endif; ?>
                     <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): // Only Air Boss can access API Settings ?>
                     <li>
-                        <a href="/admin/api_settings" <?= basename($_SERVER['PHP_SELF']) === 'api_settings.php' ? 'class="active"' : '' ?>>
+                        <a href="api_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'api_settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🔌</span>
                             API Settings
                         </a>
                     </li>
                     <?php endif; ?>
                     <li>
-                        <a href="/admin/settings" <?= basename($_SERVER['PHP_SELF']) === 'settings.php' ? 'class="active"' : '' ?>>
+                        <a href="settings.php" <?= basename($_SERVER['PHP_SELF']) === 'settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🎛️</span>
                             Site Features
                         </a>
                     </li>
                     <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): // Only Air Boss can access Navigation Settings ?>
                     <li>
-                        <a href="/admin/discord_settings" <?= basename($_SERVER['PHP_SELF']) === 'discord_settings.php' ? 'class="active"' : '' ?>>
+                        <a href="discord_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'discord_settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🎮</span>
                             Discord Link
                         </a>
                     </li>
                     <li>
-                        <a href="/admin/squadron_settings" <?= basename($_SERVER['PHP_SELF']) === 'squadron_settings.php' ? 'class="active"' : '' ?>>
+                        <a href="squadron_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'squadron_settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">✈️</span>
                             Squadron Homepage
                         </a>
                     </li>
                     <?php endif; ?>
                     <li>
-                        <a href="/admin/themes" <?= basename($_SERVER['PHP_SELF']) === 'themes.php' ? 'class="active"' : '' ?>>
+                        <a href="themes.php" <?= basename($_SERVER['PHP_SELF']) === 'themes.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🎨</span>
                             Themes
                         </a>
