@@ -317,9 +317,7 @@ $pageTitle = 'API Settings';
                         • /stats - Get general statistics<br>
                         • /topkills - Get top killers leaderboard<br>
                         • /topkdr - Get top K/D ratio leaderboard<br>
-                        • /missilepk - Get missile performance statistics<br>
-                        <br>
-                        <strong>Note:</strong> The DCSServerBot API has limited endpoints. Some features may require JSON file exports for full functionality.
+                        • /missilepk - Get missile performance statistics
                     </div>
                 </div>
             </div>
