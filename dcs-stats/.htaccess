@@ -23,9 +23,11 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L]
 
-# Redirect .php requests to clean URLs (optional - prevents duplicate content)
-RewriteCond %{THE_REQUEST} \s/+(.*?)\.php[\s?] [NC]
-RewriteRule ^(.*)\.php$ /$1 [R=301,L]
+# Comment out redirect rules - they cause issues with subdirectory installations
+# If you want to enforce clean URLs, uncomment these lines but be aware it may
+# cause issues when the site is installed in a subdirectory
+# RewriteCond %{THE_REQUEST} \s/+(.*?)\.php[\s?] [NC]
+# RewriteRule ^(.*)\.php$ /$1 [R=301,L]
 
 # Custom error pages (optional)
 ErrorDocument 404 /404.php
