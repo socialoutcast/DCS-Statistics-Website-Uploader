@@ -4,7 +4,40 @@ header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: DENY");
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:8080 http://*.skypirates.uk:* https://*.skypirates.uk:*;");
+
+// Build dynamic CSP based on API configuration
+$cspConnectSrc = "'self'";
+
+// Load API configuration if available
+$configFile = __DIR__ . '/api_config.json';
+if (file_exists($configFile)) {
+    $config = json_decode(file_get_contents($configFile), true);
+    if (!empty($config['api_base_url'])) {
+        // Parse the API URL to add to CSP
+        $parsedUrl = parse_url($config['api_base_url']);
+        if ($parsedUrl) {
+            $scheme = $parsedUrl['scheme'] ?? 'http';
+            $host = $parsedUrl['host'] ?? '';
+            $port = isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '';
+            
+            if ($host) {
+                // Add the specific API URL
+                $cspConnectSrc .= " {$scheme}://{$host}{$port}";
+                
+                // Also add wildcard for subdomains
+                $domain = preg_replace('/^[^.]+\./', '*.', $host);
+                if ($domain !== $host) {
+                    $cspConnectSrc .= " {$scheme}://{$domain}:*";
+                }
+            }
+        }
+    }
+}
+
+// Always allow localhost for development
+$cspConnectSrc .= " http://localhost:* https://localhost:*";
+
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src {$cspConnectSrc};");
 ?>
 <!DOCTYPE html>
 <html lang="en">
