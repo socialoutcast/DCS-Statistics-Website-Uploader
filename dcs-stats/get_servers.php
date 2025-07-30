@@ -1,22 +1,20 @@
 <?php
-header('Content-Type: application/json');
-ini_set('display_errors', 0);
-error_reporting(0);
+/**
+ * Server Status Endpoint Router
+ * Routes to API or JSON version based on configuration
+ */
 
-// Include security functions
-require_once __DIR__ . '/security_functions.php';
+// Load configuration
+$configFile = __DIR__ . '/api_config.json';
+$config = file_exists($configFile) ? json_decode(file_get_contents($configFile), true) : [];
 
-// Rate limiting
-if (!checkRateLimit(60, 60)) {
-    exit;
+// Check if API is enabled for this endpoint
+$useAPI = ($config['use_api'] ?? false) && 
+          in_array('get_servers.php', $config['enabled_endpoints'] ?? []);
+
+// Include appropriate version
+if ($useAPI) {
+    include __DIR__ . '/get_servers_api.php';
+} else {
+    include __DIR__ . '/get_servers_json.php';
 }
-
-// The DCSServerBot REST API doesn't provide server/instance data
-// Return empty array for now
-echo json_encode([
-    'error' => 'Server data not available through API',
-    'servers' => [],
-    'source' => 'api',
-    'message' => 'The DCSServerBot REST API does not currently provide server/instance data'
-]);
-?>
