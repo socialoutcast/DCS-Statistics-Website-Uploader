@@ -4,7 +4,7 @@ header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: DENY");
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self';");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:8080 http://*.skypirates.uk:* https://*.skypirates.uk:*;");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,6 +24,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       return div.innerHTML;
     }
   </script>
+  <script src="js/api-client.js"></script>
 </head>
 <body>
   <header>

@@ -111,8 +111,8 @@ const gradientColors = {
 // Load server statistics
 async function loadServerStats() {
     try {
-        const response = await fetch('get_server_stats.php');
-        const data = await response.json();
+        // Use the client-side API
+        const data = await window.dcsAPI.getServerStats();
         
         if (data.error) {
             console.error('Error loading stats:', data.error);

@@ -134,9 +134,8 @@ async function searchForPlayers() {
     document.getElementById('loading').style.display = 'block';
     
     try {
-        // Search for players
-        const searchResponse = await fetch(`search_players.php?search=${encodeURIComponent(searchTerm)}`);
-        const searchData = await searchResponse.json();
+        // Search for players using client-side API
+        const searchData = await window.dcsAPI.searchPlayers(searchTerm);
         
         document.getElementById('loading').style.display = 'none';
         
@@ -188,9 +187,8 @@ async function loadPilotStats(playerName) {
     document.getElementById('multiple-results').style.display = 'none';
     
     try {
-        // Get player stats
-        const statsResponse = await fetch(`get_player_stats.php?name=${encodeURIComponent(playerName)}`);
-        const statsResult = await statsResponse.json();
+        // Get player stats using client-side API
+        const statsResult = await window.dcsAPI.getPlayerStats(playerName);
         
         if (statsResult.error) {
             document.getElementById('loading').style.display = 'none';
@@ -212,8 +210,7 @@ async function loadPilotStats(playerName) {
         // Get credits data
         let credits = 0;
         try {
-            const creditsResponse = await fetch('get_credits.php');
-            const creditsData = await creditsResponse.json();
+            const creditsData = await window.dcsAPI.getCredits();
             const playerCredits = creditsData.find(p => p.name.toLowerCase() === playerName.toLowerCase());
             credits = playerCredits ? playerCredits.credits : 0;
         } catch (e) {

@@ -86,11 +86,7 @@ document.getElementById("searchBox").addEventListener("input", updateSearch);
 
 async function loadCreditsData() {
   try {
-    const response = await fetch('get_credits.php');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
+    const data = await window.dcsAPI.getCredits();
     allData = data;
     filteredData = data;
 

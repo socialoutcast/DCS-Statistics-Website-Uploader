@@ -110,11 +110,8 @@ document.getElementById("searchInput").addEventListener("input", () => {
 
 async function loadLeaderboardFromMissionstats() {
   try {
-    const response = await fetch('get_leaderboard.php');
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const result = await response.json();
+    // Use the client-side API
+    const result = await window.dcsAPI.getLeaderboard();
     
     // Handle both direct array response and wrapped response
     let data = result;

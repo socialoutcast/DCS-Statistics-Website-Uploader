@@ -74,10 +74,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById('searchInput');
 
     Promise.all([
-        fetch('get_squadron.php?file=squadrons').then(res => res.text()),
-        fetch('get_squadron.php?file=squadron_members').then(res => res.text()),
-        fetch('get_squadron.php?file=players').then(res => res.text()),
-        fetch('get_squadron.php?file=squadron_credits').then(res => res.text())
+        window.dcsAPI.getSquadronData('squadrons'),
+        window.dcsAPI.getSquadronData('squadron_members'),
+        window.dcsAPI.getSquadronData('players'),
+        window.dcsAPI.getSquadronData('squadron_credits')
     ])
     .then(([squadronText, memberText, playerText, creditText]) => {
         const squadrons = squadronText.trim().split('\n').map(line => JSON.parse(line));
