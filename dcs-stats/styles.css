@@ -1,14 +1,24 @@
+/* CSS Variables for theming */
+:root {
+    --primary_color: #1a1a1a;
+    --secondary_color: #2a2a2a;
+    --background_color: #121212;
+    --text_color: #ffffff;
+    --link_color: #4a9eff;
+    --border_color: #556b2f;
+}
+
 body {
-    background-color: #121212;
-    color: white;
+    background-color: var(--background_color);
+    color: var(--text_color);
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
 }
 
 header {
-    background-color: #2c3e50;
-    color: white;
+    background-color: var(--secondary_color);
+    color: var(--text_color);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -26,8 +36,8 @@ header .logo img {
 }
 
 footer {
-    background-color: #2c3e50;
-    color: white;
+    background-color: var(--secondary_color);
+    color: var(--text_color);
     text-align: center;
     padding: 1rem;
     position: relative;
@@ -41,10 +51,10 @@ main {
 }
 
 .nav-bar {
-    background-color: #1f2b34;
+    background-color: var(--primary_color);
     padding: 0;
     margin: 0;
-    border-bottom: 3px solid #556b2f;
+    border-bottom: 3px solid var(--border_color);
 }
 
 .nav-menu {

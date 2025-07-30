@@ -6,8 +6,14 @@
     "fallback_to_json": true,
     "use_api": true,
     "enabled_endpoints": [
+        "get_server_statistics.php",
         "get_leaderboard.php",
+        "get_pilot_credits.php",
+        "get_pilot_statistics.php",
         "get_player_stats.php",
+        "get_squadrons.php",
+        "get_servers.php",
+        "get_active_players.php",
         "search_players.php"
     ],
     "endpoints": {

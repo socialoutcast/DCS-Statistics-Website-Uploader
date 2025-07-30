@@ -1,7 +1,18 @@
 <?php
 include 'header.php';
+require_once __DIR__ . '/site_features.php';
 include 'nav.php';
+
+if (!isFeatureEnabled('squadrons_enabled')):
 ?>
+<main>
+    <div class="alert" style="text-align: center; padding: 50px;">
+        <h2>Squadron System Disabled</h2>
+        <p>The squadron system is currently disabled for this server.</p>
+    </div>
+</main>
+<?php include 'footer.php'; exit; ?>
+<?php endif; ?>
 
 <main>
     <h1>Squadrons</h1>
@@ -23,6 +34,7 @@ include 'nav.php';
         </table>
     </div>
 
+    <?php if (isFeatureEnabled('squadron_management')): ?>
     <h2>Squadron Members</h2>
     <div class="table-responsive">
         <table id="membersTable" style="width: 100%;">
@@ -36,7 +48,9 @@ include 'nav.php';
             <tbody></tbody>
         </table>
     </div>
+    <?php endif; ?>
 
+    <?php if (isFeatureEnabled('squadron_statistics') && isFeatureEnabled('credits_enabled')): ?>
     <h2>Squadron Leaderboard</h2>
     <div class="table-responsive">
         <table id="leaderboardTable" style="width: 100%;">
@@ -50,6 +64,7 @@ include 'nav.php';
             <tbody></tbody>
         </table>
     </div>
+    <?php endif; ?>
 
     <div id="error-message" style="color: red; text-align: center;"></div>
 </main>
@@ -59,10 +74,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById('searchInput');
 
     Promise.all([
-        fetch('get_squadron.php?file=squadrons').then(res => res.text()),
-        fetch('get_squadron.php?file=squadron_members').then(res => res.text()),
-        fetch('get_squadron.php?file=players').then(res => res.text()),
-        fetch('get_squadron.php?file=squadron_credits').then(res => res.text())
+        fetch('/get_squadron?file=squadrons').then(res => res.text()),
+        fetch('/get_squadron?file=squadron_members').then(res => res.text()),
+        fetch('/get_squadron?file=players').then(res => res.text()),
+        fetch('/get_squadron?file=squadron_credits').then(res => res.text())
     ])
     .then(([squadronText, memberText, playerText, creditText]) => {
         const squadrons = squadronText.trim().split('\n').map(line => JSON.parse(line));

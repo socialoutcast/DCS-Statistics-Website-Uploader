@@ -32,6 +32,13 @@ if (!$playerName) {
 }
 
 try {
+    // Load API configuration
+    $configFile = __DIR__ . '/api_config.json';
+    $config = file_exists($configFile) ? json_decode(file_get_contents($configFile), true) : [];
+    
+    // Initialize API client
+    $apiClient = new DCSServerBotAPIClient($config);
+    
     $useAPI = true;
     $stats = null;
     
@@ -41,12 +48,17 @@ try {
             // API /stats returns: deaths, aakills, aakdr, lastSessionKills, lastSessionDeaths, killsbymodule, kdrByModule
             $apiStats = $apiClient->getPlayerStats($playerName);
             
-            // Get user info from API
-            // API /getuser returns array of users with: name, last_seen
-            $userInfo = $apiClient->getUser($playerName);
+            // Try to get user info from API (this often fails with 500 error)
+            $userInfo = null;
+            try {
+                $userInfo = $apiClient->getUser($playerName);
+            } catch (Exception $e) {
+                // getuser endpoint is broken, continue without it
+                error_log('getuser endpoint failed: ' . $e->getMessage());
+            }
             
             // Check if we got valid responses
-            if (!$apiStats && !$userInfo) {
+            if (!$apiStats) {
                 // Player not found
                 echo json_encode(["error" => "Player not found"]);
                 exit;
@@ -55,8 +67,8 @@ try {
             // Transform API response to match our existing format
             $stats = [
                 'ucid' => null,  // API doesn't return UCID
-                'name' => htmlspecialchars($userInfo['name'] ?? $playerName, ENT_QUOTES, 'UTF-8'),
-                'last_seen' => $userInfo['last_seen'] ?? null,
+                'name' => htmlspecialchars($playerName, ENT_QUOTES, 'UTF-8'), // Use the search name since getuser is broken
+                'last_seen' => null, // Not available when getuser fails
                 'kills' => $apiStats['aakills'] ?? 0,
                 'deaths' => $apiStats['deaths'] ?? 0,
                 'kd_ratio' => $apiStats['aakdr'] ?? 0,
@@ -106,9 +118,24 @@ try {
             }
             
         } catch (Exception $apiError) {
-            // Log API error and fall back to JSON
-            logSecurityEvent('API_ERROR', 'Failed to fetch player stats from API: ' . $apiError->getMessage());
-            $useAPI = false;
+            // Log the actual error for debugging
+            error_log('Player stats API error for ' . $playerName . ': ' . $apiError->getMessage());
+            
+            // For debugging, include more details
+            $errorResponse = [
+                'error' => 'Player statistics unavailable',
+                'message' => $apiError->getMessage(),
+                'source' => 'api',
+                'timestamp' => date('c')
+            ];
+            
+            // If it's a generic "Service temporarily unavailable" error, try to provide more context
+            if (strpos($apiError->getMessage(), 'Unable to determine user last seen date') !== false) {
+                $errorResponse['message'] = 'Could not find player data. Please ensure the player name is spelled correctly.';
+            }
+            
+            echo json_encode($errorResponse);
+            exit;
         }
     }
     
@@ -272,6 +299,7 @@ try {
     logSecurityEvent('GENERAL_ERROR', 'Player stats error: ' . $e->getMessage());
     echo json_encode([
         'error' => 'Service temporarily unavailable',
+        'message' => 'An unexpected error occurred: ' . $e->getMessage(),
         'timestamp' => date('c')
     ]);
 }

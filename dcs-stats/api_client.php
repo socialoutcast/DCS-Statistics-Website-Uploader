@@ -31,21 +31,20 @@ class DCSServerBotAPIClient {
         
         // Add headers
         $headers = [
-            'Content-Type: application/json',
-            'Accept: application/json'
+            'Accept: */*'
         ];
         
         if ($this->apiKey) {
             $headers[] = 'Authorization: Bearer ' . $this->apiKey;
         }
         
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-        
         // Set method and data
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
             if ($data) {
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+                // Use form-urlencoded for POST data
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+                $headers[] = 'Content-Type: application/x-www-form-urlencoded';
             }
         } elseif ($method === 'GET') {
             if ($data) {
@@ -53,6 +52,9 @@ class DCSServerBotAPIClient {
                 curl_setopt($ch, CURLOPT_URL, $url);
             }
         }
+        
+        // Set headers after determining content type
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -86,11 +88,26 @@ class DCSServerBotAPIClient {
      * Get player statistics
      */
     public function getPlayerStats($nickname, $date = null) {
-        // API expects 'nick' not 'nickname'
-        $data = ['nick' => $nickname];
-        if ($date) {
-            $data['date'] = $date;
+        // If no date provided, we need to get the user's last seen date first
+        if (!$date) {
+            try {
+                $userData = $this->makeRequest('POST', '/getuser', ['nick' => $nickname]);
+                if ($userData && is_array($userData) && isset($userData[0]['date'])) {
+                    $date = $userData[0]['date'];
+                } else {
+                    // If we can't get user data, stats will likely fail
+                    throw new Exception('Unable to determine user last seen date');
+                }
+            } catch (Exception $e) {
+                throw new Exception('Failed to get user data: ' . $e->getMessage());
+            }
         }
+        
+        // API expects 'nick' and the user's exact last seen date
+        $data = [
+            'nick' => $nickname,
+            'date' => $date
+        ];
         return $this->makeRequest('POST', '/stats', $data);
     }
     
@@ -112,11 +129,26 @@ class DCSServerBotAPIClient {
      * Get missile probability of kill for a player
      */
     public function getMissilePK($nickname, $date = null) {
-        // API expects 'nick' not 'nickname'
-        $data = ['nick' => $nickname];
-        if ($date) {
-            $data['date'] = $date;
+        // If no date provided, we need to get the user's last seen date first
+        if (!$date) {
+            try {
+                $userData = $this->makeRequest('POST', '/getuser', ['nick' => $nickname]);
+                if ($userData && is_array($userData) && isset($userData[0]['date'])) {
+                    $date = $userData[0]['date'];
+                } else {
+                    // If we can't get user data, stats will likely fail
+                    throw new Exception('Unable to determine user last seen date');
+                }
+            } catch (Exception $e) {
+                throw new Exception('Failed to get user data: ' . $e->getMessage());
+            }
         }
+        
+        // API expects 'nick' and the user's exact last seen date
+        $data = [
+            'nick' => $nickname,
+            'date' => $date
+        ];
         return $this->makeRequest('POST', '/missilepk', $data);
     }
     

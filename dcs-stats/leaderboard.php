@@ -1,4 +1,6 @@
-<?php include "header.php"; include "nav.php"; ?>
+<?php include "header.php"; 
+require_once __DIR__ . '/site_features.php';
+include "nav.php"; ?>
 
 <main class="container">
   <h1>Leaderboard</h1>
@@ -18,13 +20,19 @@
         <tr>
           <th>Rank</th>
           <th>Name</th>
+          <?php if (isFeatureEnabled('leaderboard_kills')): ?>
           <th>Kills</th>
+          <?php endif; ?>
+          <?php if (isFeatureEnabled('leaderboard_sorties')): ?>
           <th>Sorties</th>
+          <?php endif; ?>
           <th>Takeoffs</th>
           <th>Landings</th>
           <th>Crashes</th>
           <th>Ejections</th>
+          <?php if (isFeatureEnabled('leaderboard_aircraft')): ?>
           <th>Most Used Aircraft</th>
+          <?php endif; ?>
         </tr>
       </thead>
       <tbody></tbody>
@@ -49,17 +57,29 @@ function renderTable() {
   tbody.innerHTML = "";
   paginatedData.forEach(player => {
     const row = document.createElement("tr");
-    row.innerHTML = `
+    let cells = `
       <td>${escapeHtml(String(player.rank))}</td>
-      <td>${escapeHtml(player.name || '')}</td>
-      <td>${escapeHtml(String(player.kills || 0))}</td>
-      <td>${escapeHtml(String(player.sorties || 0))}</td>
+      <td>${escapeHtml(player.name || '')}</td>`;
+    
+    <?php if (isFeatureEnabled('leaderboard_kills')): ?>
+    cells += `<td>${escapeHtml(String(player.kills || 0))}</td>`;
+    <?php endif; ?>
+    
+    <?php if (isFeatureEnabled('leaderboard_sorties')): ?>
+    cells += `<td>${escapeHtml(String(player.sorties || 0))}</td>`;
+    <?php endif; ?>
+    
+    cells += `
       <td>${escapeHtml(String(player.takeoffs || 0))}</td>
       <td>${escapeHtml(String(player.landings || 0))}</td>
       <td>${escapeHtml(String(player.crashes || 0))}</td>
-      <td>${escapeHtml(String(player.ejections || 0))}</td>
-      <td>${escapeHtml(player.most_used_aircraft || '')}</td>
-    `;
+      <td>${escapeHtml(String(player.ejections || 0))}</td>`;
+    
+    <?php if (isFeatureEnabled('leaderboard_aircraft')): ?>
+    cells += `<td>${escapeHtml(player.most_used_aircraft || '')}</td>`;
+    <?php endif; ?>
+    
+    row.innerHTML = cells;
     tbody.appendChild(row);
   });
 }
@@ -90,7 +110,7 @@ document.getElementById("searchInput").addEventListener("input", () => {
 
 async function loadLeaderboardFromMissionstats() {
   try {
-    const response = await fetch('get_leaderboard.php');
+    const response = await fetch('/get_leaderboard');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

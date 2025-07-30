@@ -11,12 +11,12 @@ if (!checkRateLimit(60, 60)) {
     exit;
 }
 
-// The DCSServerBot REST API doesn't provide squadron data
-// Return empty response
+// The DCSServerBot REST API doesn't provide server/instance data
+// Return empty array for now
 echo json_encode([
-    'error' => 'Squadron data not available through API',
-    'data' => [],
+    'error' => 'Server data not available through API',
+    'servers' => [],
     'source' => 'api',
-    'message' => 'The DCSServerBot REST API does not currently provide squadron data'
+    'message' => 'The DCSServerBot REST API does not currently provide server/instance data'
 ]);
 ?>

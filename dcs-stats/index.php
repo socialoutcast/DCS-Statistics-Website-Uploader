@@ -1,4 +1,5 @@
 <?php include 'header.php'; ?>
+<?php require_once __DIR__ . '/site_features.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php include 'nav.php'; ?>
 
@@ -8,6 +9,7 @@
         <p class="dashboard-subtitle">Real-time server performance and player metrics</p>
     </div>
     
+    <?php if (isFeatureEnabled('home_server_stats')): ?>
     <div class="stats-cards">
         <div class="stat-card" id="totalPlayersCard">
             <div class="stat-icon">👥</div>
@@ -41,29 +43,38 @@
             </div>
         </div>
     </div>
+    <?php endif; ?>
     
     <div class="charts-dashboard">
+        <?php if (isFeatureEnabled('home_top_pilots')): ?>
         <div class="chart-container">
             <h2>Top 5 Most Active Pilots</h2>
             <canvas id="topPilotsChart"></canvas>
             <p class="no-data-message" id="topPilotsNoData" style="display: none;">No mission data available yet</p>
         </div>
+        <?php endif; ?>
         
+        <?php if (isFeatureEnabled('home_mission_stats')): ?>
         <div class="chart-container">
             <h2>Server Combat Statistics</h2>
             <canvas id="combatStatsChart"></canvas>
         </div>
+        <?php endif; ?>
         
+        <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('home_top_pilots')): ?>
         <div class="chart-container">
             <h2>Top 3 Most Active Squadrons</h2>
             <canvas id="topSquadronsChart"></canvas>
             <p class="no-data-message" id="squadronsNoData" style="display: none;">No squadron data available yet</p>
         </div>
+        <?php endif; ?>
         
+        <?php if (isFeatureEnabled('home_player_activity')): ?>
         <div class="chart-container full-width">
             <h2>Player Activity Overview</h2>
             <canvas id="playerActivityChart"></canvas>
         </div>
+        <?php endif; ?>
     </div>
     
     <div id="loading-overlay" class="loading-overlay">
@@ -100,7 +111,7 @@ const gradientColors = {
 // Load server statistics
 async function loadServerStats() {
     try {
-        const response = await fetch('get_server_stats.php');
+        const response = await fetch('/get_server_stats');
         const data = await response.json();
         
         if (data.error) {
@@ -109,7 +120,8 @@ async function loadServerStats() {
             return;
         }
         
-        // Update stat cards with animation
+        // Update stat cards with animation (if enabled)
+        <?php if (isFeatureEnabled('home_server_stats')): ?>
         animateNumber('totalPlayers', data.totalPlayers);
         animateNumber('totalKills', data.totalKills);
         animateNumber('totalDeaths', data.totalDeaths);
@@ -117,8 +129,10 @@ async function loadServerStats() {
         // Calculate K/D ratio
         const kdRatio = data.totalDeaths > 0 ? (data.totalKills / data.totalDeaths).toFixed(2) : data.totalKills;
         document.getElementById('kdRatio').textContent = kdRatio;
+        <?php endif; ?>
         
         // Create charts with empty data handling
+        <?php if (isFeatureEnabled('home_top_pilots')): ?>
         if (data.top5Pilots && data.top5Pilots.length > 0) {
             createTopPilotsChart(data.top5Pilots);
             document.getElementById('topPilotsNoData').style.display = 'none';
@@ -126,9 +140,13 @@ async function loadServerStats() {
             document.getElementById('topPilotsChart').style.display = 'none';
             document.getElementById('topPilotsNoData').style.display = 'block';
         }
+        <?php endif; ?>
         
+        <?php if (isFeatureEnabled('home_mission_stats')): ?>
         createCombatStatsChart(data.totalKills || 0, data.totalDeaths || 0);
+        <?php endif; ?>
         
+        <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('home_top_pilots')): ?>
         if (data.top3Squadrons && data.top3Squadrons.length > 0) {
             createTopSquadronsChart(data.top3Squadrons);
             document.getElementById('squadronsNoData').style.display = 'none';
@@ -136,18 +154,23 @@ async function loadServerStats() {
             document.getElementById('topSquadronsChart').style.display = 'none';
             document.getElementById('squadronsNoData').style.display = 'block';
         }
+        <?php endif; ?>
         
+        <?php if (isFeatureEnabled('home_player_activity')): ?>
         createPlayerActivityChart(data.totalPlayers || 0, data.top5Pilots || []);
+        <?php endif; ?>
         
         // Hide loading overlay
         document.getElementById('loading-overlay').style.display = 'none';
         
         // Add pop animations to cards
+        <?php if (isFeatureEnabled('home_server_stats')): ?>
         document.querySelectorAll('.stat-card').forEach((card, index) => {
             setTimeout(() => {
                 card.classList.add('pop-in');
             }, index * 100);
         });
+        <?php endif; ?>
         
     } catch (error) {
         console.error('Error fetching server stats:', error);

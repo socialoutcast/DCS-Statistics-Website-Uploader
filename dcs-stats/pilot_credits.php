@@ -1,5 +1,16 @@
 <?php include 'header.php'; ?>
+<?php require_once __DIR__ . '/site_features.php'; ?>
 <?php include 'nav.php'; ?>
+
+<?php if (!isFeatureEnabled('credits_enabled')): ?>
+<main>
+    <div class="alert" style="text-align: center; padding: 50px;">
+        <h2>Credits System Disabled</h2>
+        <p>The credits system is currently disabled for this server.</p>
+    </div>
+</main>
+<?php include 'footer.php'; exit; ?>
+<?php endif; ?>
 
 <main>
     <h2>Pilot Credits</h2>
@@ -75,7 +86,7 @@ document.getElementById("searchBox").addEventListener("input", updateSearch);
 
 async function loadCreditsData() {
   try {
-    const response = await fetch('get_credits.php');
+    const response = await fetch('/get_credits');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
