@@ -256,7 +256,7 @@ $pageTitle = 'API Settings';
                                    id="api_base_url" 
                                    name="api_base_url" 
                                    value="<?= e($apiConfig['api_base_url']) ?>"
-                                   placeholder="http://dcs1.skypirates.uk:9876">
+                                   placeholder="http://localhost:8080">
                             <div class="help-text">The base URL of your DCSServerBot REST API (without /api suffix)</div>
                         </div>
                         
