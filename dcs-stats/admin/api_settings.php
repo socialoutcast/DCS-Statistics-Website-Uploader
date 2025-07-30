@@ -256,7 +256,7 @@ $pageTitle = 'API Settings';
                                    id="api_base_url" 
                                    name="api_base_url" 
                                    value="<?= e($apiConfig['api_base_url']) ?>"
-                                   placeholder="http://dcs1.skypirates.uk:9876">
+                                   placeholder="http://localhost:8080">
                             <div class="help-text">The base URL of your DCSServerBot REST API (without /api suffix)</div>
                         </div>
                         
@@ -317,9 +317,7 @@ $pageTitle = 'API Settings';
                         • /stats - Get general statistics<br>
                         • /topkills - Get top killers leaderboard<br>
                         • /topkdr - Get top K/D ratio leaderboard<br>
-                        • /missilepk - Get missile performance statistics<br>
-                        <br>
-                        <strong>Note:</strong> The DCSServerBot API has limited endpoints. Some features may require JSON file exports for full functionality.
+                        • /missilepk - Get missile performance statistics
                     </div>
                 </div>
             </div>

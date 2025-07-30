@@ -1,5 +1,5 @@
 {
-    "api_base_url": "http://localhost:8080/api",
+    "api_base_url": "http://localhost:8080",
     "api_key": null,
     "timeout": 30,
     "cache_ttl": 300,

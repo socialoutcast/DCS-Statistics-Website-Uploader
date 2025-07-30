@@ -45,7 +45,7 @@ A fully-featured Navy carrier-themed administration interface with role-based ac
    ```bash
    cp api_config.json.example api_config.json
    ```
-   - Default API URL: `http://localhost:8080/api`
+   - Default API URL: `http://localhost:8080`
    - Update if your DCSServerBot REST API is on a different address
 
 4. **Set proper permissions**:
