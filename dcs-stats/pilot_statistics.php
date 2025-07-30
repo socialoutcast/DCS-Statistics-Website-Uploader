@@ -135,7 +135,7 @@ async function searchForPlayers() {
     
     try {
         // Search for players
-        const searchResponse = await fetch(`/search_players?search=${encodeURIComponent(searchTerm)}`);
+        const searchResponse = await fetch(`search_players.php?search=${encodeURIComponent(searchTerm)}`);
         const searchData = await searchResponse.json();
         
         document.getElementById('loading').style.display = 'none';
@@ -189,7 +189,7 @@ async function loadPilotStats(playerName) {
     
     try {
         // Get player stats
-        const statsResponse = await fetch(`/get_player_stats?name=${encodeURIComponent(playerName)}`);
+        const statsResponse = await fetch(`get_player_stats.php?name=${encodeURIComponent(playerName)}`);
         const statsResult = await statsResponse.json();
         
         if (statsResult.error) {
@@ -212,7 +212,7 @@ async function loadPilotStats(playerName) {
         // Get credits data
         let credits = 0;
         try {
-            const creditsResponse = await fetch('/get_credits');
+            const creditsResponse = await fetch('get_credits.php');
             const creditsData = await creditsResponse.json();
             const playerCredits = creditsData.find(p => p.name.toLowerCase() === playerName.toLowerCase());
             credits = playerCredits ? playerCredits.credits : 0;

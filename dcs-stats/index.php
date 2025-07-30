@@ -111,7 +111,7 @@ const gradientColors = {
 // Load server statistics
 async function loadServerStats() {
     try {
-        const response = await fetch('/get_server_stats');
+        const response = await fetch('get_server_stats.php');
         const data = await response.json();
         
         if (data.error) {

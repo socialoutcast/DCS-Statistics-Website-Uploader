@@ -1,33 +1,14 @@
-# Enable Rewrite Engine
-RewriteEngine On
-
 # Security - Prevent access to sensitive files
-RewriteRule ^(data|admin/data|admin/theme_backups)/.*$ - [F,L]
-RewriteRule \.(json|log|sql)$ - [F,L]
+<Files ~ "\.(json|log|sql)$">
+    Order allow,deny
+    Deny from all
+</Files>
 
-# Remove .php extension from URLs
-# If the request is for a file that exists, serve it
-RewriteCond %{REQUEST_FILENAME} -f
-RewriteRule ^(.*)$ - [L]
-
-# If the request is for a directory that exists, serve it
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^(.*)$ - [L]
-
-# If the request doesn't have .php extension and the .php file exists, rewrite to it
-RewriteCond %{REQUEST_FILENAME}.php -f
-RewriteRule ^([^/]+)/?$ $1.php [L]
-
-# For admin panel - rewrite admin URLs
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^admin/([^/]+)/?$ admin/$1.php [L]
-
-# Comment out redirect rules - they cause issues with subdirectory installations
-# If you want to enforce clean URLs, uncomment these lines but be aware it may
-# cause issues when the site is installed in a subdirectory
-# RewriteCond %{THE_REQUEST} \s/+(.*?)\.php[\s?] [NC]
-# RewriteRule ^(.*)\.php$ /$1 [R=301,L]
+# Prevent direct access to data directories
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(data|admin/data|admin/theme_backups)/.*$ - [F,L]
+</IfModule>
 
 # Custom error pages (optional)
 ErrorDocument 404 /404.php
