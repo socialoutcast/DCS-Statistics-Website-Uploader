@@ -12,7 +12,7 @@ class DCSServerBotAPIClient {
     private $timeout;
     
     public function __construct($config = []) {
-        $this->apiBaseUrl = $config['api_base_url'] ?? 'http://localhost:8080/api';
+        $this->apiBaseUrl = $config['api_base_url'] ?? 'http://localhost:8080';
         $this->apiKey = $config['api_key'] ?? null;
         $this->timeout = $config['timeout'] ?? 30;
     }
@@ -200,7 +200,7 @@ function loadAPIConfig() {
     
     // Default configuration
     return [
-        'api_base_url' => getenv('DCSBOT_API_URL') ?: 'http://localhost:8080/api',
+        'api_base_url' => getenv('DCSBOT_API_URL') ?: 'http://localhost:8080',
         'api_key' => getenv('DCSBOT_API_KEY') ?: null,
         'timeout' => 30
     ];
