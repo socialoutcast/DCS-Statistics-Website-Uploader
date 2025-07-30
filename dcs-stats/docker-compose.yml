@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  dcs-stats:
+    build: .
+    container_name: dcs-stats-test
+    ports:
+      - "3080:80"
+    volumes:
+      # Mount the entire project for development
+      - .:/var/www/html
+      # Persist data directory
+      - dcs-data:/var/www/html/data
+      - dcs-admin-data:/var/www/html/admin/data
+    environment:
+      - PHP_DISPLAY_ERRORS=1
+      - PHP_ERROR_REPORTING=E_ALL
+    restart: unless-stopped
+    networks:
+      - dcs-network
+
+  # Optional: MySQL database for future use
+  # Uncomment if you want to test with database features
+  # mysql:
+  #   image: mysql:8.0
+  #   container_name: dcs-stats-mysql
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: rootpass
+  #     MYSQL_DATABASE: dcs_stats
+  #     MYSQL_USER: dcs_user
+  #     MYSQL_PASSWORD: dcs_pass
+  #   volumes:
+  #     - mysql-data:/var/lib/mysql
+  #   ports:
+  #     - "3306:3306"
+  #   networks:
+  #     - dcs-network
+
+volumes:
+  dcs-data:
+  dcs-admin-data:
+  # mysql-data:
+
+networks:
+  dcs-network:
+    driver: bridge

@@ -1,14 +1,21 @@
 <?php include 'header.php'; ?>
+<?php require_once __DIR__ . '/site_features.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php include 'nav.php'; ?>
 
 <main>
     <h2>Pilot Statistics</h2>
     
+    <?php if (isFeatureEnabled('pilot_search')): ?>
     <div class="search-container">
         <input type="text" id="playerSearchInput" placeholder="Search for a pilot..." />
         <button onclick="searchForPlayers()">Search</button>
     </div>
+    <?php else: ?>
+    <div class="alert" style="text-align: center; padding: 20px;">
+        <p>Pilot search functionality is currently disabled.</p>
+    </div>
+    <?php endif; ?>
     
     <div id="multiple-results" style="display: none;">
         <h3 style="text-align: center; color: #ccc;">Multiple pilots found. Please select one:</h3>
@@ -60,18 +67,22 @@
                 <div class="stat-group">
                     <h4>Credits & Squadron</h4>
                     <div class="stats-grid">
+                        <?php if (isFeatureEnabled('credits_enabled')): ?>
                         <div class="stat-item">
                             <span class="stat-label">Credits:</span>
                             <span class="stat-value" id="pilot-credits">0</span>
                         </div>
+                        <?php endif; ?>
                         <div class="stat-item">
                             <span class="stat-label">Most Used Aircraft:</span>
                             <span class="stat-value" id="pilot-aircraft">Unknown</span>
                         </div>
+                        <?php if (isFeatureEnabled('squadrons_enabled')): ?>
                         <div class="stat-item" id="squadron-info">
                             <span class="stat-label">Squadron:</span>
                             <span class="stat-value" id="pilot-squadron">None</span>
                         </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -124,14 +135,17 @@ async function searchForPlayers() {
     
     try {
         // Search for players
-        const searchResponse = await fetch(`search_players.php?search=${encodeURIComponent(searchTerm)}`);
+        const searchResponse = await fetch(`/search_players?search=${encodeURIComponent(searchTerm)}`);
         const searchData = await searchResponse.json();
         
         document.getElementById('loading').style.display = 'none';
         
         if (searchData.error || searchData.count === 0) {
-            document.getElementById('no-results-message').textContent = 
-                'No pilots with recorded statistics found matching that name.';
+            let errorMessage = searchData.error || 'No pilots with recorded statistics found matching that name.';
+            if (searchData.message) {
+                errorMessage += '\n\n' + searchData.message;
+            }
+            document.getElementById('no-results-message').textContent = errorMessage;
             document.getElementById('no-results').style.display = 'block';
             return;
         }
@@ -175,19 +189,30 @@ async function loadPilotStats(playerName) {
     
     try {
         // Get player stats
-        const statsResponse = await fetch(`get_player_stats.php?name=${encodeURIComponent(playerName)}`);
-        const statsData = await statsResponse.json();
+        const statsResponse = await fetch(`/get_player_stats?name=${encodeURIComponent(playerName)}`);
+        const statsResult = await statsResponse.json();
         
-        if (statsData.error) {
+        if (statsResult.error) {
             document.getElementById('loading').style.display = 'none';
+            
+            // Show more detailed error message
+            let errorMessage = statsResult.error || 'No pilot found with that name.';
+            if (statsResult.message) {
+                errorMessage += '<br><br>' + statsResult.message;
+            }
+            
+            document.getElementById('no-results-message').innerHTML = errorMessage;
             document.getElementById('no-results').style.display = 'block';
             return;
         }
         
+        // Extract actual stats data from the response
+        const statsData = statsResult.data || statsResult;
+        
         // Get credits data
         let credits = 0;
         try {
-            const creditsResponse = await fetch('get_credits.php');
+            const creditsResponse = await fetch('/get_credits');
             const creditsData = await creditsResponse.json();
             const playerCredits = creditsData.find(p => p.name.toLowerCase() === playerName.toLowerCase());
             credits = playerCredits ? playerCredits.credits : 0;
@@ -235,15 +260,16 @@ async function loadPilotStats(playerName) {
         }
         
         // Populate the results
-        document.getElementById('pilot-name').textContent = statsData.name;
+        document.getElementById('pilot-name').textContent = statsData.name || playerName;
         document.getElementById('pilot-kills').textContent = statsData.kills || 0;
         document.getElementById('pilot-sorties').textContent = statsData.sorties || 0;
         document.getElementById('pilot-takeoffs').textContent = statsData.takeoffs || 0;
         document.getElementById('pilot-landings').textContent = statsData.landings || 0;
-        document.getElementById('pilot-traps').textContent = statsData.traps || 0;
+        document.getElementById('pilot-traps').textContent = statsData.carrier_traps || statsData.traps || 0;
         
         // Show average trap score if there are traps
-        if (statsData.traps > 0 && statsData.avgTrapScore !== undefined) {
+        const trapCount = statsData.carrier_traps || statsData.traps || 0;
+        if (trapCount > 0 && statsData.avgTrapScore !== undefined) {
             document.getElementById('trap-score-item').style.display = 'flex';
             document.getElementById('pilot-trap-score').textContent = statsData.avgTrapScore.toFixed(2);
         }
@@ -251,7 +277,7 @@ async function loadPilotStats(playerName) {
         document.getElementById('pilot-crashes').textContent = statsData.crashes || 0;
         document.getElementById('pilot-ejections').textContent = statsData.ejections || 0;
         document.getElementById('pilot-credits').textContent = credits;
-        document.getElementById('pilot-aircraft').textContent = statsData.mostUsedAircraft || 'Unknown';
+        document.getElementById('pilot-aircraft').textContent = statsData.most_used_aircraft || statsData.mostUsedAircraft || 'N/A';
         
         // Update squadron info with logo if available
         const squadronInfoDiv = document.getElementById('squadron-info');
@@ -274,9 +300,21 @@ async function loadPilotStats(playerName) {
         // Create charts
         createCombatChart(statsData);
         createFlightChart(statsData);
+        
+        // Check for aircraft usage data
         if (statsData.aircraftUsage && statsData.aircraftUsage.length > 0) {
             createAircraftChart(statsData.aircraftUsage);
+        } else if (statsData.kills_by_module && Object.keys(statsData.kills_by_module).length > 0) {
+            // Convert kills_by_module from API format to aircraftUsage format
+            const aircraftUsage = Object.entries(statsData.kills_by_module).map(([name, count]) => ({
+                name,
+                count
+            })).sort((a, b) => b.count - a.count).slice(0, 5); // Top 5 aircraft
+            if (aircraftUsage.length > 0) {
+                createAircraftChart(aircraftUsage);
+            }
         }
+        
         if (statsData.trapScores && statsData.trapScores.length > 0) {
             createTrapScoresChart(statsData.trapScores);
         }
@@ -432,7 +470,7 @@ function createFlightChart(statsData) {
     const landings = statsData.landings || 0;
     const crashes = statsData.crashes || 0;
     const ejections = statsData.ejections || 0;
-    const traps = statsData.traps || 0;
+    const traps = statsData.carrier_traps || statsData.traps || 0;
     
     // Adjust labels and data based on whether pilot has traps
     const labels = traps > 0 

@@ -12,7 +12,10 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DCS Statistics Dashboard</title>
-  <link rel="stylesheet" href="/DCS-Stats-Demo/dev/styles.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <?php if (file_exists(__DIR__ . '/custom_theme.css')): ?>
+  <link rel="stylesheet" href="custom_theme.css" />
+  <?php endif; ?>
   <script>
     // XSS Protection function
     function escapeHtml(text) {

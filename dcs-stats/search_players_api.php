@@ -25,78 +25,81 @@ if ($query === false) {
 }
 
 try {
-    $useAPI = true;
-    $players = [];
+    // Load API configuration
+    $configFile = __DIR__ . '/api_config.json';
+    $config = file_exists($configFile) ? json_decode(file_get_contents($configFile), true) : [];
     
-    if ($useAPI) {
-        try {
-            // Use /getuser endpoint to search for players
-            // This returns an array of players matching the nickname
-            $apiResponse = $apiClient->makeRequest('POST', '/getuser', ['nick' => $query]);
-            
-            if (is_array($apiResponse)) {
-                foreach ($apiResponse as $player) {
-                    $players[] = [
-                        'ucid' => null, // API doesn't provide UCID
-                        'name' => htmlspecialchars($player['name'] ?? '', ENT_QUOTES, 'UTF-8'),
-                        'last_seen' => $player['last_seen'] ?? null
-                    ];
-                }
-            }
-            
-        } catch (Exception $apiError) {
-            // Fall back to JSON
-            logSecurityEvent('API_ERROR', 'Search API failed: ' . $apiError->getMessage());
-            $useAPI = false;
-        }
-    }
+    // Initialize API client
+    $apiClient = new DCSServerBotAPIClient($config);
     
-    // Fallback to JSON search if API fails
-    if (!$useAPI) {
-        $dataDir = __DIR__ . '/data';
-        $playersFile = validatePath($dataDir . '/players.json', $dataDir);
+    // Note: The /getuser endpoint appears to be broken on many DCSServerBot instances
+    // It often returns Internal Server Error (500)
+    // As a workaround, we'll return a message explaining this limitation
+    
+    // Try to use the API anyway
+    try {
+        $apiResponse = $apiClient->makeRequest('POST', '/getuser', ['nick' => $query]);
         
-        if ($playersFile && file_exists($playersFile)) {
-            $queryLower = strtolower($query);
-            $handle = fopen($playersFile, "r");
-            
-            while (($line = fgets($handle)) !== false) {
-                $entry = json_decode(trim($line), true);
-                if (!$entry) continue;
-                
-                $nameLower = strtolower($entry['name'] ?? '');
-                if (strpos($nameLower, $queryLower) !== false) {
-                    $players[] = [
-                        'ucid' => $entry['ucid'] ?? null,
-                        'name' => htmlspecialchars($entry['name'] ?? '', ENT_QUOTES, 'UTF-8'),
-                        'last_seen' => $entry['last_seen'] ?? null
-                    ];
+        // Debug: Log the raw API response
+        error_log('API /getuser response: ' . json_encode($apiResponse));
+        
+        $players = [];
+        if (is_array($apiResponse) && !empty($apiResponse)) {
+            // Check if it's a single result wrapped in an array or multiple results
+            if (isset($apiResponse['name'])) {
+                // Single result returned as object
+                $players[] = [
+                    'ucid' => $apiResponse['ucid'] ?? null,
+                    'name' => htmlspecialchars($apiResponse['name'] ?? '', ENT_QUOTES, 'UTF-8'),
+                    'last_seen' => $apiResponse['last_seen'] ?? null
+                ];
+            } else {
+                // Multiple results
+                foreach ($apiResponse as $player) {
+                    // Skip if not an array/object
+                    if (!is_array($player)) {
+                        continue;
+                    }
                     
-                    // Limit results
-                    if (count($players) >= 50) break;
+                    $name = $player['name'] ?? $player['player_name'] ?? $player['nick'] ?? '';
+                    if ($name) {
+                        $players[] = [
+                            'ucid' => $player['ucid'] ?? $player['player_ucid'] ?? null,
+                            'name' => htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
+                            'last_seen' => $player['last_seen'] ?? null
+                        ];
+                    }
                 }
             }
-            fclose($handle);
         }
+        
+        // Always return valid structure
+        echo json_encode([
+            'results' => $players,
+            'count' => count($players),
+            'source' => 'api',
+            'error' => count($players) === 0 ? 'No players found' : null
+        ]);
+        
+    } catch (Exception $apiError) {
+        // The /getuser endpoint is broken - return informative error
+        echo json_encode([
+            'error' => 'Player search is currently unavailable',
+            'message' => 'The DCSServerBot /getuser endpoint is returning errors. This is a known issue with some DCSServerBot installations.',
+            'results' => [],
+            'count' => 0,
+            'source' => 'api'
+        ]);
     }
-    
-    // Sort by name
-    usort($players, function($a, $b) {
-        return strcasecmp($a['name'], $b['name']);
-    });
-    
-    // Return response with metadata
-    echo json_encode([
-        'source' => $useAPI ? 'api' : 'json',
-        'query' => $query,
-        'count' => count($players),
-        'players' => $players
-    ]);
     
 } catch (Exception $e) {
-    logSecurityEvent('GENERAL_ERROR', 'Search error: ' . $e->getMessage());
+    // General error
+    error_log('Error in search_players_api.php: ' . $e->getMessage());
+    
     echo json_encode([
-        'error' => 'Search temporarily unavailable',
-        'query' => $query
+        'error' => 'Search service error',
+        'results' => [],
+        'count' => 0,
+        'source' => 'api'
     ]);
 }
