@@ -132,7 +132,7 @@ async function loadServers() {
         document.getElementById('servers-container').style.display = 'block';
         
     } catch (error) {
-        console.error('Error loading servers:', error);
+        // Error loading servers
         document.getElementById('servers-loading').style.display = 'none';
         document.getElementById('no-servers').style.display = 'block';
     }

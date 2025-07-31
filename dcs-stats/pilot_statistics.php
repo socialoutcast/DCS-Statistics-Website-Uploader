@@ -318,7 +318,9 @@ async function loadPilotStats(playerName) {
                 const config = await window.dcsAPI.loadConfig();
                 if (config.use_api && config.api_base_url) {
                     // Call credits endpoint with player name and current date
-                    const response = await fetch('api_proxy.php?endpoint=' + encodeURIComponent('/credits') + '&method=POST', {
+                    const basePath = window.DCS_CONFIG ? window.DCS_CONFIG.basePath : '';
+                    const buildUrl = (path) => basePath ? `${basePath}/${path}` : path;
+                    const response = await fetch(buildUrl('api_proxy.php?endpoint=' + encodeURIComponent('/credits') + '&method=POST'), {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'

@@ -9,6 +9,8 @@ if (!defined('ADMIN_PANEL')) {
     die('Direct access not permitted');
 }
 
+// No need for path configuration with relative paths
+
 // Get current admin if not already available
 if (!isset($currentAdmin)) {
     $currentAdmin = getCurrentAdmin();

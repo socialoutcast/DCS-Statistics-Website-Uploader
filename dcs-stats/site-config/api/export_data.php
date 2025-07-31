@@ -59,35 +59,9 @@ switch ($exportType) {
             die('Date range required for mission export');
         }
         
-        $dataDir = dirname(dirname(__DIR__)) . '/data';
-        $missionStatsFile = $dataDir . '/missionstats.json';
-        
-        if (file_exists($missionStatsFile)) {
-            $handle = fopen($missionStatsFile, "r");
-            if ($handle) {
-                $count = 0;
-                while (($line = fgets($handle)) !== false && $count < EXPORT_MAX_RECORDS) {
-                    $entry = json_decode($line, true);
-                    if (!$entry) continue;
-                    
-                    $time = $entry['time'] ?? '';
-                    if ($time >= $dateFrom . ' 00:00:00' && $time <= $dateTo . ' 23:59:59') {
-                        $data[] = [
-                            'time' => $time,
-                            'event' => $entry['event'] ?? '',
-                            'init_id' => $entry['init_id'] ?? '',
-                            'init_type' => $entry['init_type'] ?? '',
-                            'target_id' => $entry['target_id'] ?? '',
-                            'target_type' => $entry['target_type'] ?? '',
-                            'weapon' => $entry['weapon'] ?? '',
-                            'server' => $entry['server'] ?? ''
-                        ];
-                        $count++;
-                    }
-                }
-                fclose($handle);
-            }
-        }
+        // Mission export would require API endpoint for historical data
+        // For now, return empty as API doesn't provide historical mission events
+        $data = [];
         break;
         
     case 'admin_logs':

@@ -7,36 +7,109 @@ class DCSStatsAPI {
     constructor() {
         this.config = null;
         this.configLoaded = false;
+        this.basePath = window.DCS_CONFIG ? window.DCS_CONFIG.basePath : '';
+    }
+
+    // Helper to build proper URLs
+    buildUrl(path) {
+        if (!path) return this.basePath;
+        const cleanPath = path.replace(/^\//, '');
+        return this.basePath ? `${this.basePath}/${cleanPath}` : `/${cleanPath}`;
     }
 
     async loadConfig() {
         if (this.configLoaded) return this.config;
         
         try {
-            const response = await fetch('get_api_config.php');
+            const response = await fetch(this.buildUrl('get_api_config.php'));
             this.config = await response.json();
             this.configLoaded = true;
             return this.config;
         } catch (error) {
-            console.error('Failed to load API config:', error);
-            this.config = { use_api: true, fallback_to_json: false };
+            // Failed to load API config
+            this.config = { use_api: true };
             return this.config;
         }
     }
 
+    async makeDirectAPICall(endpoint, options = {}) {
+        const config = await this.loadConfig();
+        
+        // Determine API base URL
+        let apiUrl = config.api_base_url;
+        if (!apiUrl && config.api_host) {
+            // Auto-detect protocol
+            const protocols = ['https', 'http'];
+            for (const protocol of protocols) {
+                try {
+                    const testUrl = `${protocol}://${config.api_host}/stats`;
+                    const testResponse = await fetch(testUrl, { 
+                        method: 'HEAD',
+                        mode: 'cors',
+                        timeout: 3000 
+                    });
+                    if (testResponse.ok || testResponse.status < 500) {
+                        apiUrl = `${protocol}://${config.api_host}`;
+                        // Detected working protocol
+                        break;
+                    }
+                } catch (e) {
+                    // Protocol failed
+                }
+            }
+            if (!apiUrl) {
+                apiUrl = `https://${config.api_host}`; // Default to HTTPS
+            }
+        }
+        
+        const url = apiUrl + endpoint;
+        const method = options.method || 'GET';
+        
+        // Making direct API call
+        
+        try {
+            const fetchOptions = {
+                method: method,
+                mode: 'cors',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            };
+            
+            // Add data for POST requests
+            if (method === 'POST' && options.data) {
+                fetchOptions.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+                fetchOptions.body = new URLSearchParams(options.data).toString();
+            }
+            
+            const response = await fetch(url, fetchOptions);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            // Direct API response received
+            return data;
+        } catch (error) {
+            // Direct API call error
+            throw error;
+        }
+    }
+    
     async makeAPICall(endpoint, options = {}) {
         const config = await this.loadConfig();
         
-        if (!config.use_api || !config.api_base_url) {
-            console.error('API not enabled or no base URL configured');
+        if (!config.use_api || (!config.api_base_url && !config.api_host)) {
+            // API not enabled or no base URL configured
             throw new Error('API not enabled');
         }
 
-        // Use proxy endpoint to avoid CORS issues
+        // First try proxy endpoint
         const method = options.method || 'GET';
-        const proxyUrl = `api_proxy.php?endpoint=${encodeURIComponent(endpoint)}&method=${method}`;
+        const proxyUrl = this.buildUrl(`api_proxy.php?endpoint=${encodeURIComponent(endpoint)}&method=${method}`);
         
-        console.log(`Making API call via proxy to: ${endpoint}`, options);
+        // Making API call via proxy
 
         const timeout = (config.timeout || 30) * 1000;
         const controller = new AbortController();
@@ -70,16 +143,23 @@ class DCSStatsAPI {
             clearTimeout(timeoutId);
 
             if (!response.ok) {
-                console.error(`API call failed with status: ${response.status}`);
+                // API call failed
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            console.log(`API response from ${endpoint}:`, data);
+            // API response received
             return data;
         } catch (error) {
             clearTimeout(timeoutId);
-            console.error(`API call error for ${endpoint}:`, error);
+            // API proxy call error
+            
+            // If proxy fails, try direct API call (for sites that block PHP calls)
+            if (config.api_base_url || config.api_host) {
+                // Proxy failed, attempting direct API call
+                return this.makeDirectAPICall(endpoint, options);
+            }
+            
             throw error;
         }
     }
@@ -142,7 +222,7 @@ class DCSStatsAPI {
                 };
             }
         } catch (error) {
-            console.warn('Enhanced stats endpoint failed:', error);
+            // Enhanced stats endpoint failed
         }
         
         // Use multiple API endpoints to build server stats
@@ -213,7 +293,7 @@ class DCSStatsAPI {
                 };
             }
         } catch (e) {
-            console.log('Direct lookup failed, trying broader search');
+            // Direct lookup failed, trying broader search
         }
 
         // If direct lookup fails, search through multiple endpoints
@@ -425,9 +505,20 @@ class DCSStatsAPI {
         };
     }
 
-    async getSquadronData(file) {
-        // Squadron data not available via API
-        throw new Error('Squadron data requires JSON files. API-only mode does not support squadrons.');
+    async getSquadronData(type) {
+        // Squadron data is now available via API
+        const endpoints = {
+            'squadrons': '/get_squadrons.php',
+            'squadron_members': '/get_squadron_members.php',
+            'squadron_credits': '/get_squadron_credits.php'
+        };
+        
+        const endpoint = endpoints[type];
+        if (!endpoint) {
+            throw new Error(`Unknown squadron data type: ${type}`);
+        }
+        
+        return this.request(endpoint);
     }
 }
 

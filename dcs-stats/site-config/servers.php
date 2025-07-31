@@ -13,41 +13,28 @@ requirePermission('manage_servers');
 // Get current admin
 $currentAdmin = getCurrentAdmin();
 
-// Get server data from instances.json
+// Get server data from API
 $servers = [];
-$dataDir = dirname(__DIR__) . '/data';
-$instancesFile = $dataDir . '/instances.json';
-
-if (file_exists($instancesFile)) {
-    $content = file_get_contents($instancesFile);
-    $data = json_decode($content, true);
-    if ($data && is_array($data)) {
-        $servers = $data;
+try {
+    require_once dirname(__DIR__) . '/api_client_enhanced.php';
+    $client = createEnhancedAPIClient();
+    $servers = $client->request('/servers');
+    if (!is_array($servers)) {
+        $servers = [];
     }
+} catch (Exception $e) {
+    $servers = [];
 }
 
 // Get mission statistics for each server
 $serverStats = [];
-$missionStatsFile = $dataDir . '/missionstats.json';
 
-if (file_exists($missionStatsFile)) {
-    $handle = fopen($missionStatsFile, "r");
-    if ($handle) {
-        $now = time();
-        $day_ago = $now - 86400;
-        $week_ago = $now - 604800;
-        
-        while (($line = fgets($handle)) !== false) {
-            $entry = json_decode($line, true);
-            if (!$entry) continue;
-            
-            $server = $entry['server'] ?? 'Unknown';
-            $time = strtotime($entry['time'] ?? '');
-            
-            if (!isset($serverStats[$server])) {
-                $serverStats[$server] = [
-                    'total_events' => 0,
-                    'events_24h' => 0,
+// Initialize stats for each server
+foreach ($servers as $server) {
+    $serverName = $server['server_name'] ?? 'Unknown';
+    $serverStats[$serverName] = [
+        'total_events' => 0,
+        'events_24h' => 0,
                     'events_7d' => 0,
                     'unique_players' => [],
                     'unique_players_24h' => [],
@@ -249,7 +236,7 @@ $pageTitle = 'Server Statistics';
                     </div>
                     
                     <?php if (empty($servers)): ?>
-                        <p class="text-muted">No server data available. Make sure instances.json is being uploaded.</p>
+                        <p class="text-muted">No server data available. Make sure the API is configured and accessible.</p>
                     <?php else: ?>
                         <?php foreach ($servers as $server): ?>
                             <?php

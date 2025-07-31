@@ -80,32 +80,89 @@ if (!isFeatureEnabled('squadrons_enabled')):
 document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById('searchInput');
 
-    // Check if API is enabled
-    window.dcsAPI.loadConfig().then(config => {
-        if (config.use_api) {
-            // API-only mode - squadrons not supported
-            document.querySelector('main').innerHTML = `
-                <div class="alert" style="text-align: center; padding: 50px;">
-                    <h2>Squadrons Not Available</h2>
-                    <p>Squadron data is not available in API-only mode.</p>
-                    <p>This feature requires JSON file support.</p>
-                </div>
-            `;
-            return;
+    // Helper to build URLs
+    const basePath = window.DCS_CONFIG ? window.DCS_CONFIG.basePath : '';
+    const buildUrl = (path) => basePath ? `${basePath}/${path}` : path;
+    
+    // Load squadron data from API
+    async function loadSquadronData() {
+        try {
+            // First, get the list of squadrons
+            const squadronsResponse = await fetch(buildUrl('get_squadrons.php'));
+            if (!squadronsResponse.ok) {
+                throw new Error('Failed to load squadrons');
+            }
+            const squadronsData = await squadronsResponse.json();
+            const squadrons = squadronsData.data || [];
+            
+            // Load players for member name mapping
+            const playersResponse = await fetch(buildUrl('search_players.php?search=&limit=1000'));
+            if (!playersResponse.ok) {
+                throw new Error('Failed to load players');
+            }
+            const playersData = await playersResponse.json();
+            const players = playersData.results || playersData.data || [];
+            
+            // Load member and credit data for each squadron
+            const allMembers = [];
+            const allCredits = [];
+            
+            for (const squadron of squadrons) {
+                // Get squadron members
+                try {
+                    const membersResp = await fetch(buildUrl('get_squadron_members.php'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: squadron.name })
+                    });
+                    if (membersResp.ok) {
+                        const membersData = await membersResp.json();
+                        if (membersData.data) {
+                            allMembers.push(...membersData.data);
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Failed to load members for squadron ${squadron.name}:`, error);
+                }
+                
+                // Get squadron credits
+                try {
+                    const creditsResp = await fetch(buildUrl('get_squadron_credits.php'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: squadron.name })
+                    });
+                    if (creditsResp.ok) {
+                        const creditsData = await creditsResp.json();
+                        if (creditsData.data) {
+                            // Add squadron_id to credits data for compatibility
+                            const credits = creditsData.data;
+                            if (credits && typeof credits === 'object') {
+                                credits.squadron_id = squadron.id;
+                                allCredits.push(credits);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Failed to load credits for squadron ${squadron.name}:`, error);
+                }
+            }
+            
+            return { 
+                squadrons, 
+                members: allMembers, 
+                players, 
+                credits: allCredits 
+            };
+            
+        } catch (error) {
+            console.error('Error loading squadron data:', error);
+            throw error;
         }
-        
-        // JSON mode - load squadron data
-        Promise.all([
-            fetch('get_squadron.php?file=squadrons').then(r => r.text()),
-            fetch('get_squadron.php?file=squadron_members').then(r => r.text()),
-            fetch('get_squadron.php?file=players').then(r => r.text()),
-            fetch('get_squadron.php?file=squadron_credits').then(r => r.text())
-        ])
-        .then(([squadronText, memberText, playerText, creditText]) => {
-        const squadrons = squadronText.trim().split('\n').map(line => JSON.parse(line));
-        const members = memberText.trim().split('\n').map(line => JSON.parse(line));
-        const players = playerText.trim().split('\n').map(line => JSON.parse(line));
-        const credits = creditText.trim().split('\n').map(line => JSON.parse(line));
+    }
+    
+    // Main execution
+    loadSquadronData().then(({ squadrons, members, players, credits }) => {
 
         const squadronsById = Object.fromEntries(squadrons.map(sq => [sq.id, sq]));
         const playersByUcid = Object.fromEntries(players.map(p => [p.ucid, p]));
@@ -200,11 +257,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         renderTables(); // Initial load
-        })
-        .catch(err => {
-            document.getElementById('error-message').textContent = "Error loading data: " + err.message;
-            console.error(err);
-        });
+    }).catch(err => {
+        console.error('Error loading squadron data:', err);
+        document.querySelector('main').innerHTML = `
+            <div class="alert" style="text-align: center; padding: 50px;">
+                <h2>Error Loading Squadron Data</h2>
+                <p>${err.message}</p>
+                <p>Please check your configuration and try again.</p>
+            </div>
+        `;
     });
 });
 </script>

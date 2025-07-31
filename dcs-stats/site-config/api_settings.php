@@ -5,6 +5,7 @@
 
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/admin_functions.php';
+require_once __DIR__ . '/../api_config_helper.php';
 
 // Require admin login and permission
 requireAdmin();
@@ -19,22 +20,21 @@ if ($currentAdmin['role'] !== ROLE_AIR_BOSS) {
     exit();
 }
 
-// Load current API configuration
-$configFile = dirname(__DIR__) . '/api_config.json';
-$apiConfig = file_exists($configFile) ? json_decode(file_get_contents($configFile), true) : [
-    'api_base_url' => '',
-    'timeout' => 30,
-    'cache_ttl' => 300,
-    'use_api' => false,
-    'enabled_endpoints' => [],
-    'endpoints' => [
-        'getuser' => '/getuser',
-        'stats' => '/stats',
-        'topkills' => '/topkills',
-        'topkdr' => '/topkdr',
-        'missilepk' => '/missilepk'
-    ]
-];
+// Load current API configuration with auto-fixing
+$configResult = loadApiConfigWithFix();
+$apiConfig = $configResult['config'];
+$configFile = $configResult['config_path'];
+$autoFixMessage = '';
+
+// Show any auto-fix messages
+if (isset($configResult['fixed']) && $configResult['fixed'] && !empty($configResult['changes'])) {
+    $autoFixMessage = 'Configuration auto-fixed: ' . implode(', ', $configResult['changes']);
+}
+
+// Show config location if not standard
+if ($configFile !== dirname(__DIR__) . '/api_config.json') {
+    $autoFixMessage .= ($autoFixMessage ? ' | ' : '') . 'Config location: ' . $configFile;
+}
 
 // Handle form submission
 $message = '';
@@ -50,75 +50,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (isset($_POST['action'])) {
             switch ($_POST['action']) {
                 case 'save':
-                    // Update API configuration
-                    $apiConfig['api_base_url'] = trim($_POST['api_base_url'] ?? '');
-                    $apiConfig['timeout'] = intval($_POST['timeout'] ?? 30);
-                    $apiConfig['cache_ttl'] = intval($_POST['cache_ttl'] ?? 300);
-                    $apiConfig['use_api'] = isset($_POST['use_api']);
+                    // Get form inputs
+                    $apiHost = trim($_POST['api_host'] ?? '');
+                    $timeout = intval($_POST['timeout'] ?? 30);
+                    $cacheTtl = intval($_POST['cache_ttl'] ?? 300);
+                    $useApi = isset($_POST['use_api']);
                     
-                    // Save configuration
-                    if (file_put_contents($configFile, json_encode($apiConfig, JSON_PRETTY_PRINT))) {
-                        logAdminActivity('API_CONFIG_CHANGE', $_SESSION['admin_id'], 'settings', 'api_config', $apiConfig);
-                        $message = 'API configuration saved successfully';
-                        $messageType = 'success';
+                    // Use helper to create complete config
+                    $saveResult = createApiConfigFromHost($apiHost, $configFile);
+                    
+                    if ($saveResult['success']) {
+                        // Update with form values
+                        $apiConfig = $saveResult['config'];
+                        $apiConfig['timeout'] = $timeout;
+                        $apiConfig['cache_ttl'] = $cacheTtl;
+                        $apiConfig['use_api'] = $useApi;
+                        
+                        // Save again with all settings
+                        if (file_put_contents($configFile, json_encode($apiConfig, JSON_PRETTY_PRINT))) {
+                            logAdminActivity('API_CONFIG_CHANGE', $_SESSION['admin_id'], 'settings', 'api_config', $apiConfig);
+                            $message = 'API configuration saved successfully with all endpoints enabled';
+                            $messageType = 'success';
+                        }
                     } else {
-                        $message = 'Failed to save API configuration';
+                        $message = $saveResult['message'];
                         $messageType = 'error';
                     }
                     break;
                     
                 case 'test':
-                    // Test API connection
-                    if (!empty($apiConfig['api_base_url'])) {
-                        // Try the /servers endpoint first (GET method)
-                        $testUrl = rtrim($apiConfig['api_base_url'], '/') . '/servers';
-                        $ch = curl_init($testUrl);
-                        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                    // Test API connection using enhanced client with auto-detection
+                    require_once dirname(__DIR__) . '/api_client_enhanced.php';
+                    
+                    try {
+                        // Create enhanced client
+                        $client = createEnhancedAPIClient();
                         
-                        $response = curl_exec($ch);
-                        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                        $error = curl_error($ch);
-                        curl_close($ch);
+                        // Try to make a simple request
+                        $result = $client->request('/servers', null, 'GET');
                         
-                        if (!$error && $httpCode === 200) {
-                            $data = json_decode($response, true);
-                            if ($data !== null) {
-                                $testResult = ['success' => true, 'message' => 'API connection successful! /servers endpoint working.'];
+                        if ($result !== null) {
+                            $protocol = $client->getDetectedProtocol();
+                            $detectedUrl = $client->getApiBaseUrl();
+                            
+                            // Update config with detected protocol
+                            $apiHost = $apiConfig['api_host'] ?? preg_replace('#^https?://#', '', $apiConfig['api_base_url']);
+                            $apiConfig['api_host'] = $apiHost;
+                            $apiConfig['api_base_url'] = $detectedUrl;
+                            
+                            // Save the configuration with detected protocol
+                            $saveConfig = $apiConfig;
+                            $saveConfig['api_base_url'] = $detectedUrl;
+                            
+                            if (@file_put_contents($configFile, json_encode($saveConfig, JSON_PRETTY_PRINT))) {
+                                $testResult = [
+                                    'success' => true, 
+                                    'message' => "API connection successful! Detected and saved {$protocol}:// protocol.",
+                                    'protocol' => $protocol
+                                ];
                             } else {
-                                $testResult = ['success' => false, 'message' => 'Invalid JSON response from API'];
+                                $testResult = [
+                                    'success' => true, 
+                                    'message' => "API connection successful using {$protocol}://",
+                                    'protocol' => $protocol
+                                ];
                             }
                         } else {
-                            // If /servers fails, try /stats with POST method
-                            $testUrl = rtrim($apiConfig['api_base_url'], '/') . '/stats';
-                            $ch = curl_init($testUrl);
-                            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-                            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                            curl_setopt($ch, CURLOPT_POST, true);
-                            curl_setopt($ch, CURLOPT_POSTFIELDS, '');
-                            
-                            $response = curl_exec($ch);
-                            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                            $error = curl_error($ch);
-                            curl_close($ch);
-                            
-                            if ($error) {
-                                $testResult = ['success' => false, 'message' => 'Connection error: ' . $error];
-                            } elseif ($httpCode === 200) {
-                                $data = json_decode($response, true);
-                                if ($data !== null) {
-                                    $testResult = ['success' => true, 'message' => 'API connection successful! /stats endpoint working.'];
-                                } else {
-                                    $testResult = ['success' => false, 'message' => 'Invalid JSON response from API'];
-                                }
-                            } else {
-                                $testResult = ['success' => false, 'message' => 'HTTP error: ' . $httpCode . ' - Make sure the API server is running and accessible.'];
-                            }
+                            $testResult = ['success' => false, 'message' => 'No response from API'];
                         }
-                    } else {
-                        $testResult = ['success' => false, 'message' => 'Please enter an API URL first'];
+                    } catch (Exception $e) {
+                        $errorMsg = $e->getMessage();
+                        
+                        // The enhanced client should have handled protocol detection
+                        // If we still get an error, it's a real connection issue
+                        $testResult = [
+                            'success' => false, 
+                            'message' => 'Unable to connect to API: ' . $errorMsg
+                        ];
                     }
                     break;
             }
@@ -128,15 +136,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Page title
 $pageTitle = 'API Settings';
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $pageTitle ?> - Carrier Air Wing Command</title>
-    <link rel="stylesheet" href="css/admin.css">
-    <style>
+
+// Additional styles
+$additionalStyles = '
+<style>
         .api-form {
             max-width: 800px;
             margin: 0 auto;
@@ -236,31 +239,21 @@ $pageTitle = 'API Settings';
             gap: 10px;
             margin-top: 30px;
         }
-    </style>
-</head>
-<body>
-    <div class="admin-wrapper">
-        <?php include 'nav.php'; ?>
-        
-        <!-- Main Content -->
-        <main class="admin-main">
-            <!-- Header -->
-            <header class="admin-header">
-                <h1><?= $pageTitle ?></h1>
-                <div class="admin-user-menu">
-                    <div class="admin-user-info">
-                        <div class="admin-username"><?= e($currentAdmin['username']) ?></div>
-                        <div class="admin-role"><?= getRoleBadge($currentAdmin['role']) ?></div>
-                    </div>
-                    <a href="logout.php" class="btn btn-secondary btn-small">Logout</a>
-                </div>
-            </header>
-            
-            <!-- Content -->
-            <div class="admin-content">
+</style>
+';
+
+// Include common header
+include 'admin_header.php';
+?>
                 <?php if ($message): ?>
                     <div class="alert alert-<?= $messageType ?>">
                         <?= e($message) ?>
+                    </div>
+                <?php endif; ?>
+                
+                <?php if ($autoFixMessage): ?>
+                    <div class="alert alert-info">
+                        <?= e($autoFixMessage) ?>
                     </div>
                 <?php endif; ?>
                 
@@ -274,13 +267,14 @@ $pageTitle = 'API Settings';
                         <input type="hidden" name="action" value="save">
                         
                         <div class="form-group">
-                            <label for="api_base_url">API Base URL</label>
+                            <label for="api_host">API Host</label>
                             <input type="text" 
-                                   id="api_base_url" 
-                                   name="api_base_url" 
-                                   value="<?= e($apiConfig['api_base_url']) ?>"
-                                   placeholder="http://localhost:8080">
-                            <div class="help-text">The base URL of your DCSServerBot REST API (without /api suffix)</div>
+                                   id="api_host" 
+                                   name="api_host" 
+                                   value="<?= e($apiConfig['api_host'] ?? preg_replace('#^https?://#', '', $apiConfig['api_base_url'])) ?>"
+                                   placeholder="localhost:8080"
+                                   pattern="[a-zA-Z0-9.-]+:[0-9]+">
+                            <div class="help-text">Enter domain:port (e.g., dcs1.example.com:9876). Protocol will be auto-detected.</div>
                         </div>
                         
                         
@@ -333,20 +327,127 @@ $pageTitle = 'API Settings';
                 <?php endif; ?>
                 
                 <div class="endpoints-info">
-                    <h4>Available API Endpoints</h4>
+                    <h4>Available Endpoints</h4>
                     <div class="endpoints-list">
-                        <strong>DCSServerBot REST API provides these endpoints:</strong><br>
+                        <strong>DCSServerBot REST API endpoints:</strong><br>
                         • /servers - Get server status (GET)<br>
                         • /credits - Get player credits (POST with nick and date)<br>
                         • /stats - Get enhanced statistics (POST with nick and date)<br>
-                        • /getuser - Get user statistics (POST)<br>
+                        • /getuser - Get user statistics (POST with nick)<br>
                         • /topkills - Get top killers leaderboard (GET)<br>
-                        • /topkdr - Get top K/D ratio leaderboard<br>
-                        • /missilepk - Get missile performance statistics
+                        • /topkdr - Get top K/D ratio leaderboard (GET)<br>
+                        • /missilepk - Get missile probability of kill (POST with nick and date)<br>
+                        • /squadrons - Get all squadrons (GET)<br>
+                        • /squadron_members - Get squadron members (POST with name)<br>
+                        • /squadron_credits - Get squadron credits (POST with name)<br>
+                        <br>
+                        <strong>Our system endpoints (PHP files):</strong><br>
+                        • get_servers.php - Server status page data<br>
+                        • get_leaderboard.php - Leaderboard page data<br>
+                        • get_player_stats.php - Individual player statistics<br>
+                        • get_pilot_credits.php - Credits leaderboard<br>
+                        • get_pilot_statistics.php - Pilot details<br>
+                        • get_server_statistics.php - Server statistics<br>
+                        • get_active_players.php - Currently active players<br>
+                        • search_players.php - Player search functionality<br>
+                        • get_leaderboard_client.php - Client-side leaderboard<br>
+                        • get_credits.php - Credits data<br>
+                        • get_missionstats.php - Mission statistics<br>
+                        • get_server_stats.php - Server performance stats<br>
+                        <br>
+                        <strong>Note:</strong> All features now work through the API
                     </div>
                 </div>
-            </div>
-        </main>
-    </div>
-</body>
-</html>
+
+<?php
+// Additional scripts
+$additionalScripts = '
+<script>
+    // Enhanced test functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const testBtn = document.querySelector('button[value="test"]');
+        const apiHostInput = document.getElementById('api_host');
+        
+        if (testBtn) {
+            testBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                
+                const apiHost = apiHostInput.value.trim();
+                if (!apiHost) {
+                    alert('Please enter an API host first');
+                    return;
+                }
+                
+                // Show loading state
+                testBtn.disabled = true;
+                testBtn.textContent = 'Testing...';
+                
+                try {
+                    // Use our test endpoint
+                    const response = await fetch('<?php echo url("test_api_connection.php"); ?>', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({
+                            api_host: apiHost,
+                            endpoint: '/stats'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    // Display results
+                    let message = '';
+                    
+                    if (result.recommended_protocol) {
+                        if (result.recommendation_reason && result.recommendation_reason.includes('SSL errors')) {
+                            message = `⚠️ SSL Error Detected!\n\n`;
+                            message += `The API server is using HTTP, not HTTPS.\n`;
+                            message += `Detected: ${result.recommended_protocol}://${apiHost}\n\n`;
+                            message += `Click OK to save and test again with the correct protocol.`;
+                            
+                            if (confirm(message)) {
+                                // Submit the form to save with auto-detection
+                                const form = testBtn.closest('form');
+                                if (form) {
+                                    // The server-side test will handle the SSL error and auto-configure
+                                    form.submit();
+                                }
+                            }
+                        } else {
+                            message = `✅ Connection Successful!\n\n`;
+                            message += `Protocol: ${result.recommended_protocol}\n`;
+                            message += `API URL: ${result.recommended_url}\n`;
+                            message += `Reason: ${result.recommendation_reason}`;
+                            alert(message);
+                        }
+                    } else {
+                        message = '❌ Could not connect to API\n\n';
+                        message += 'Details:\n';
+                        for (const [protocol, test] of Object.entries(result.results)) {
+                            if (test.ssl_error) {
+                                message += `${protocol}: SSL Error - Server is using HTTP\n`;
+                            } else {
+                                message += `${protocol}: ${test.error || 'HTTP ' + test.http_code}\n`;
+                            }
+                        }
+                        message += '\nMake sure the API server is running and accessible.';
+                        alert(message);
+                    }
+                    
+                } catch (error) {
+                    alert('Test failed: ' + error.message);
+                } finally {
+                    testBtn.disabled = false;
+                    testBtn.textContent = 'Test Connection';
+                }
+            });
+        }
+    });
+</script>
+';
+
+// Include common footer
+include 'admin_footer.php';
+?>

@@ -4,10 +4,45 @@
  * Controls which features/sections are enabled on the public site
  */
 
+// Get writable path for settings
+function getSettingsPath() {
+    // Try primary location
+    $primaryPath = __DIR__ . '/site-config/data/site_settings.json';
+    $primaryDir = dirname($primaryPath);
+    
+    // Check if directory exists and is writable
+    if (is_dir($primaryDir) && is_writable($primaryDir)) {
+        return $primaryPath;
+    }
+    
+    // Try to create directory
+    if (!is_dir($primaryDir)) {
+        @mkdir($primaryDir, 0777, true);
+        if (is_dir($primaryDir) && is_writable($primaryDir)) {
+            return $primaryPath;
+        }
+    }
+    
+    // Try alternative data directory
+    $altDir = __DIR__ . '/data';
+    if (!is_dir($altDir)) {
+        @mkdir($altDir, 0777, true);
+    }
+    if (is_dir($altDir) && is_writable($altDir)) {
+        return $altDir . '/site_settings.json';
+    }
+    
+    // Fall back to temp directory
+    $tempDir = sys_get_temp_dir() . '/dcs_stats';
+    if (!is_dir($tempDir)) {
+        @mkdir($tempDir, 0777, true);
+    }
+    
+    return $tempDir . '/site_settings.json';
+}
+
 // Load settings from JSON file
 function loadSiteFeatures() {
-    $settingsFile = __DIR__ . '/site-config/data/site_settings.json';
-    
     // Default features (all enabled)
     $defaults = [
         // Navigation Items
@@ -67,11 +102,17 @@ function loadSiteFeatures() {
         'squadron_homepage_text' => 'Squadron'
     ];
     
+    // Get settings file path
+    $settingsFile = getSettingsPath();
+    
     // Load saved settings
     if (file_exists($settingsFile)) {
-        $saved = json_decode(file_get_contents($settingsFile), true);
-        if ($saved) {
-            return array_merge($defaults, $saved);
+        $content = @file_get_contents($settingsFile);
+        if ($content) {
+            $saved = json_decode($content, true);
+            if ($saved) {
+                return array_merge($defaults, $saved);
+            }
         }
     }
     
@@ -80,8 +121,25 @@ function loadSiteFeatures() {
 
 // Save settings
 function saveSiteFeatures($features) {
-    $settingsFile = __DIR__ . '/site-config/data/site_settings.json';
-    return file_put_contents($settingsFile, json_encode($features, JSON_PRETTY_PRINT)) !== false;
+    $settingsFile = getSettingsPath();
+    
+    // Ensure directory exists
+    $dir = dirname($settingsFile);
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0777, true);
+    }
+    
+    // Try to save
+    $result = @file_put_contents($settingsFile, json_encode($features, JSON_PRETTY_PRINT));
+    
+    // If failed, try to make writable and retry
+    if ($result === false) {
+        @chmod($dir, 0777);
+        @chmod($settingsFile, 0666);
+        $result = @file_put_contents($settingsFile, json_encode($features, JSON_PRETTY_PRINT));
+    }
+    
+    return $result !== false;
 }
 
 // Check if a feature is enabled

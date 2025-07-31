@@ -36,107 +36,83 @@ function formatDate($date, $format = null) {
 }
 
 /**
- * Get player data from JSON files
+ * Get player data from API
  */
 function getPlayers($search = null, $limit = null, $offset = 0) {
-    $dataDir = dirname(__DIR__) . '/data';
-    $playersFile = $dataDir . '/players.json';
+    require_once dirname(__DIR__) . '/api_client_enhanced.php';
     
-    if (!file_exists($playersFile)) {
-        return [];
-    }
-    
-    $players = [];
-    $handle = fopen($playersFile, "r");
-    if ($handle) {
-        $count = 0;
-        $matched = 0;
+    try {
+        $client = createEnhancedAPIClient();
         
-        while (($line = fgets($handle)) !== false) {
-            $player = json_decode($line, true);
-            if (!$player) continue;
-            
-            // Apply search filter
-            if ($search) {
-                $searchLower = strtolower($search);
-                $nameMatch = stripos($player['name'] ?? '', $searchLower) !== false;
-                $ucidMatch = stripos($player['ucid'] ?? '', $searchLower) !== false;
-                
-                if (!$nameMatch && !$ucidMatch) {
-                    continue;
-                }
+        // If searching, use the search endpoint
+        if ($search) {
+            $searchUrl = '/search_players.php?search=' . urlencode($search);
+            if ($limit) {
+                $searchUrl .= '&limit=' . $limit;
             }
-            
-            // Apply offset
-            if ($matched < $offset) {
-                $matched++;
-                continue;
+            $response = @file_get_contents(dirname(__DIR__) . $searchUrl);
+            if ($response) {
+                $data = json_decode($response, true);
+                return $data['results'] ?? [];
             }
-            
-            // Apply limit
-            if ($limit && $count >= $limit) {
-                break;
-            }
-            
-            $players[] = $player;
-            $count++;
-            $matched++;
         }
-        fclose($handle);
+        
+        // Otherwise get all players from topkills endpoint
+        $players = $client->request('/topkills', null, 'GET');
+        
+        if ($players && is_array($players)) {
+            // Apply offset and limit manually
+            if ($offset || $limit) {
+                return array_slice($players, $offset, $limit);
+            }
+            return $players;
+        }
+    } catch (Exception $e) {
+        // Return empty array on error
     }
     
-    return $players;
+    return [];
 }
 
 /**
  * Get player statistics
  */
 function getPlayerStats($ucid) {
+    require_once dirname(__DIR__) . '/api_client_enhanced.php';
+    
     $stats = [
         'ucid' => $ucid,
         'kills' => 0,
         'deaths' => 0,
         'flight_hours' => 0,
         'sorties' => 0,
-        'last_seen' => null
+        'last_seen' => null,
+        'kd_ratio' => 0
     ];
     
-    $dataDir = dirname(__DIR__) . '/data';
-    $missionStatsFile = $dataDir . '/missionstats.json';
-    
-    if (!file_exists($missionStatsFile)) {
-        return $stats;
-    }
-    
-    $handle = fopen($missionStatsFile, "r");
-    if ($handle) {
-        while (($line = fgets($handle)) !== false) {
-            $entry = json_decode($line, true);
-            if (!$entry || $entry['init_id'] !== $ucid) continue;
+    try {
+        $client = createEnhancedAPIClient();
+        
+        // Get player stats from API
+        $playerData = $client->request('/stats', ['ucid' => $ucid]);
+        
+        if ($playerData && is_array($playerData) && !empty($playerData)) {
+            $player = is_array($playerData[0]) ? $playerData[0] : $playerData;
             
-            switch ($entry['event'] ?? '') {
-                case 'S_EVENT_HIT':
-                    $stats['kills']++;
-                    break;
-                case 'S_EVENT_DEAD':
-                    $stats['deaths']++;
-                    break;
-                case 'S_EVENT_TAKEOFF':
-                    $stats['sorties']++;
-                    break;
-            }
+            $stats['kills'] = intval($player['kills'] ?? 0);
+            $stats['deaths'] = intval($player['deaths'] ?? 0);
+            $stats['sorties'] = intval($player['sorties'] ?? 0);
+            $stats['flight_hours'] = floatval($player['flight_hours'] ?? 0);
+            $stats['last_seen'] = $player['date'] ?? $player['last_seen'] ?? null;
             
-            if (!$stats['last_seen'] || $entry['time'] > $stats['last_seen']) {
-                $stats['last_seen'] = $entry['time'];
-            }
+            // Calculate K/D ratio
+            $stats['kd_ratio'] = $stats['deaths'] > 0 ? 
+                round($stats['kills'] / $stats['deaths'], 2) : 
+                $stats['kills'];
         }
-        fclose($handle);
+    } catch (Exception $e) {
+        // Return default stats on error
     }
-    
-    // Calculate K/D ratio
-    $stats['kd_ratio'] = $stats['deaths'] > 0 ? 
-        round($stats['kills'] / $stats['deaths'], 2) : 
-        $stats['kills'];
     
     return $stats;
 }

@@ -1,31 +1,35 @@
 <?php
 // Include site features configuration
 require_once __DIR__ . '/site_features.php';
+// Include path configuration if not already included
+if (!defined('BASE_PATH')) {
+    require_once __DIR__ . '/config_path.php';
+}
 ?>
 <nav class="nav-bar">
   <ul class="nav-menu">
     <?php if (isFeatureEnabled('nav_home')): ?>
-      <li><a class="nav-link" href="index.php">Home</a></li>
+      <li><a class="nav-link" href="<?php echo url('index.php'); ?>">Home</a></li>
     <?php endif; ?>
     
     <?php if (isFeatureEnabled('nav_pilot_credits') && isFeatureEnabled('credits_enabled')): ?>
-      <li><a class="nav-link" href="pilot_credits.php">Pilot Credits</a></li>
+      <li><a class="nav-link" href="<?php echo url('pilot_credits.php'); ?>">Pilot Credits</a></li>
     <?php endif; ?>
     
     <?php if (isFeatureEnabled('nav_leaderboard')): ?>
-      <li><a class="nav-link" href="leaderboard.php">Leaderboard</a></li>
+      <li><a class="nav-link" href="<?php echo url('leaderboard.php'); ?>">Leaderboard</a></li>
     <?php endif; ?>
     
     <?php if (isFeatureEnabled('nav_pilot_statistics')): ?>
-      <li><a class="nav-link" href="pilot_statistics.php">Pilot Statistics</a></li>
+      <li><a class="nav-link" href="<?php echo url('pilot_statistics.php'); ?>">Pilot Statistics</a></li>
     <?php endif; ?>
     
     <?php if (isFeatureEnabled('nav_squadrons') && isFeatureEnabled('squadrons_enabled')): ?>
-      <li><a class="nav-link" href="squadrons.php">Squadrons</a></li>
+      <li><a class="nav-link" href="<?php echo url('squadrons.php'); ?>">Squadrons</a></li>
     <?php endif; ?>
     
     <?php if (isFeatureEnabled('nav_servers')): ?>
-      <li><a class="nav-link" href="servers.php">Servers</a></li>
+      <li><a class="nav-link" href="<?php echo url('servers.php'); ?>">Servers</a></li>
     <?php endif; ?>
     
     <?php if (isFeatureEnabled('show_squadron_homepage') && !empty(getFeatureValue('squadron_homepage_url'))): ?>
@@ -40,7 +44,7 @@ require_once __DIR__ . '/site_features.php';
     // Check if user is logged in as admin
     if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']): 
     ?>
-      <li><a class="nav-link" href="site-config/">Site Config</a></li>
+      <li><a class="nav-link" href="<?php echo url('site-config/'); ?>">Site Config</a></li>
     <?php endif; ?>
   </ul>
 </nav>

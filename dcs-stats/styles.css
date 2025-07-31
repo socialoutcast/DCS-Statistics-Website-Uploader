@@ -111,6 +111,41 @@ body {
     gap: 20px;
 }
 
+.admin-link {
+    position: relative;
+}
+
+.admin-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 10px 15px;
+    border-radius: 25px;
+    border: 2px solid rgba(255, 152, 0, 0.6);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    color: #ff9800;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.admin-button:hover {
+    background: rgba(255, 152, 0, 0.2);
+    border-color: rgba(255, 152, 0, 0.8);
+    color: #ffb033;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.3);
+}
+
+.admin-icon {
+    width: 20px;
+    height: 20px;
+    color: currentColor;
+}
+
 .status-indicator {
     display: flex;
     align-items: center;
@@ -176,6 +211,14 @@ body {
         padding: 8px 12px;
     }
     
+    .admin-button {
+        padding: 8px 12px;
+    }
+    
+    .admin-button span {
+        display: none;
+    }
+    
     .status-text {
         display: none;
     }
@@ -198,6 +241,14 @@ body {
     .site-subtitle {
         font-size: 0.75rem;
         letter-spacing: 1px;
+    }
+    
+    .header-actions {
+        gap: 10px;
+    }
+    
+    .admin-button {
+        padding: 6px 10px;
     }
     
     .status-indicator {

@@ -54,28 +54,21 @@ if ($isBanned) {
 // Log view action
 logAdminActivity('PLAYER_VIEW', $_SESSION['admin_id'], 'player', $ucid);
 
-// Get player's recent activity from mission stats
+// Get player's recent activity from API
 $recentActivity = [];
-$dataDir = dirname(__DIR__) . '/data';
-$missionStatsFile = $dataDir . '/missionstats.json';
-
-if (file_exists($missionStatsFile)) {
-    $handle = fopen($missionStatsFile, "r");
-    if ($handle) {
-        $events = [];
-        while (($line = fgets($handle)) !== false) {
-            $entry = json_decode($line, true);
-            if (!$entry || $entry['init_id'] !== $ucid) continue;
-            $events[] = $entry;
-        }
-        fclose($handle);
-        
-        // Sort by time descending and take last 20
-        usort($events, function($a, $b) {
-            return strtotime($b['time']) - strtotime($a['time']);
-        });
-        $recentActivity = array_slice($events, 0, 20);
-    }
+try {
+    require_once dirname(__DIR__) . '/api_client_enhanced.php';
+    $client = createEnhancedAPIClient();
+    
+    // Get recent mission activity for player
+    $missionHistory = $client->request('/stats', ['player' => $player['name']]);
+    
+    // For now, we'll leave this empty as the API doesn't provide detailed event history
+    // This would need a new API endpoint to get player's recent events
+    $recentActivity = [];
+} catch (Exception $e) {
+    // Leave empty if API fails
+    $recentActivity = [];
 }
 
 // Page title

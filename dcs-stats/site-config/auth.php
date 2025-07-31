@@ -26,13 +26,119 @@ session_start();
  * Initialize admin data files if they don't exist
  */
 function initializeAdminData() {
+    // Show setup progress if first time
+    $isFirstTime = !is_dir(ADMIN_DATA_DIR);
+    
+    if ($isFirstTime && php_sapi_name() !== 'cli') {
+        // Send setup page to browser
+        ob_end_clean(); // Clear any previous output
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Setting Up Admin Panel</title>
+            <style>
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                    background: #1a1a1a;
+                    color: #fff;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                }
+                .setup-container {
+                    background: #2d2d2d;
+                    padding: 40px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+                    text-align: center;
+                    max-width: 500px;
+                }
+                h1 {
+                    color: #4CAF50;
+                    margin-bottom: 20px;
+                }
+                .spinner {
+                    border: 3px solid #f3f3f3;
+                    border-top: 3px solid #4CAF50;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    animation: spin 1s linear infinite;
+                    margin: 20px auto;
+                }
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                .status {
+                    margin: 15px 0;
+                    padding: 10px;
+                    background: #1a1a1a;
+                    border-radius: 5px;
+                }
+                .success { color: #4CAF50; }
+                .error { color: #f44336; }
+            </style>
+            <meta http-equiv="refresh" content="3">
+        </head>
+        <body>
+            <div class="setup-container">
+                <h1>Setting Up Your Environment</h1>
+                <div class="spinner"></div>
+                <p>Please wait while we configure the admin panel...</p>
+                <div class="status">Creating necessary directories and files...</div>
+            </div>
+        </body>
+        </html>
+        <?php
+        flush();
+        // Continue with setup but exit after showing the page
+        sleep(1); // Give a moment for the page to display
+    }
+    
     // Create data directory if it doesn't exist
     if (!is_dir(ADMIN_DATA_DIR)) {
-        mkdir(ADMIN_DATA_DIR, 0700, true);
+        $created = @mkdir(ADMIN_DATA_DIR, 0777, true);
+        if (!$created) {
+            // Try alternative approach - create parent directories first
+            $parent = dirname(ADMIN_DATA_DIR);
+            if (!is_dir($parent)) {
+                @mkdir($parent, 0777, true);
+            }
+            @mkdir(ADMIN_DATA_DIR, 0777, true);
+        }
+        // Try to make it writable
+        @chmod(ADMIN_DATA_DIR, 0777);
+    }
+    
+    // If directory still doesn't exist or isn't writable, try alternative location
+    if (!is_dir(ADMIN_DATA_DIR) || !is_writable(ADMIN_DATA_DIR)) {
+        // Try to use system temp directory as fallback
+        $tempDir = sys_get_temp_dir() . '/dcs_admin_data';
+        if (!is_dir($tempDir)) {
+            @mkdir($tempDir, 0777, true);
+        }
+        
+        // If temp directory works, update the constant
+        if (is_dir($tempDir) && is_writable($tempDir)) {
+            // Override the data directory path
+            if (!defined('ADMIN_DATA_DIR_OVERRIDE')) {
+                define('ADMIN_DATA_DIR_OVERRIDE', $tempDir . '/');
+                // Update file paths
+                define('ADMIN_USERS_FILE_OVERRIDE', ADMIN_DATA_DIR_OVERRIDE . 'users.json');
+                define('ADMIN_LOGS_FILE_OVERRIDE', ADMIN_DATA_DIR_OVERRIDE . 'logs.json');
+                define('ADMIN_BANS_FILE_OVERRIDE', ADMIN_DATA_DIR_OVERRIDE . 'bans.json');
+                define('ADMIN_SESSIONS_FILE_OVERRIDE', ADMIN_DATA_DIR_OVERRIDE . 'sessions.json');
+            }
+        }
     }
     
     // Initialize users file with default admin
-    if (!file_exists(ADMIN_USERS_FILE)) {
+    $usersFile = defined('ADMIN_USERS_FILE_OVERRIDE') ? ADMIN_USERS_FILE_OVERRIDE : ADMIN_USERS_FILE;
+    if (!file_exists($usersFile)) {
         $defaultAdmin = [
             'id' => 1,
             'username' => DEFAULT_ADMIN_USERNAME,
@@ -46,34 +152,43 @@ function initializeAdminData() {
             'locked_until' => null
         ];
         
-        file_put_contents(ADMIN_USERS_FILE, json_encode([$defaultAdmin], JSON_PRETTY_PRINT));
-        chmod(ADMIN_USERS_FILE, 0600);
+        @file_put_contents($usersFile, json_encode([$defaultAdmin], JSON_PRETTY_PRINT));
+        @chmod($usersFile, 0666);
     }
     
     // Initialize other data files
-    $dataFiles = [
-        ADMIN_LOGS_FILE => [],
-        ADMIN_BANS_FILE => [],
-        ADMIN_SESSIONS_FILE => []
-    ];
+    $dataTypes = ['logs', 'bans', 'sessions'];
     
-    foreach ($dataFiles as $file => $defaultContent) {
+    foreach ($dataTypes as $type) {
+        $file = getDataFilePath($type);
         if (!file_exists($file)) {
-            file_put_contents($file, json_encode($defaultContent, JSON_PRETTY_PRINT));
-            chmod($file, 0600);
+            @file_put_contents($file, json_encode([], JSON_PRETTY_PRINT));
+            @chmod($file, 0666);
         }
     }
+}
+
+/**
+ * Get the correct file path (with override support)
+ */
+function getDataFilePath($type) {
+    $overrideConstant = strtoupper('ADMIN_' . $type . '_FILE_OVERRIDE');
+    if (defined($overrideConstant)) {
+        return constant($overrideConstant);
+    }
+    return constant('ADMIN_' . strtoupper($type) . '_FILE');
 }
 
 /**
  * Get all admin users
  */
 function getAdminUsers() {
-    if (!file_exists(ADMIN_USERS_FILE)) {
+    $usersFile = getDataFilePath('users');
+    if (!file_exists($usersFile)) {
         initializeAdminData();
     }
     
-    $users = json_decode(file_get_contents(ADMIN_USERS_FILE), true);
+    $users = json_decode(file_get_contents($usersFile), true);
     return $users ?: [];
 }
 
@@ -81,7 +196,15 @@ function getAdminUsers() {
  * Save admin users
  */
 function saveAdminUsers($users) {
-    file_put_contents(ADMIN_USERS_FILE, json_encode($users, JSON_PRETTY_PRINT));
+    $usersFile = getDataFilePath('users');
+    $result = @file_put_contents($usersFile, json_encode($users, JSON_PRETTY_PRINT));
+    if ($result === false) {
+        // Try to make the file writable
+        @chmod($usersFile, 0666);
+        // Try again
+        $result = @file_put_contents($usersFile, json_encode($users, JSON_PRETTY_PRINT));
+    }
+    return $result !== false;
 }
 
 /**
@@ -146,7 +269,8 @@ function logAdminActivity($action, $adminId = null, $targetType = null, $targetI
         return;
     }
     
-    $logs = json_decode(file_get_contents(ADMIN_LOGS_FILE), true) ?: [];
+    $logsFile = getDataFilePath('logs');
+    $logs = json_decode(@file_get_contents($logsFile), true) ?: [];
     
     $log = [
         'id' => count($logs) + 1,
@@ -168,7 +292,7 @@ function logAdminActivity($action, $adminId = null, $targetType = null, $targetI
         return $log['created_at'] > $cutoffDate;
     });
     
-    file_put_contents(ADMIN_LOGS_FILE, json_encode(array_values($logs), JSON_PRETTY_PRINT));
+    @file_put_contents($logsFile, json_encode(array_values($logs), JSON_PRETTY_PRINT));
 }
 
 /**
@@ -236,7 +360,8 @@ function attemptLogin($username, $password, $remember = false) {
         $tokenHash = hash('sha256', $token);
         
         // Save session to file
-        $sessions = json_decode(file_get_contents(ADMIN_SESSIONS_FILE), true) ?: [];
+        $sessionsFile = getDataFilePath('sessions');
+        $sessions = json_decode(@file_get_contents($sessionsFile), true) ?: [];
         $sessions[] = [
             'id' => count($sessions) + 1,
             'admin_id' => $user['id'],
@@ -246,7 +371,8 @@ function attemptLogin($username, $password, $remember = false) {
             'expires_at' => date(DATE_FORMAT, time() + ADMIN_COOKIE_LIFETIME),
             'created_at' => date(DATE_FORMAT)
         ];
-        file_put_contents(ADMIN_SESSIONS_FILE, json_encode($sessions, JSON_PRETTY_PRINT));
+        $sessionsFile = getDataFilePath('sessions');
+        @file_put_contents($sessionsFile, json_encode($sessions, JSON_PRETTY_PRINT));
         
         // Set cookie
         setcookie(
@@ -287,7 +413,8 @@ function isAdminLoggedIn() {
         $tokenHash = hash('sha256', $token);
         
         // Find valid session
-        $sessions = json_decode(file_get_contents(ADMIN_SESSIONS_FILE), true) ?: [];
+        $sessionsFile = getDataFilePath('sessions');
+        $sessions = json_decode(@file_get_contents($sessionsFile), true) ?: [];
         foreach ($sessions as $session) {
             if ($session['admin_id'] == $userId && 
                 $session['token_hash'] === $tokenHash &&
@@ -344,11 +471,13 @@ function logout() {
         list($userId, $token) = explode(':', $_COOKIE[ADMIN_COOKIE_NAME], 2);
         $tokenHash = hash('sha256', $token);
         
-        $sessions = json_decode(file_get_contents(ADMIN_SESSIONS_FILE), true) ?: [];
+        $sessionsFile = getDataFilePath('sessions');
+        $sessions = json_decode(@file_get_contents($sessionsFile), true) ?: [];
         $sessions = array_filter($sessions, function($session) use ($userId, $tokenHash) {
             return !($session['admin_id'] == $userId && $session['token_hash'] === $tokenHash);
         });
-        file_put_contents(ADMIN_SESSIONS_FILE, json_encode(array_values($sessions), JSON_PRETTY_PRINT));
+        $sessionsFile = getDataFilePath('sessions');
+        @file_put_contents($sessionsFile, json_encode(array_values($sessions), JSON_PRETTY_PRINT));
     }
 }
 
