@@ -124,19 +124,22 @@ class DCSStatsAPI {
             };
 
             // For POST requests, send data as JSON in body
-            if (method === 'POST' && (options.body instanceof FormData || options.data)) {
-                const data = options.data || {};
+            if (method === 'POST' && (options.body || options.data)) {
+                const data = options.body || options.data || {};
                 
                 // If body is FormData, convert to object
-                if (options.body instanceof FormData) {
-                    for (let [key, value] of options.body.entries()) {
-                        data[key] = value;
+                if (data instanceof FormData) {
+                    const formObject = {};
+                    for (let [key, value] of data.entries()) {
+                        formObject[key] = value;
                     }
+                    fetchOptions.body = JSON.stringify(formObject);
+                } else {
+                    fetchOptions.body = JSON.stringify(data);
                 }
                 
                 fetchOptions.method = 'POST';
                 fetchOptions.headers['Content-Type'] = 'application/json';
-                fetchOptions.body = JSON.stringify(data);
             }
 
             const response = await fetch(proxyUrl, fetchOptions);
@@ -172,25 +175,77 @@ class DCSStatsAPI {
         }
 
         // API only - no fallback
-        const data = await this.makeAPICall('/topkills');
+        const topKillsData = await this.makeAPICall('/topkills');
         
-        // Transform API data to match expected format
+        // For each player in top 10, fetch their detailed stats
+        const detailedPlayers = await Promise.all(
+            topKillsData.slice(0, 10).map(async (player, index) => {
+                try {
+                    // First get the user to find their last seen date
+                    const userData = await this.makeAPICall('/getuser', {
+                        method: 'POST',
+                        body: { nick: player.fullNickname }
+                    });
+                    
+                    
+                    if (userData && userData.length > 0 && userData[0].date) {
+                        // Now get their detailed stats
+                        const stats = await this.makeAPICall('/stats', {
+                            method: 'POST',
+                            body: { 
+                                nick: player.fullNickname,
+                                date: userData[0].date
+                            }
+                        });
+                        
+                        
+                        // Find most used aircraft from killsByModule
+                        let mostUsedAircraft = 'N/A';
+                        if (stats.killsByModule && stats.killsByModule.length > 0) {
+                            // Sort by kills to find most used
+                            const sorted = [...stats.killsByModule].sort((a, b) => b.kills - a.kills);
+                            mostUsedAircraft = sorted[0].module || 'N/A';
+                        }
+                        
+                        return {
+                            rank: index + 1,
+                            name: player.fullNickname,
+                            kills: player.AAkills || 0,
+                            deaths: player.deaths || 0,
+                            kd_ratio: player.AAKDR || 0,
+                            sorties: stats.takeoffs || 0, // Use takeoffs as sorties
+                            takeoffs: stats.takeoffs || 0,
+                            landings: stats.landings || 0,
+                            crashes: stats.crashes || 0,
+                            ejections: stats.ejections || 0,
+                            most_used_aircraft: mostUsedAircraft
+                        };
+                    }
+                } catch (e) {
+                    console.error(`Failed to get detailed stats for ${player.fullNickname}:`, e);
+                }
+                
+                // Fallback to basic data if detailed stats fail
+                return {
+                    rank: index + 1,
+                    name: player.fullNickname,
+                    kills: player.AAkills || 0,
+                    deaths: player.deaths || 0,
+                    kd_ratio: player.AAKDR || 0,
+                    sorties: 0,
+                    takeoffs: 0,
+                    landings: 0,
+                    crashes: 0,
+                    ejections: 0,
+                    most_used_aircraft: 'N/A'
+                };
+            })
+        );
+        
         return {
-            data: data.map((player, index) => ({
-                rank: index + 1,
-                name: player.fullNickname || player.name,
-                kills: player.AAkills || 0,
-                deaths: player.deaths || 0,
-                kd_ratio: player.AAKDR || 0,
-                sorties: 0,
-                takeoffs: 0,
-                landings: 0,
-                crashes: 0,
-                ejections: 0,
-                most_used_aircraft: 'N/A'
-            })),
+            data: detailedPlayers,
             source: 'api-client',
-            count: data.length,
+            count: detailedPlayers.length,
             generated: new Date().toISOString()
         };
     }
@@ -382,7 +437,6 @@ class DCSStatsAPI {
             throw new Error('API is not enabled');
         }
 
-        console.log(`Getting stats for player: ${playerName}`);
         
         // Get user data first using proxy
         const users = await this.makeAPICall('/getuser', {
@@ -390,7 +444,6 @@ class DCSStatsAPI {
             data: { nick: playerName }
         });
         
-        console.log('Getuser response:', users);
         
         if (users && users.length > 0) {
             const user = users[0];
@@ -407,7 +460,6 @@ class DCSStatsAPI {
                 }
             });
             
-            console.log('Stats response:', stats);
             
             // Check if stats is empty object
             if (!stats || Object.keys(stats).length === 0) {

@@ -29,22 +29,6 @@ if (!isset($currentAdmin)) {
                     Dashboard
                 </a>
             </li>
-            <?php if (hasPermission('manage_players')): ?>
-            <li>
-                <a href="players.php" <?= basename($_SERVER['PHP_SELF']) === 'players.php' || basename($_SERVER['PHP_SELF']) === 'player_details.php' ? 'class="active"' : '' ?>>
-                    <span class="nav-icon">👥</span>
-                    Players
-                </a>
-            </li>
-            <?php endif; ?>
-            <?php if (hasPermission('manage_servers')): ?>
-            <li>
-                <a href="servers.php" <?= basename($_SERVER['PHP_SELF']) === 'servers.php' ? 'class="active"' : '' ?>>
-                    <span class="nav-icon">🖥️</span>
-                    Servers
-                </a>
-            </li>
-            <?php endif; ?>
             <?php if (hasPermission('view_logs')): ?>
             <li>
                 <a href="logs.php" <?= basename($_SERVER['PHP_SELF']) === 'logs.php' ? 'class="active"' : '' ?>>
@@ -62,7 +46,7 @@ if (!isset($currentAdmin)) {
             </li>
             <?php endif; ?>
             <?php if (hasPermission('change_settings')): ?>
-            <?php $isSettingsPage = in_array(basename($_SERVER['PHP_SELF']), ['settings.php', 'api_settings.php', 'themes.php', 'discord_settings.php', 'squadron_settings.php', 'admins.php']); ?>
+            <?php $isSettingsPage = in_array(basename($_SERVER['PHP_SELF']), ['settings.php', 'api_settings.php', 'themes.php', 'discord_settings.php', 'squadron_settings.php', 'admins.php', 'permissions.php']); ?>
             <li class="nav-dropdown <?= $isSettingsPage ? 'open' : '' ?>">
                 <a href="#" class="nav-dropdown-toggle <?= $isSettingsPage ? 'active' : '' ?>">
                     <span class="nav-icon">⚙️</span>
@@ -78,7 +62,15 @@ if (!isset($currentAdmin)) {
                         </a>
                     </li>
                     <?php endif; ?>
-                    <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): // Only Air Boss can access API Settings ?>
+                    <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): // Only Air Boss can manage permissions ?>
+                    <li>
+                        <a href="permissions.php" <?= basename($_SERVER['PHP_SELF']) === 'permissions.php' ? 'class="active"' : '' ?>>
+                            <span class="nav-icon">🛡️</span>
+                            LSO Permissions
+                        </a>
+                    </li>
+                    <?php endif; ?>
+                    <?php if (hasPermission('manage_api') || $currentAdmin['role'] === ROLE_AIR_BOSS): ?>
                     <li>
                         <a href="api_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'api_settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🔌</span>
@@ -86,12 +78,14 @@ if (!isset($currentAdmin)) {
                         </a>
                     </li>
                     <?php endif; ?>
+                    <?php if (hasPermission('manage_features') || hasPermission('change_settings')): ?>
                     <li>
                         <a href="settings.php" <?= basename($_SERVER['PHP_SELF']) === 'settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🎛️</span>
                             Site Features
                         </a>
                     </li>
+                    <?php endif; ?>
                     <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): // Only Air Boss can access Navigation Settings ?>
                     <li>
                         <a href="discord_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'discord_settings.php' ? 'class="active"' : '' ?>>
@@ -106,12 +100,14 @@ if (!isset($currentAdmin)) {
                         </a>
                     </li>
                     <?php endif; ?>
+                    <?php if (hasPermission('manage_themes') || hasPermission('change_settings')): ?>
                     <li>
                         <a href="themes.php" <?= basename($_SERVER['PHP_SELF']) === 'themes.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🎨</span>
                             Themes
                         </a>
                     </li>
+                    <?php endif; ?>
                 </ul>
             </li>
             <?php endif; ?>

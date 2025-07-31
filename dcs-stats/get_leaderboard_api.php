@@ -59,8 +59,6 @@ try {
     ]);
     
 } catch (Exception $e) {
-    // Log error but don't expose it
-    error_log('API Error in get_leaderboard_api.php: ' . $e->getMessage());
     
     // Return error response
     echo json_encode([

@@ -136,10 +136,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Page title
 $pageTitle = 'API Settings';
-
-// Additional styles
-$additionalStyles = '
-<style>
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $pageTitle ?> - Carrier Air Wing Command</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
         .api-form {
             max-width: 800px;
             margin: 0 auto;
@@ -239,12 +244,23 @@ $additionalStyles = '
             gap: 10px;
             margin-top: 30px;
         }
-</style>
-';
-
-// Include common header
-include 'admin_header.php';
-?>
+        
+        /* Critical inline CSS for layout */
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow-x: hidden; }
+        .admin-wrapper { display: flex; min-height: 100vh; width: 100%; overflow-x: hidden; }
+        .admin-sidebar { width: 250px; flex-shrink: 0; background: #2a2a2a; }
+        .admin-main { flex: 1; min-width: 0; overflow-x: hidden; }
+        .admin-content { padding: 30px; max-width: 100%; overflow-x: hidden; }
+        .card { max-width: 100%; overflow-x: auto; }
+    </style>
+</head>
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <?php include __DIR__ . '/nav.php'; ?>
+        
+        <main class="admin-main">
+            <div class="admin-content">
                 <?php if ($message): ?>
                     <div class="alert alert-<?= $messageType ?>">
                         <?= e($message) ?>
@@ -359,49 +375,46 @@ include 'admin_header.php';
                     </div>
                 </div>
 
-<?php
-// Additional scripts
-$additionalScripts = '
 <script>
     // Enhanced test functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        const testBtn = document.querySelector('button[value="test"]');
-        const apiHostInput = document.getElementById('api_host');
+    document.addEventListener(\'DOMContentLoaded\', function() {
+        const testBtn = document.querySelector(\'button[value="test"]\');
+        const apiHostInput = document.getElementById(\'api_host\');
         
         if (testBtn) {
-            testBtn.addEventListener('click', async function(e) {
+            testBtn.addEventListener(\'click\', async function(e) {
                 e.preventDefault();
                 
                 const apiHost = apiHostInput.value.trim();
                 if (!apiHost) {
-                    alert('Please enter an API host first');
+                    alert(\'Please enter an API host first\');
                     return;
                 }
                 
                 // Show loading state
                 testBtn.disabled = true;
-                testBtn.textContent = 'Testing...';
+                testBtn.textContent = \'Testing...\';
                 
                 try {
                     // Use our test endpoint
-                    const response = await fetch('<?php echo url("test_api_connection.php"); ?>', {
-                        method: 'POST',
+                    const response = await fetch(\'' . url("test_api_connection.php") . '\', {
+                        method: \'POST\',
                         headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
+                            \'Content-Type\': \'application/x-www-form-urlencoded\'
                         },
                         body: new URLSearchParams({
                             api_host: apiHost,
-                            endpoint: '/stats'
+                            endpoint: \'/stats\'
                         })
                     });
                     
                     const result = await response.json();
                     
                     // Display results
-                    let message = '';
+                    let message = \'\';
                     
                     if (result.recommended_protocol) {
-                        if (result.recommendation_reason && result.recommendation_reason.includes('SSL errors')) {
+                        if (result.recommendation_reason && result.recommendation_reason.includes(\'SSL errors\')) {
                             message = `⚠️ SSL Error Detected!\n\n`;
                             message += `The API server is using HTTP, not HTTPS.\n`;
                             message += `Detected: ${result.recommended_protocol}://${apiHost}\n\n`;
@@ -409,7 +422,7 @@ $additionalScripts = '
                             
                             if (confirm(message)) {
                                 // Submit the form to save with auto-detection
-                                const form = testBtn.closest('form');
+                                const form = testBtn.closest(\'form\');
                                 if (form) {
                                     // The server-side test will handle the SSL error and auto-configure
                                     form.submit();
@@ -423,31 +436,31 @@ $additionalScripts = '
                             alert(message);
                         }
                     } else {
-                        message = '❌ Could not connect to API\n\n';
-                        message += 'Details:\n';
+                        message = \'❌ Could not connect to API\\n\\n\';
+                        message += \'Details:\\n\';
                         for (const [protocol, test] of Object.entries(result.results)) {
                             if (test.ssl_error) {
-                                message += `${protocol}: SSL Error - Server is using HTTP\n`;
+                                message += `${protocol}: SSL Error - Server is using HTTP\\n`;
                             } else {
-                                message += `${protocol}: ${test.error || 'HTTP ' + test.http_code}\n`;
+                                message += `${protocol}: ${test.error || \'HTTP \' + test.http_code}\\n`;
                             }
                         }
-                        message += '\nMake sure the API server is running and accessible.';
+                        message += \'\\nMake sure the API server is running and accessible.\';
                         alert(message);
                     }
                     
                 } catch (error) {
-                    alert('Test failed: ' + error.message);
+                    alert(\'Test failed: \' + error.message);
                 } finally {
                     testBtn.disabled = false;
-                    testBtn.textContent = 'Test Connection';
+                    testBtn.textContent = \'Test Connection\';
                 }
             });
         }
     });
 </script>
-';
-
-// Include common footer
-include 'admin_footer.php';
-?>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

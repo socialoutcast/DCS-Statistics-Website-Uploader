@@ -91,8 +91,6 @@ try {
     }
     
 } catch (Exception $e) {
-    // General error
-    error_log('Error in search_players_api.php: ' . $e->getMessage());
     
     echo json_encode([
         'error' => 'Search service error',

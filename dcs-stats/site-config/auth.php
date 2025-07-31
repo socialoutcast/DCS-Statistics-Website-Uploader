@@ -490,8 +490,34 @@ function hasPermission($permission) {
     }
     
     $role = $_SESSION['admin_role'] ?? 0;
-    $permissions = ROLE_PERMISSIONS[$role] ?? [];
     
+    // Air Boss has all permissions
+    if ($role === ROLE_AIR_BOSS) {
+        return true;
+    }
+    
+    // For LSO role, check custom permissions if they exist
+    if ($role === ROLE_LSO) {
+        // Load custom LSO permissions
+        $customPermFile = __DIR__ . '/data/lso_permissions.json';
+        if (!file_exists($customPermFile)) {
+            // Try alternative locations
+            $customPermFile = __DIR__ . '/../lso_permissions.json';
+            if (!file_exists($customPermFile)) {
+                $customPermFile = sys_get_temp_dir() . '/dcs_stats/lso_permissions.json';
+            }
+        }
+        
+        if (file_exists($customPermFile)) {
+            $customPerms = json_decode(file_get_contents($customPermFile), true);
+            if ($customPerms && isset($customPerms[$permission])) {
+                return $customPerms[$permission]['enabled'] ?? false;
+            }
+        }
+    }
+    
+    // Fall back to default role permissions
+    $permissions = ROLE_PERMISSIONS[$role] ?? [];
     return in_array($permission, $permissions);
 }
 

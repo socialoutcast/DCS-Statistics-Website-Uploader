@@ -7,6 +7,73 @@ include "header.php";
 require_once __DIR__ . '/site_features.php';
 include "nav.php"; ?>
 
+<style>
+  /* Professional Leaderboard Styling */
+  #leaderboardTable {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+  }
+  
+  #leaderboardTable tbody tr {
+    background: rgba(0, 0, 0, 0.3);
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+  }
+  
+  #leaderboardTable tbody tr:hover {
+    background: rgba(76, 175, 80, 0.05);
+    border-left-color: #4CAF50;
+    transform: translateX(3px);
+  }
+  
+  .player-name a {
+    display: inline-block;
+    color: #e0e0e0;
+    text-decoration: none;
+    transition: color 0.2s ease;
+    font-weight: 500;
+  }
+  
+  .player-name a:hover {
+    color: #4CAF50;
+  }
+  
+  /* Rank styling */
+  #leaderboardTable tbody tr td:first-child {
+    font-weight: 600;
+    color: #4CAF50;
+  }
+  
+  /* Top 3 trophy boxes professional styling */
+  .trophy-box {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    padding: 20px;
+    text-align: center;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+  
+  .trophy-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+    border-color: #4CAF50;
+  }
+  
+  .trophy {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 10px;
+  }
+  
+  .trophy-box strong {
+    color: #4CAF50;
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+</style>
+
 <main class="container">
   <div class="dashboard-header">
     <h1>Leaderboard</h1>
@@ -56,9 +123,16 @@ function renderTable() {
   tbody.innerHTML = "";
   top10Data.forEach(player => {
     const row = document.createElement("tr");
+    row.style.cursor = "pointer";
+    row.style.transition = "background-color 0.2s ease";
+    
     let cells = `
       <td>${escapeHtml(String(player.rank))}</td>
-      <td>${escapeHtml(player.name || '')}</td>`;
+      <td class="player-name">
+        <a href="pilot_statistics.php?search=${encodeURIComponent(player.name || '')}" style="color: inherit; text-decoration: none;">
+          ${escapeHtml(player.name || '')}
+        </a>
+      </td>`;
     
     <?php if (isFeatureEnabled('leaderboard_kills')): ?>
     cells += `<td>${escapeHtml(String(player.kills || 0))}</td>`;
@@ -79,6 +153,20 @@ function renderTable() {
     <?php endif; ?>
     
     row.innerHTML = cells;
+    
+    // Add hover effect
+    row.addEventListener('mouseenter', function() {
+      this.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+    });
+    row.addEventListener('mouseleave', function() {
+      this.style.backgroundColor = '';
+    });
+    
+    // Add click handler for the entire row
+    row.addEventListener('click', function() {
+      window.location.href = `pilot_statistics.php?search=${encodeURIComponent(player.name || '')}`;
+    });
+    
     tbody.appendChild(row);
   });
 }

@@ -77,15 +77,6 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
         </div>
       </div>
       <div class="header-actions">
-        <div class="admin-link">
-          <a href="<?php echo url('site-config/'); ?>" class="admin-button">
-            <svg class="admin-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10 12C11.6569 12 13 10.6569 13 9C13 7.34315 11.6569 6 10 6C8.34315 6 7 7.34315 7 9C7 10.6569 8.34315 12 10 12Z" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M17.5 9.5C17.5 9.33 17.5 9.17 17.49 9L18.87 7.91C19 7.81 19.04 7.62 18.95 7.46L17.65 5.04C17.56 4.88 17.37 4.82 17.21 4.88L15.58 5.53C15.23 5.28 14.85 5.08 14.44 4.93L14.17 3.21C14.14 3.04 13.99 2.92 13.82 2.92H11.22C11.05 2.92 10.9 3.04 10.87 3.21L10.6 4.93C10.19 5.08 9.81 5.28 9.46 5.53L7.83 4.88C7.67 4.82 7.48 4.88 7.39 5.04L6.09 7.46C6 7.62 6.04 7.81 6.17 7.91L7.55 9C7.54 9.17 7.54 9.33 7.54 9.5C7.54 9.67 7.54 9.83 7.55 10L6.17 11.09C6.04 11.19 6 11.38 6.09 11.54L7.39 13.96C7.48 14.12 7.67 14.18 7.83 14.12L9.46 13.47C9.81 13.72 10.19 13.92 10.6 14.07L10.87 15.79C10.9 15.96 11.05 16.08 11.22 16.08H13.82C13.99 16.08 14.14 15.96 14.17 15.79L14.44 14.07C14.85 13.92 15.23 13.72 15.58 13.47L17.21 14.12C17.37 14.18 17.56 14.12 17.65 13.96L18.95 11.54C19.04 11.38 19 11.19 18.87 11.09L17.49 10C17.5 9.83 17.5 9.67 17.5 9.5Z" stroke="currentColor" stroke-width="1.5"/>
-            </svg>
-            <span>Admin Panel</span>
-          </a>
-        </div>
         <div class="status-indicator">
           <span class="status-dot"></span>
           <span class="status-text">Live Data</span>

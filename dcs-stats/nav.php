@@ -5,40 +5,115 @@ require_once __DIR__ . '/site_features.php';
 if (!defined('BASE_PATH')) {
     require_once __DIR__ . '/config_path.php';
 }
+
+// Get writable path for menu configuration (same logic as in themes.php)
+function getMenuConfigPath() {
+    // Try primary location with data directory
+    $primaryPath = __DIR__ . '/site-config/data/menu_config.json';
+    $primaryDir = dirname($primaryPath);
+    
+    if (is_dir($primaryDir) && is_writable($primaryDir)) {
+        return $primaryPath;
+    }
+    
+    if (!is_dir($primaryDir)) {
+        @mkdir($primaryDir, 0777, true);
+        @chmod($primaryDir, 0777);
+        if (is_dir($primaryDir) && is_writable($primaryDir)) {
+            return $primaryPath;
+        }
+    }
+    
+    // Try alternative location
+    $altPath = __DIR__ . '/menu_config.json';
+    $altDir = dirname($altPath);
+    if (is_writable($altDir)) {
+        return $altPath;
+    }
+    
+    // Fall back to temp directory
+    $tempDir = sys_get_temp_dir() . '/dcs_stats';
+    if (!is_dir($tempDir)) {
+        @mkdir($tempDir, 0777, true);
+    }
+    
+    return $tempDir . '/menu_config.json';
+}
+
+// Load menu configuration
+$menuConfigFile = getMenuConfigPath();
+$defaultMenuItems = [
+    ['name' => 'Home', 'url' => 'index.php', 'enabled' => true],
+    ['name' => 'Leaderboard', 'url' => 'leaderboard.php', 'enabled' => true],
+    ['name' => 'Pilot Statistics', 'url' => 'pilot_statistics.php', 'enabled' => true],
+    ['name' => 'Pilot Credits', 'url' => 'pilot_credits.php', 'enabled' => true],
+    ['name' => 'Squadrons', 'url' => 'squadrons.php', 'enabled' => true],
+    ['name' => 'Servers', 'url' => 'servers.php', 'enabled' => true]
+];
+
+$menuItems = $defaultMenuItems;
+if (file_exists($menuConfigFile)) {
+    $savedMenu = json_decode(file_get_contents($menuConfigFile), true);
+    if ($savedMenu && is_array($savedMenu)) {
+        $menuItems = $savedMenu;
+    }
+}
+// Check if menu config exists, if not check for Discord/Squadron links to add
+$hasDiscordInMenu = false;
+$hasSquadronInMenu = false;
+foreach ($menuItems as $item) {
+    if (($item['type'] ?? '') === 'discord') $hasDiscordInMenu = true;
+    if (($item['type'] ?? '') === 'squadron_homepage') $hasSquadronInMenu = true;
+}
+
+// Add Discord if enabled but not in menu
+if (!$hasDiscordInMenu && isFeatureEnabled('show_discord_link')) {
+    $menuItems[] = [
+        'name' => 'Discord',
+        'url' => getFeatureValue('discord_link_url', 'https://discord.gg/DNENf6pUNX'),
+        'enabled' => true,
+        'type' => 'discord'
+    ];
+}
+
+// Add Squadron Homepage if enabled but not in menu
+if (!$hasSquadronInMenu && isFeatureEnabled('show_squadron_homepage') && !empty(getFeatureValue('squadron_homepage_url'))) {
+    $menuItems[] = [
+        'name' => getFeatureValue('squadron_homepage_text', 'Squadron'),
+        'url' => getFeatureValue('squadron_homepage_url'),
+        'enabled' => true,
+        'type' => 'squadron_homepage'
+    ];
+}
 ?>
 <nav class="nav-bar">
   <ul class="nav-menu">
-    <?php if (isFeatureEnabled('nav_home')): ?>
-      <li><a class="nav-link" href="<?php echo url('index.php'); ?>">Home</a></li>
-    <?php endif; ?>
-    
-    <?php if (isFeatureEnabled('nav_pilot_credits') && isFeatureEnabled('credits_enabled')): ?>
-      <li><a class="nav-link" href="<?php echo url('pilot_credits.php'); ?>">Pilot Credits</a></li>
-    <?php endif; ?>
-    
-    <?php if (isFeatureEnabled('nav_leaderboard')): ?>
-      <li><a class="nav-link" href="<?php echo url('leaderboard.php'); ?>">Leaderboard</a></li>
-    <?php endif; ?>
-    
-    <?php if (isFeatureEnabled('nav_pilot_statistics')): ?>
-      <li><a class="nav-link" href="<?php echo url('pilot_statistics.php'); ?>">Pilot Statistics</a></li>
-    <?php endif; ?>
-    
-    <?php if (isFeatureEnabled('nav_squadrons') && isFeatureEnabled('squadrons_enabled')): ?>
-      <li><a class="nav-link" href="<?php echo url('squadrons.php'); ?>">Squadrons</a></li>
-    <?php endif; ?>
-    
-    <?php if (isFeatureEnabled('nav_servers')): ?>
-      <li><a class="nav-link" href="<?php echo url('servers.php'); ?>">Servers</a></li>
-    <?php endif; ?>
-    
-    <?php if (isFeatureEnabled('show_squadron_homepage') && !empty(getFeatureValue('squadron_homepage_url'))): ?>
-      <li><a class="nav-link" href="<?= htmlspecialchars(getFeatureValue('squadron_homepage_url')) ?>"><?= htmlspecialchars(getFeatureValue('squadron_homepage_text', 'Squadron')) ?></a></li>
-    <?php endif; ?>
-    
-    <?php if (isFeatureEnabled('show_discord_link')): ?>
-      <li><a class="nav-link" href="<?= htmlspecialchars(getFeatureValue('discord_link_url', 'https://discord.gg/DNENf6pUNX')) ?>">Discord</a></li>
-    <?php endif; ?>
+    <?php foreach ($menuItems as $item): ?>
+      <?php if ($item['enabled']): ?>
+        <?php 
+        // Check feature flags for specific pages
+        $showItem = true;
+        $itemType = $item['type'] ?? 'page';
+        
+        if ($item['url'] === 'pilot_credits.php' && !isFeatureEnabled('credits_enabled')) {
+            $showItem = false;
+        } elseif ($item['url'] === 'squadrons.php' && !isFeatureEnabled('squadrons_enabled')) {
+            $showItem = false;
+        } elseif ($itemType === 'discord' && !isFeatureEnabled('show_discord_link')) {
+            $showItem = false;
+        } elseif ($itemType === 'squadron_homepage' && (!isFeatureEnabled('show_squadron_homepage') || empty(getFeatureValue('squadron_homepage_url')))) {
+            $showItem = false;
+        }
+        ?>
+        <?php if ($showItem): ?>
+          <?php if (in_array($itemType, ['discord', 'squadron_homepage'])): ?>
+            <li><a class="nav-link" href="<?= htmlspecialchars($item['url']) ?>"><?= htmlspecialchars($item['name']) ?></a></li>
+          <?php else: ?>
+            <li><a class="nav-link" href="<?php echo url($item['url']); ?>"><?= htmlspecialchars($item['name']) ?></a></li>
+          <?php endif; ?>
+        <?php endif; ?>
+      <?php endif; ?>
+    <?php endforeach; ?>
     
     <?php 
     // Check if user is logged in as admin
