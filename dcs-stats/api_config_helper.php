@@ -186,9 +186,15 @@ function getWritableConfigPath($preferredFile = null) {
     $dataDir = __DIR__ . '/data/';
     if (!is_dir($dataDir)) {
         @mkdir($dataDir, 0777, true);
+        @chmod($dataDir, 0777);
     }
     if (is_writable($dataDir)) {
         return $dataDir . 'api_config.json';
+    }
+    
+    // Try the current directory itself as last resort before temp
+    if (is_writable(__DIR__)) {
+        return __DIR__ . '/api_config.json';
     }
     
     // Fall back to system temp directory
