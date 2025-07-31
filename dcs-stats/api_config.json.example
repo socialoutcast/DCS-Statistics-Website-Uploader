@@ -3,7 +3,7 @@
     "api_key": null,
     "timeout": 30,
     "cache_ttl": 300,
-    "fallback_to_json": true,
+    "fallback_to_json": false,
     "use_api": true,
     "enabled_endpoints": [
         "get_server_statistics.php",

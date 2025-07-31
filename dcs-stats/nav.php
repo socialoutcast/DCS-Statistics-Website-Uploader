@@ -35,5 +35,12 @@ require_once __DIR__ . '/site_features.php';
     <?php if (isFeatureEnabled('show_discord_link')): ?>
       <li><a class="nav-link" href="<?= htmlspecialchars(getFeatureValue('discord_link_url', 'https://discord.gg/DNENf6pUNX')) ?>">Discord</a></li>
     <?php endif; ?>
+    
+    <?php 
+    // Check if user is logged in as admin
+    if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']): 
+    ?>
+      <li><a class="nav-link" href="site-config/">Site Config</a></li>
+    <?php endif; ?>
   </ul>
 </nav>

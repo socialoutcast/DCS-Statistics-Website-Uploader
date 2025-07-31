@@ -1,4 +1,10 @@
-<?php include 'header.php'; ?>
+<?php 
+// Start session before any output
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+include 'header.php'; 
+?>
 <?php require_once __DIR__ . '/site_features.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php include 'nav.php'; ?>
@@ -47,31 +53,31 @@
     
     <div class="charts-dashboard">
         <?php if (isFeatureEnabled('home_top_pilots')): ?>
-        <div class="chart-container">
-            <h2>Top 5 Most Active Pilots</h2>
+        <div class="chart-container" title="Shows the top 5 pilots ranked by their number of air-to-air kills">
+            <h2>Top 5 Most Active Pilots <span class="chart-info">ⓘ</span></h2>
             <canvas id="topPilotsChart"></canvas>
             <p class="no-data-message" id="topPilotsNoData" style="display: none;">No mission data available yet</p>
         </div>
         <?php endif; ?>
         
         <?php if (isFeatureEnabled('home_mission_stats')): ?>
-        <div class="chart-container">
-            <h2>Server Combat Statistics</h2>
+        <div class="chart-container" title="Overview of total server-wide kills and deaths in combat">
+            <h2>Server Combat Statistics <span class="chart-info">ⓘ</span></h2>
             <canvas id="combatStatsChart"></canvas>
         </div>
         <?php endif; ?>
         
         <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('home_top_pilots')): ?>
-        <div class="chart-container">
-            <h2>Top 3 Most Active Squadrons</h2>
+        <div class="chart-container" title="Shows the top 3 squadrons based on member activity and performance">
+            <h2>Top 3 Most Active Squadrons <span class="chart-info">ⓘ</span></h2>
             <canvas id="topSquadronsChart"></canvas>
             <p class="no-data-message" id="squadronsNoData" style="display: none;">No squadron data available yet</p>
         </div>
         <?php endif; ?>
         
         <?php if (isFeatureEnabled('home_player_activity')): ?>
-        <div class="chart-container full-width">
-            <h2>Player Activity Overview</h2>
+        <div class="chart-container full-width" title="Displays player activity trends over time showing peak hours and player engagement">
+            <h2>Player Activity Overview <span class="chart-info">ⓘ</span></h2>
             <canvas id="playerActivityChart"></canvas>
         </div>
         <?php endif; ?>
@@ -111,11 +117,10 @@ const gradientColors = {
 // Load server statistics
 async function loadServerStats() {
     try {
-        const response = await fetch('get_server_stats.php');
-        const data = await response.json();
+        // Use the client-side API
+        const data = await window.dcsAPI.getServerStats();
         
         if (data.error) {
-            console.error('Error loading stats:', data.error);
             document.getElementById('loading-overlay').style.display = 'none';
             return;
         }
@@ -703,7 +708,8 @@ main {
     grid-template-columns: repeat(2, 1fr);
     gap: 30px;
     margin: 40px auto;
-    max-width: 1200px;
+    width: 100%;
+    max-width: 100%;
     padding: 0 20px;
 }
 
@@ -808,6 +814,83 @@ main {
     font-style: italic;
     margin-top: 20px;
     font-size: 0.9rem;
+}
+
+/* Chart info icon and tooltip styles */
+.chart-info {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    background-color: #444;
+    color: #ccc;
+    border-radius: 50%;
+    font-size: 12px;
+    margin-left: 5px;
+    cursor: help;
+    transition: all 0.3s ease;
+}
+
+.chart-info:hover {
+    background-color: #4CAF50;
+    color: white;
+    transform: scale(1.1);
+}
+
+.chart-container {
+    position: relative;
+}
+
+.chart-container:hover {
+    box-shadow: 0 12px 40px rgba(76, 175, 80, 0.3);
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+.chart-container[title] {
+    cursor: help;
+}
+
+/* Enhanced tooltip styling */
+.chart-container:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    white-space: normal;
+    max-width: 300px;
+    text-align: center;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.chart-container:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-top-color: #333;
+    margin-bottom: 2px;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
 }
 
 @media (max-width: 768px) {

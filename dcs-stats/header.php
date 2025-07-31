@@ -4,7 +4,40 @@ header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: DENY");
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self';");
+
+// Build dynamic CSP based on API configuration
+$cspConnectSrc = "'self'";
+
+// Load API configuration if available
+$configFile = __DIR__ . '/api_config.json';
+if (file_exists($configFile)) {
+    $config = json_decode(file_get_contents($configFile), true);
+    if (!empty($config['api_base_url'])) {
+        // Parse the API URL to add to CSP
+        $parsedUrl = parse_url($config['api_base_url']);
+        if ($parsedUrl) {
+            $scheme = $parsedUrl['scheme'] ?? 'http';
+            $host = $parsedUrl['host'] ?? '';
+            $port = isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '';
+            
+            if ($host) {
+                // Add the specific API URL
+                $cspConnectSrc .= " {$scheme}://{$host}{$port}";
+                
+                // Also add wildcard for subdomains
+                $domain = preg_replace('/^[^.]+\./', '*.', $host);
+                if ($domain !== $host) {
+                    $cspConnectSrc .= " {$scheme}://{$domain}:*";
+                }
+            }
+        }
+    }
+}
+
+// Always allow localhost for development
+$cspConnectSrc .= " http://localhost:* https://localhost:*";
+
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src {$cspConnectSrc};");
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,11 +57,24 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       return div.innerHTML;
     }
   </script>
+  <script src="js/api-client.js"></script>
 </head>
 <body>
-  <header>
-    <div class="logo">
-      <img src="jet.png" alt="Jet Logo" style="height: 40px; vertical-align: middle; margin-right: 10px;" />
-      <h1 style="display: inline-block; margin: 0;">DCS Statistics Dashboard</h1>
+  <header class="main-header">
+    <div class="header-background"></div>
+    <div class="header-overlay"></div>
+    <div class="header-container">
+      <div class="header-brand">
+        <div class="brand-text">
+          <h1 class="site-title">DCS Statistics</h1>
+          <p class="site-subtitle">Combat Data & Analytics Platform</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span class="status-text">Live Data</span>
+        </div>
+      </div>
     </div>
   </header>

@@ -70,29 +70,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 case 'test':
                     // Test API connection
                     if (!empty($apiConfig['api_base_url'])) {
-                        $testUrl = rtrim($apiConfig['api_base_url'], '/') . '/stats';
+                        // Try the /servers endpoint first (GET method)
+                        $testUrl = rtrim($apiConfig['api_base_url'], '/') . '/servers';
                         $ch = curl_init($testUrl);
                         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
                         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                        
                         
                         $response = curl_exec($ch);
                         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                         $error = curl_error($ch);
                         curl_close($ch);
                         
-                        if ($error) {
-                            $testResult = ['success' => false, 'message' => 'Connection error: ' . $error];
-                        } elseif ($httpCode === 200) {
+                        if (!$error && $httpCode === 200) {
                             $data = json_decode($response, true);
                             if ($data !== null) {
-                                $testResult = ['success' => true, 'message' => 'API connection successful!'];
+                                $testResult = ['success' => true, 'message' => 'API connection successful! /servers endpoint working.'];
                             } else {
                                 $testResult = ['success' => false, 'message' => 'Invalid JSON response from API'];
                             }
                         } else {
-                            $testResult = ['success' => false, 'message' => 'HTTP error: ' . $httpCode];
+                            // If /servers fails, try /stats with POST method
+                            $testUrl = rtrim($apiConfig['api_base_url'], '/') . '/stats';
+                            $ch = curl_init($testUrl);
+                            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                            curl_setopt($ch, CURLOPT_POST, true);
+                            curl_setopt($ch, CURLOPT_POSTFIELDS, '');
+                            
+                            $response = curl_exec($ch);
+                            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                            $error = curl_error($ch);
+                            curl_close($ch);
+                            
+                            if ($error) {
+                                $testResult = ['success' => false, 'message' => 'Connection error: ' . $error];
+                            } elseif ($httpCode === 200) {
+                                $data = json_decode($response, true);
+                                if ($data !== null) {
+                                    $testResult = ['success' => true, 'message' => 'API connection successful! /stats endpoint working.'];
+                                } else {
+                                    $testResult = ['success' => false, 'message' => 'Invalid JSON response from API'];
+                                }
+                            } else {
+                                $testResult = ['success' => false, 'message' => 'HTTP error: ' . $httpCode . ' - Make sure the API server is running and accessible.'];
+                            }
                         }
                     } else {
                         $testResult = ['success' => false, 'message' => 'Please enter an API URL first'];
@@ -313,9 +336,11 @@ $pageTitle = 'API Settings';
                     <h4>Available API Endpoints</h4>
                     <div class="endpoints-list">
                         <strong>DCSServerBot REST API provides these endpoints:</strong><br>
-                        • /getuser - Get user statistics<br>
-                        • /stats - Get general statistics<br>
-                        • /topkills - Get top killers leaderboard<br>
+                        • /servers - Get server status (GET)<br>
+                        • /credits - Get player credits (POST with nick and date)<br>
+                        • /stats - Get enhanced statistics (POST with nick and date)<br>
+                        • /getuser - Get user statistics (POST)<br>
+                        • /topkills - Get top killers leaderboard (GET)<br>
                         • /topkdr - Get top K/D ratio leaderboard<br>
                         • /missilepk - Get missile performance statistics
                     </div>
