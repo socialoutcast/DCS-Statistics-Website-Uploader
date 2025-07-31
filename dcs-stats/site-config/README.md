@@ -43,7 +43,7 @@ chmod 755 admin/
 chmod 777 admin/data/
 
 # 2. Access admin panel
-https://yoursite.com/dcs-stats/admin/
+https://yoursite.com/dcs-stats/site-config/
 
 # 3. Login with default credentials
 Username: admin
@@ -87,7 +87,7 @@ define('EXPORT_MAX_RECORDS', 10000);  // Export limit
 
 ### First Time Setup
 
-1. Navigate to `/dcs-stats/admin/`
+1. Navigate to `/dcs-stats/site-config/`
 2. Login with default credentials
 3. Go to Settings → Change Password
 4. Create additional admin users as needed

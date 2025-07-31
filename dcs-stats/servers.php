@@ -1,4 +1,8 @@
 <?php
+// Start session before any output
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 include 'header.php';
 require_once __DIR__ . '/site_features.php';
 include 'nav.php';
@@ -15,7 +19,10 @@ if (!isFeatureEnabled('nav_servers')):
 <?php endif; ?>
 
 <main>
-    <h1>Server Status</h1>
+    <div class="dashboard-header">
+        <h1>Server Status</h1>
+        <p class="dashboard-subtitle">Live DCS server information and player counts</p>
+    </div>
     
     <div id="servers-loading" style="text-align: center; padding: 50px;">
         <p>Loading server information...</p>
@@ -28,13 +35,15 @@ if (!isFeatureEnabled('nav_servers')):
                     <tr>
                         <th>Server Name</th>
                         <th>Status</th>
-                        <th>Players</th>
-                        <th>Map</th>
+                        <th>Address</th>
+                        <th>Password</th>
                         <th>Mission</th>
+                        <th>Theatre</th>
+                        <th>Players</th>
                         <th>Uptime</th>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody id="serversTableBody"></tbody>
             </table>
         </div>
     </div>
@@ -47,29 +56,76 @@ if (!isFeatureEnabled('nav_servers')):
 <script>
 async function loadServers() {
     try {
-        const response = await fetch('get_servers.php');
-        const data = await response.json();
+        // Use client-side API
+        const result = await window.dcsAPI.getServers();
         
         document.getElementById('servers-loading').style.display = 'none';
         
-        if (!data || data.error || !data.servers || data.servers.length === 0) {
+        // Handle both direct data and wrapped response
+        const data = result.data || result;
+        
+        if (!data || result.error || data.length === 0) {
             document.getElementById('no-servers').style.display = 'block';
             return;
         }
         
-        const tbody = document.querySelector('#serversTable tbody');
+        const tbody = document.getElementById('serversTableBody');
         tbody.innerHTML = '';
         
-        data.servers.forEach(server => {
+        // Handle both array and object with servers property
+        const servers = Array.isArray(data) ? data : (data.servers || []);
+        
+        servers.forEach((server, index) => {
+            
             const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${escapeHtml(server.name || 'Unknown')}</td>
-                <td><span class="status-${server.status || 'offline'}">${escapeHtml(server.status || 'Offline')}</span></td>
-                <td>${escapeHtml(String(server.players || 0))}/${escapeHtml(String(server.max_players || 0))}</td>
-                <td>${escapeHtml(server.map || 'N/A')}</td>
-                <td>${escapeHtml(server.mission || 'N/A')}</td>
-                <td>${escapeHtml(server.uptime || 'N/A')}</td>
-            `;
+            
+            // Determine status class
+            const statusClass = server.status ? `status-${server.status.toLowerCase()}` : 'status-unknown';
+            
+            // Extract mission data if available
+            let missionName = 'N/A';
+            let theatre = 'N/A';
+            let playerCount = 'N/A';
+            let uptime = 'N/A';
+            
+            if (server.mission) {
+                missionName = server.mission.name || 'N/A';
+                theatre = server.mission.theatre || 'N/A';
+                
+                // Calculate player counts
+                const blueUsed = server.mission.blue_slots_used || 0;
+                const blueTotal = server.mission.blue_slots || 0;
+                const redUsed = server.mission.red_slots_used || 0;
+                const redTotal = server.mission.red_slots || 0;
+                const totalUsed = blueUsed + redUsed;
+                const totalSlots = blueTotal + redTotal;
+                
+                playerCount = `${totalUsed}/${totalSlots} (B:${blueUsed}/${blueTotal} R:${redUsed}/${redTotal})`;
+                
+                // Format uptime
+                if (server.mission.uptime !== undefined) {
+                    const hours = Math.floor(server.mission.uptime / 3600);
+                    const minutes = Math.floor((server.mission.uptime % 3600) / 60);
+                    uptime = `${hours}h ${minutes}m`;
+                }
+            }
+            
+            // Check if password protected
+            const passwordStatus = server.password ? '🔒 Yes' : '🔓 No';
+            
+            // Create cells individually to ensure proper count
+            const cells = [
+                `<td>${escapeHtml(server.name || 'Unknown')}</td>`,
+                `<td><span class="${statusClass}">${escapeHtml(server.status || 'Unknown')}</span></td>`,
+                `<td>${escapeHtml(server.address || 'N/A')}</td>`,
+                `<td>${passwordStatus}</td>`,
+                `<td>${escapeHtml(missionName)}</td>`,
+                `<td>${escapeHtml(theatre)}</td>`,
+                `<td>${escapeHtml(playerCount)}</td>`,
+                `<td>${escapeHtml(uptime)}</td>`
+            ];
+            
+            row.innerHTML = cells.join('');
             tbody.appendChild(row);
         });
         
@@ -100,6 +156,7 @@ setInterval(loadServers, 30000);
     border-collapse: collapse;
     background-color: #2c2c2c;
     color: #fff;
+    table-layout: auto;
 }
 
 #serversTable th {
@@ -108,29 +165,41 @@ setInterval(loadServers, 30000);
     text-align: left;
     border-bottom: 2px solid #4CAF50;
     color: #4CAF50;
+    white-space: nowrap;
 }
 
 #serversTable td {
     padding: 10px;
     border-bottom: 1px solid #444;
+    vertical-align: middle;
+}
+
+/* Ensure all content is left-aligned */
+#serversTable th, #serversTable td {
+    text-align: left;
 }
 
 #serversTable tr:hover {
     background-color: #3a3a3a;
 }
 
-.status-online {
+.status-online, .status-running {
     color: #4CAF50;
     font-weight: bold;
 }
 
-.status-offline {
+.status-offline, .status-shutdown {
     color: #f44336;
     font-weight: bold;
 }
 
-.status-starting {
+.status-starting, .status-paused {
     color: #ff9800;
+    font-weight: bold;
+}
+
+.status-unknown {
+    color: #9e9e9e;
     font-weight: bold;
 }
 </style>

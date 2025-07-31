@@ -118,7 +118,6 @@ $mostUsedAircraft = key($aircraftUsage);
 // Get traps from traps.json
 $trapsFile = validatePath($dataDir . '/traps.json', $dataDir);
 $trapScores = [];
-$debugInfo = [];
 
 if ($trapsFile && file_exists($trapsFile)) {
     $handle = fopen($trapsFile, 'r');
@@ -129,10 +128,6 @@ if ($trapsFile && file_exists($trapsFile)) {
             $entry = json_decode(trim($line), true);
             if (!$entry) continue;
             
-            // Debug: Store first few entries to understand structure
-            if ($lineCount <= 3) {
-                $debugInfo[] = array_keys($entry);
-            }
             
             // Check if this trap belongs to the current player
             if (isset($entry['player_ucid']) && $entry['player_ucid'] === $ucid) {

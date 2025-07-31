@@ -60,9 +60,21 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
   <script src="js/api-client.js"></script>
 </head>
 <body>
-  <header>
-    <div class="logo">
-      <img src="jet.png" alt="Jet Logo" style="height: 40px; vertical-align: middle; margin-right: 10px;" />
-      <h1 style="display: inline-block; margin: 0;">DCS Statistics Dashboard</h1>
+  <header class="main-header">
+    <div class="header-background"></div>
+    <div class="header-overlay"></div>
+    <div class="header-container">
+      <div class="header-brand">
+        <div class="brand-text">
+          <h1 class="site-title">DCS Statistics</h1>
+          <p class="site-subtitle">Combat Data & Analytics Platform</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span class="status-text">Live Data</span>
+        </div>
+      </div>
     </div>
   </header>

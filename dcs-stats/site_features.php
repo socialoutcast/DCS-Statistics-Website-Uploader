@@ -6,7 +6,7 @@
 
 // Load settings from JSON file
 function loadSiteFeatures() {
-    $settingsFile = __DIR__ . '/admin/data/site_settings.json';
+    $settingsFile = __DIR__ . '/site-config/data/site_settings.json';
     
     // Default features (all enabled)
     $defaults = [
@@ -15,7 +15,7 @@ function loadSiteFeatures() {
         'nav_leaderboard' => true,
         'nav_pilot_credits' => true,
         'nav_pilot_statistics' => true,
-        'nav_squadrons' => true,
+        'nav_squadrons' => false,
         'nav_servers' => true,
         
         // Homepage Sections
@@ -37,15 +37,19 @@ function loadSiteFeatures() {
         'pilot_search' => true,
         'pilot_detailed_stats' => true,
         'pilot_mission_history' => true,
+        'pilot_combat_stats' => true,
+        'pilot_flight_stats' => true,
+        'pilot_session_stats' => true,
+        'pilot_aircraft_chart' => true,
         
         // Credits System
         'credits_enabled' => true,
         'credits_leaderboard' => true,
         
         // Squadron Features
-        'squadrons_enabled' => true,
-        'squadron_management' => true,
-        'squadron_statistics' => true,
+        'squadrons_enabled' => false,
+        'squadron_management' => false,
+        'squadron_statistics' => false,
         
         // Server Features
         'servers_list' => true,
@@ -54,7 +58,6 @@ function loadSiteFeatures() {
         
         // Global Features
         'show_discord_link' => true,
-        'enable_api_data' => true,
         'show_last_update' => true,
         
         // Custom Links
@@ -77,7 +80,7 @@ function loadSiteFeatures() {
 
 // Save settings
 function saveSiteFeatures($features) {
-    $settingsFile = __DIR__ . '/admin/data/site_settings.json';
+    $settingsFile = __DIR__ . '/site-config/data/site_settings.json';
     return file_put_contents($settingsFile, json_encode($features, JSON_PRETTY_PRINT)) !== false;
 }
 
@@ -128,7 +131,11 @@ function getFeatureGroups() {
         'Pilot Features' => [
             'pilot_search' => 'Pilot Search',
             'pilot_detailed_stats' => 'Detailed Statistics',
-            'pilot_mission_history' => 'Mission History'
+            'pilot_mission_history' => 'Mission History',
+            'pilot_combat_stats' => 'Combat Statistics (Kills/Deaths)',
+            'pilot_flight_stats' => 'Flight Statistics (Takeoffs/Landings)',
+            'pilot_session_stats' => 'Last Session Statistics',
+            'pilot_aircraft_chart' => 'Aircraft Usage Chart'
         ],
         'Credits System' => [
             'credits_enabled' => 'Enable Credits System',
@@ -146,7 +153,6 @@ function getFeatureGroups() {
         ],
         'Global Settings' => [
             'show_discord_link' => 'Show Discord Link',
-            'enable_api_data' => 'Use API Data (when available)',
             'show_last_update' => 'Show Last Update Time'
         ]
     ];

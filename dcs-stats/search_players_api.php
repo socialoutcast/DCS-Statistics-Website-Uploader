@@ -40,8 +40,6 @@ try {
     try {
         $apiResponse = $apiClient->makeRequest('POST', '/getuser', ['nick' => $query]);
         
-        // Debug: Log the raw API response
-        error_log('API /getuser response: ' . json_encode($apiResponse));
         
         $players = [];
         if (is_array($apiResponse) && !empty($apiResponse)) {

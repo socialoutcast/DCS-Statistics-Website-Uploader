@@ -1,17 +1,21 @@
-<?php include "header.php"; 
+<?php 
+// Start session before any output
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+include "header.php"; 
 require_once __DIR__ . '/site_features.php';
 include "nav.php"; ?>
 
 <main class="container">
-  <h1>Leaderboard</h1>
+  <div class="dashboard-header">
+    <h1>Leaderboard</h1>
+    <p class="dashboard-subtitle">Top 10 pilots ranked by air-to-air kills</p>
+  </div>
   <div id="leaderboard-loading">Loading leaderboard...</div>
 
   <div id="top3-wrapper">
     <div class="top-3-container" id="top3-leaderboard"></div>
-  </div>
-
-  <div class="search-bar" style="text-align: center;">
-    <input type="text" id="searchInput" placeholder="Search by name..." style="margin: 0 auto; width: 50%;">
   </div>
 
   <div class="table-responsive">
@@ -38,24 +42,19 @@ include "nav.php"; ?>
       <tbody></tbody>
     </table>
   </div>
-
-  <div id="pagination" class="pagination-container" style="text-align: center;"></div>
 </main>
 
 <script>
 let leaderboardData = [];
-const rowsPerPage = 20;
-let currentPage = 1;
 
 function renderTable() {
   const tbody = document.querySelector("#leaderboardTable tbody");
-  const searchQuery = document.getElementById("searchInput").value.toLowerCase();
-  const start = (currentPage - 1) * rowsPerPage;
-  const filteredData = leaderboardData.filter(p => p.name.toLowerCase().includes(searchQuery));
-  const paginatedData = filteredData.slice(start, start + rowsPerPage);
+  
+  // Only show top 10 players
+  const top10Data = leaderboardData.slice(0, 10);
 
   tbody.innerHTML = "";
-  paginatedData.forEach(player => {
+  top10Data.forEach(player => {
     const row = document.createElement("tr");
     let cells = `
       <td>${escapeHtml(String(player.rank))}</td>
@@ -84,30 +83,6 @@ function renderTable() {
   });
 }
 
-function renderPagination() {
-  const container = document.getElementById("pagination");
-  const totalPages = Math.ceil(
-    leaderboardData.filter(p => p.name.toLowerCase().includes(document.getElementById("searchInput").value.toLowerCase())).length / rowsPerPage
-  );
-  let html = '';
-  html += `<button onclick="goToPage(${Math.max(currentPage - 1, 1)})">Prev</button>`;
-  html += ` Page ${currentPage} of ${totalPages} `;
-  html += `<button onclick="goToPage(${Math.min(currentPage + 1, totalPages)})">Next</button>`;
-  container.innerHTML = html;
-}
-
-function goToPage(page) {
-  currentPage = page;
-  renderTable();
-  renderPagination();
-}
-
-document.getElementById("searchInput").addEventListener("input", () => {
-  currentPage = 1;
-  renderTable();
-  renderPagination();
-});
-
 async function loadLeaderboardFromMissionstats() {
   try {
     // Use the client-side API
@@ -119,16 +94,16 @@ async function loadLeaderboardFromMissionstats() {
         data = result.data;
         // Show data source if available
         if (result.source) {
-            console.log(`Leaderboard data source: ${result.source}`);
         }
     }
-    leaderboardData = data;
+    // Only keep top 10 players
+    leaderboardData = data.slice(0, 10);
     document.getElementById("leaderboard-loading").style.display = "none";
     
     // Populate top 3 leaderboard
     const top3Container = document.getElementById("top3-leaderboard");
     const trophies = ['🥇', '🥈', '🥉'];
-    data.slice(0, 3).forEach((player, i) => {
+    leaderboardData.slice(0, 3).forEach((player, i) => {
         const box = document.createElement("div");
         box.className = "trophy-box";
         box.innerHTML = `<span class="trophy">${trophies[i]}</span><strong>${escapeHtml(player.name || '')}</strong><br>${escapeHtml(String(player.kills || 0))} kills`;
@@ -136,7 +111,6 @@ async function loadLeaderboardFromMissionstats() {
     });
     
     renderTable();
-    renderPagination();
   } catch (error) {
     document.getElementById("leaderboard-loading").innerText = "Failed to load leaderboard data. Please try again later.";
     console.error("Error loading leaderboard:", error);

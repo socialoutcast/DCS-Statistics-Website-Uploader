@@ -371,7 +371,7 @@ function hasPermission($permission) {
  */
 function requireAdmin() {
     if (!isAdminLoggedIn()) {
-        header('Location: /admin/login');
+        header('Location: login.php');
         exit;
     }
 }

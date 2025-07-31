@@ -145,7 +145,7 @@ echo "========================================\n\n";
 
 if ($is_cli) {
     echo "You can now access the admin panel at:\n";
-    echo "https://yoursite.com/dcs-stats/admin/\n\n";
+    echo "https://yoursite.com/dcs-stats/site-config/\n\n";
     echo "Login with:\n";
     echo "Username: $username\n";
     echo "Password: [the password you entered]\n";

@@ -1,4 +1,8 @@
 <?php
+// Start session before any output
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 include 'header.php';
 require_once __DIR__ . '/site_features.php';
 include 'nav.php';
@@ -15,10 +19,13 @@ if (!isFeatureEnabled('squadrons_enabled')):
 <?php endif; ?>
 
 <main>
-    <h1>Squadrons</h1>
+    <div class="dashboard-header">
+        <h1>Squadrons</h1>
+        <p class="dashboard-subtitle">Squadron rankings and member information</p>
+    </div>
 
-    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-        <input type="text" id="searchInput" placeholder="Search squadrons, members, or credits..." style="width: 60%; padding: 10px; font-size: 16px;">
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search squadrons, members, or credits...">
     </div>
 
     <div class="table-responsive">
@@ -73,13 +80,28 @@ if (!isFeatureEnabled('squadrons_enabled')):
 document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.getElementById('searchInput');
 
-    Promise.all([
-        window.dcsAPI.getSquadronData('squadrons'),
-        window.dcsAPI.getSquadronData('squadron_members'),
-        window.dcsAPI.getSquadronData('players'),
-        window.dcsAPI.getSquadronData('squadron_credits')
-    ])
-    .then(([squadronText, memberText, playerText, creditText]) => {
+    // Check if API is enabled
+    window.dcsAPI.loadConfig().then(config => {
+        if (config.use_api) {
+            // API-only mode - squadrons not supported
+            document.querySelector('main').innerHTML = `
+                <div class="alert" style="text-align: center; padding: 50px;">
+                    <h2>Squadrons Not Available</h2>
+                    <p>Squadron data is not available in API-only mode.</p>
+                    <p>This feature requires JSON file support.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // JSON mode - load squadron data
+        Promise.all([
+            fetch('get_squadron.php?file=squadrons').then(r => r.text()),
+            fetch('get_squadron.php?file=squadron_members').then(r => r.text()),
+            fetch('get_squadron.php?file=players').then(r => r.text()),
+            fetch('get_squadron.php?file=squadron_credits').then(r => r.text())
+        ])
+        .then(([squadronText, memberText, playerText, creditText]) => {
         const squadrons = squadronText.trim().split('\n').map(line => JSON.parse(line));
         const members = memberText.trim().split('\n').map(line => JSON.parse(line));
         const players = playerText.trim().split('\n').map(line => JSON.parse(line));
@@ -178,10 +200,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         renderTables(); // Initial load
-    })
-    .catch(err => {
-        document.getElementById('error-message').textContent = "Error loading data: " + err.message;
-        console.error(err);
+        })
+        .catch(err => {
+            document.getElementById('error-message').textContent = "Error loading data: " + err.message;
+            console.error(err);
+        });
     });
 });
 </script>

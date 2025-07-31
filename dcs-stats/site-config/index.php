@@ -151,7 +151,6 @@ $pageTitle = 'Flight Deck Operations';
         // Auto-refresh activity every 30 seconds
         setInterval(() => {
             // In a real implementation, this would fetch new activity via AJAX
-            console.log('Checking for new activity...');
         }, 30000);
     </script>
 </body>
