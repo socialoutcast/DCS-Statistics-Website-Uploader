@@ -171,9 +171,9 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
 
 ### API Integration
 
-The admin panel will integrate with both:
-1. **Existing DCSServerBot REST API** (where available)
-2. **Local JSON files** (fallback and additional features)
+The admin panel integrates with:
+1. **DCSServerBot REST API** exclusively
+2. **Auto-detection of HTTP/HTTPS protocols**
 
 ### Implementation Phases
 

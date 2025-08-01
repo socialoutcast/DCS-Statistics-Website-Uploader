@@ -41,21 +41,12 @@ A fully-featured Navy carrier-themed administration interface with role-based ac
    - Ensure Apache `mod_rewrite` is enabled
    - For nginx, configure rewrite rules for clean URLs
 
-3. **Set up the API configuration**:
-   ```bash
-   cp api_config.json.example api_config.json
-   ```
-   - Default API URL: `http://localhost:8080`
-   - Update if your DCSServerBot REST API is on a different address
+3. **Access the admin panel** at `/site-config`
+   - The system will auto-configure itself on first visit
+   - Configure your DCSServerBot REST API connection in the admin panel
 
-4. **Set proper permissions**:
-   ```bash
-   chmod 755 admin/data
-   chmod 644 admin/data/*
-   ```
-
-5. **Access the admin panel** at `/admin`
-   - Default credentials: `admin` / `password`
+4. **Access the admin panel** at `/site-config`
+   - Default credentials: `admin` / `changeme123`
    - **⚠️ CRITICAL**: Change these immediately after first login!
 
 ## Admin Panel Guide
@@ -107,15 +98,11 @@ A fully-featured Navy carrier-themed administration interface with role-based ac
 
 ### API Integration
 
-The site supports two data sources:
-1. **REST API** (Recommended):
-   - Configure in admin panel: Settings → API Settings
-   - Requires DCSServerBot REST API
-   - Real-time data updates
-
-2. **JSON Files** (Legacy):
-   - Falls back automatically if API is unavailable
-   - Requires file uploads from DCSServerBot
+The site uses DCSServerBot REST API exclusively:
+- Configure in admin panel: Settings → API Settings
+- Auto-detects HTTP/HTTPS protocols
+- Real-time data updates
+- No file uploads required
 
 ### Clean URLs
 
@@ -197,7 +184,7 @@ dcs-stats/
 │   ├── themes.php          # Theme management
 │   └── data/               # Admin data storage
 ├── api_client.php          # DCSServerBot API client
-├── api_config.json         # API configuration
+├── api_client_enhanced.php # Enhanced API client with auto-detection
 └── .htaccess               # URL rewriting rules
 ```
 

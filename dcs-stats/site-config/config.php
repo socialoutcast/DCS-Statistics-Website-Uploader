@@ -48,7 +48,7 @@ const ROLE_PERMISSIONS = [
     ]
 ];
 
-// Database configuration (optional - can use JSON files)
+// Database configuration (optional - can use local file storage)
 define('USE_DATABASE', false); // Set to true to use MySQL
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'dcs_stats_admin');
@@ -78,10 +78,10 @@ define('RECORDS_PER_PAGE', 25);
 define('DATE_FORMAT', 'Y-m-d H:i:s');
 
 // Default admin user (only used for initial setup)
-// IMPORTANT: Change these values and remove after first login!
+// IMPORTANT: These are example values only - must be changed on first login!
 define('DEFAULT_ADMIN_USERNAME', 'admin');
 define('DEFAULT_ADMIN_EMAIL', 'admin@example.com');
-define('DEFAULT_ADMIN_PASSWORD', 'changeme123'); // Will be hashed on first use
+define('DEFAULT_ADMIN_PASSWORD', ''); // Must be set during installation
 
 // Activity log action types
 const LOG_ACTIONS = [

@@ -50,9 +50,8 @@ foreach ($allLogs as $log) {
         continue;
     }
     
-    // Add admin username
+    // Add username for display
     $log['admin_username'] = $userMap[$log['admin_id']] ?? 'Unknown';
-    
     $filteredLogs[] = $log;
 }
 
@@ -64,7 +63,10 @@ usort($filteredLogs, function($a, $b) {
 // Pagination
 $totalLogs = count($filteredLogs);
 $totalPages = ceil($totalLogs / $perPage);
+$page = min($page, $totalPages ?: 1);
 $offset = ($page - 1) * $perPage;
+
+// Get logs for current page
 $logs = array_slice($filteredLogs, $offset, $perPage);
 
 // Get unique actions for filter
@@ -82,6 +84,19 @@ $pageTitle = 'Activity Logs';
     <title><?= $pageTitle ?> - Carrier Air Wing Command</title>
     <link rel="stylesheet" href="css/admin.css">
     <style>
+        /* Critical inline CSS for layout */
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow-x: hidden; }
+        .admin-wrapper { display: flex; min-height: 100vh; width: 100%; overflow-x: hidden; }
+        .admin-sidebar { width: 250px; flex-shrink: 0; background: #2a2a2a; }
+        .admin-main { flex: 1; min-width: 0; overflow-x: hidden; }
+        .admin-content { padding: 30px; max-width: 100%; overflow-x: hidden; }
+        .card { max-width: 100%; overflow-x: auto; }
+        @media (max-width: 768px) {
+            .admin-sidebar { display: none; }
+            .admin-wrapper { flex-direction: column; }
+            .admin-content { padding: 15px; }
+        }
         .filter-form {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -169,16 +184,33 @@ $pageTitle = 'Activity Logs';
                 <!-- Filters -->
                 <div class="card">
                     <div class="card-header">
-                        <h2 class="card-title">Filter Logs</h2>
+                        <h2 class="card-title">Filters</h2>
                     </div>
-                    
                     <form method="GET" action="" class="filter-form">
                         <div class="form-group">
-                            <label for="filter_action">Action</label>
-                            <select name="action" id="filter_action" class="form-control">
+                            <label for="date_from">From Date</label>
+                            <input type="date" 
+                                   id="date_from" 
+                                   name="date_from" 
+                                   class="form-control" 
+                                   value="<?= e($filterDateFrom) ?>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="date_to">To Date</label>
+                            <input type="date" 
+                                   id="date_to" 
+                                   name="date_to" 
+                                   class="form-control" 
+                                   value="<?= e($filterDateTo) ?>">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="action">Action Type</label>
+                            <select id="action" name="action" class="form-control">
                                 <option value="">All Actions</option>
                                 <?php foreach ($uniqueActions as $action): ?>
-                                    <option value="<?= e($action) ?>" <?= $filterAction === $action ? 'selected' : '' ?>>
+                                    <option value="<?= e($action) ?>" <?= $action === $filterAction ? 'selected' : '' ?>>
                                         <?= e(LOG_ACTIONS[$action] ?? $action) ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -186,27 +218,15 @@ $pageTitle = 'Activity Logs';
                         </div>
                         
                         <div class="form-group">
-                            <label for="filter_admin">Admin User</label>
-                            <select name="admin" id="filter_admin" class="form-control">
-                                <option value="">All Admins</option>
+                            <label for="admin">Admin User</label>
+                            <select id="admin" name="admin" class="form-control">
+                                <option value="">All Users</option>
                                 <?php foreach ($users as $user): ?>
-                                    <option value="<?= $user['id'] ?>" <?= $filterAdmin == $user['id'] ? 'selected' : '' ?>>
+                                    <option value="<?= e($user['id']) ?>" <?= $user['id'] == $filterAdmin ? 'selected' : '' ?>>
                                         <?= e($user['username']) ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="filter_date_from">From Date</label>
-                            <input type="date" name="date_from" id="filter_date_from" 
-                                   class="form-control" value="<?= e($filterDateFrom) ?>">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="filter_date_to">To Date</label>
-                            <input type="date" name="date_to" id="filter_date_to" 
-                                   class="form-control" value="<?= e($filterDateTo) ?>">
                         </div>
                         
                         <div class="form-group" style="display: flex; align-items: flex-end; gap: 10px;">
@@ -259,13 +279,13 @@ $pageTitle = 'Activity Logs';
                                         <?php if ($log['target_type'] && $log['target_id']): ?>
                                             - <?= e($log['target_type']) ?>: <code><?= e($log['target_id']) ?></code>
                                         <?php endif; ?>
+                                        
+                                        <?php if ($log['details']): ?>
+                                            <div class="log-meta">
+                                                Details: <?= e(is_array($log['details']) ? json_encode($log['details']) : $log['details']) ?>
+                                            </div>
+                                        <?php endif; ?>
                                     </div>
-                                    
-                                    <?php if ($log['details']): ?>
-                                        <div class="log-meta">
-                                            Details: <?= e(is_array($log['details']) ? json_encode($log['details']) : $log['details']) ?>
-                                        </div>
-                                    <?php endif; ?>
                                     
                                     <div class="log-meta">
                                         IP: <?= e($log['ip_address']) ?>
@@ -273,9 +293,11 @@ $pageTitle = 'Activity Logs';
                                 </div>
                             <?php endforeach; ?>
                         </div>
-                        
-                        <!-- Pagination -->
-                        <?= getPagination($totalLogs, $perPage, $page, 'logs.php?' . http_build_query([
+                    <?php endif; ?>
+                    
+                    <!-- Pagination -->
+                    <?php if ($totalPages > 1): ?>
+                        <?= getPagination($page, $totalPages, array_merge($_GET, [
                             'action' => $filterAction,
                             'admin' => $filterAdmin,
                             'date_from' => $filterDateFrom,

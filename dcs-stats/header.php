@@ -1,4 +1,7 @@
 <?php
+// Include path configuration
+require_once __DIR__ . '/config_path.php';
+
 // Security headers for protection against common web vulnerabilities
 header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: DENY");
@@ -45,11 +48,14 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DCS Statistics Dashboard</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="<?php echo url('styles.php'); ?>" />
   <?php if (file_exists(__DIR__ . '/custom_theme.css')): ?>
-  <link rel="stylesheet" href="custom_theme.css" />
+  <link rel="stylesheet" href="<?php echo url('custom_theme.css'); ?>" />
   <?php endif; ?>
   <script>
+    // Path configuration for JavaScript
+    window.DCS_CONFIG = <?php echo getJsConfig(); ?>;
+    
     // XSS Protection function
     function escapeHtml(text) {
       const div = document.createElement('div');
@@ -57,7 +63,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
       return div.innerHTML;
     }
   </script>
-  <script src="js/api-client.js"></script>
+  <script src="<?php echo url('js/api-client.js'); ?>"></script>
 </head>
 <body>
   <header class="main-header">

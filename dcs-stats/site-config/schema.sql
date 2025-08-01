@@ -1,5 +1,5 @@
 -- DCS Statistics Admin Panel Database Schema
--- This is optional - the admin panel can work with JSON files
+-- This is optional - the admin panel works with local data storage
 
 -- Create database (optional)
 -- CREATE DATABASE IF NOT EXISTS dcs_stats_admin;

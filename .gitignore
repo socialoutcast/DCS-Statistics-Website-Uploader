@@ -52,6 +52,8 @@ claude-cache/
 dcs-stats/admin/data/
 dcs-stats/data/*.json
 dcs-stats/security.log
+dcs-stats/site-config/data/
+!dcs-stats/site-config/data/.gitkeep
 
 # Development/Testing
 dcs-stats/docker/sample-data/

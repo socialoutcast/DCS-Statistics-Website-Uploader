@@ -18,6 +18,105 @@ $isAirBoss = ($currentAdmin['role'] === ROLE_AIR_BOSS);
 $message = '';
 $error = '';
 
+// Get writable path for menu configuration
+function getMenuConfigPath() {
+    // Try primary location with data directory
+    $primaryPath = __DIR__ . '/data/menu_config.json';
+    $primaryDir = dirname($primaryPath);
+    
+    // Check if directory exists and is writable
+    if (is_dir($primaryDir) && is_writable($primaryDir)) {
+        return $primaryPath;
+    }
+    
+    // Try to create directory with proper permissions
+    if (!is_dir($primaryDir)) {
+        @mkdir($primaryDir, 0777, true);
+        @chmod($primaryDir, 0777);
+        if (is_dir($primaryDir) && is_writable($primaryDir)) {
+            return $primaryPath;
+        }
+    }
+    
+    // Try alternative location in parent directory
+    $altPath = __DIR__ . '/../menu_config.json';
+    $altDir = dirname($altPath);
+    if (is_writable($altDir)) {
+        return $altPath;
+    }
+    
+    // Fall back to temp directory
+    $tempDir = sys_get_temp_dir() . '/dcs_stats';
+    if (!is_dir($tempDir)) {
+        @mkdir($tempDir, 0777, true);
+    }
+    
+    return $tempDir . '/menu_config.json';
+}
+
+// Load site features to check if Discord/Squadron links are enabled
+require_once __DIR__ . '/../site_features.php';
+
+// Load menu configuration
+$menuConfigFile = getMenuConfigPath();
+$defaultMenuItems = [
+    ['name' => 'Home', 'url' => 'index.php', 'enabled' => true, 'type' => 'page'],
+    ['name' => 'Leaderboard', 'url' => 'leaderboard.php', 'enabled' => true, 'type' => 'page'],
+    ['name' => 'Pilot Statistics', 'url' => 'pilot_statistics.php', 'enabled' => true, 'type' => 'page'],
+    ['name' => 'Pilot Credits', 'url' => 'pilot_credits.php', 'enabled' => true, 'type' => 'page'],
+    ['name' => 'Squadrons', 'url' => 'squadrons.php', 'enabled' => true, 'type' => 'page'],
+    ['name' => 'Servers', 'url' => 'servers.php', 'enabled' => true, 'type' => 'page']
+];
+
+// Add Discord if enabled
+if (isFeatureEnabled('show_discord_link')) {
+    $defaultMenuItems[] = [
+        'name' => 'Discord',
+        'url' => getFeatureValue('discord_link_url', 'https://discord.gg/DNENf6pUNX'),
+        'enabled' => true,
+        'type' => 'discord'
+    ];
+}
+
+// Add Squadron Homepage if enabled
+if (isFeatureEnabled('show_squadron_homepage') && !empty(getFeatureValue('squadron_homepage_url'))) {
+    $defaultMenuItems[] = [
+        'name' => getFeatureValue('squadron_homepage_text', 'Squadron'),
+        'url' => getFeatureValue('squadron_homepage_url'),
+        'enabled' => true,
+        'type' => 'squadron_homepage'
+    ];
+}
+
+$menuItems = $defaultMenuItems;
+if (file_exists($menuConfigFile)) {
+    $savedMenu = json_decode(file_get_contents($menuConfigFile), true);
+    if ($savedMenu && is_array($savedMenu)) {
+        // Merge with default items to pick up any new Discord/Squadron links
+        $savedUrls = array_column($savedMenu, 'url');
+        foreach ($defaultMenuItems as $defaultItem) {
+            $found = false;
+            foreach ($savedMenu as &$savedItem) {
+                if ($savedItem['url'] === $defaultItem['url'] || 
+                    (isset($savedItem['type']) && isset($defaultItem['type']) && $savedItem['type'] === $defaultItem['type'])) {
+                    $found = true;
+                    // Update URL for Discord/Squadron links in case they changed
+                    if (in_array($defaultItem['type'] ?? '', ['discord', 'squadron_homepage'])) {
+                        $savedItem['url'] = $defaultItem['url'];
+                        $savedItem['name'] = $defaultItem['name']; // Update name too for squadron
+                    }
+                    break;
+                }
+            }
+            if (!$found && in_array($defaultItem['type'] ?? '', ['discord', 'squadron_homepage'])) {
+                // Add new Discord/Squadron link that wasn't in saved config
+                $savedMenu[] = $defaultItem;
+            }
+        }
+        $menuItems = $savedMenu;
+    }
+}
+
 // Handle theme actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF protection
@@ -27,6 +126,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'] ?? '';
         
         switch ($action) {
+            case 'update_menu':
+                // Handle menu updates
+                $newMenuItems = [];
+                $menuNames = $_POST['menu_names'] ?? [];
+                $menuUrls = $_POST['menu_urls'] ?? [];
+                $menuEnabled = $_POST['menu_enabled'] ?? [];
+                $menuOrder = $_POST['menu_order'] ?? [];
+                $menuTypes = $_POST['menu_types'] ?? [];
+                
+                // Rebuild menu items based on posted data
+                foreach ($menuOrder as $index) {
+                    if (isset($menuNames[$index]) && isset($menuUrls[$index])) {
+                        $newMenuItems[] = [
+                            'name' => $menuNames[$index],
+                            'url' => $menuUrls[$index],
+                            'enabled' => isset($menuEnabled[$index]),
+                            'type' => $menuTypes[$index] ?? 'page'
+                        ];
+                    }
+                }
+                
+                // Save to file
+                $result = @file_put_contents($menuConfigFile, json_encode($newMenuItems, JSON_PRETTY_PRINT));
+                if ($result === false) {
+                    $error = 'Failed to save menu configuration. Please check file permissions.';
+                } else {
+                    $menuItems = $newMenuItems;
+                    $message = 'Menu configuration updated successfully';
+                    if (function_exists('logActivity')) {
+                        logActivity('MENU_UPDATE', 'Updated navigation menu configuration');
+                    }
+                }
+                break;
+                
             case 'upload_css':
                 // Only Air Boss can upload CSS
                 if (!$isAirBoss) {
@@ -63,7 +196,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Upload new CSS
                         if (move_uploaded_file($fileTmp, $currentCSS)) {
                             $message = 'CSS file uploaded successfully. Previous version backed up.';
-                            logActivity('THEME_UPLOAD', 'Uploaded new CSS file: ' . $fileName);
+                            if (function_exists('logActivity')) {
+                                logActivity('THEME_UPLOAD', 'Uploaded new CSS file: ' . $fileName);
+                            }
                         } else {
                             $error = 'Failed to upload CSS file';
                         }
@@ -98,7 +233,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 file_put_contents($customCSS, $cssVars);
                 
                 $message = 'Color theme updated successfully';
-                logActivity('THEME_COLORS', 'Updated theme colors');
+                if (function_exists('logActivity')) {
+                    logActivity('THEME_COLORS', 'Updated theme colors');
+                }
                 break;
                 
             case 'restore_backup':
@@ -115,7 +252,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $currentCSS = __DIR__ . '/../styles.css';
                     copy($backupPath, $currentCSS);
                     $message = 'Theme restored from backup';
-                    logActivity('THEME_RESTORE', 'Restored theme from: ' . $backupFile);
+                    if (function_exists('logActivity')) {
+                        logActivity('THEME_RESTORE', 'Restored theme from: ' . $backupFile);
+                    }
                 } else {
                     $error = 'Backup file not found';
                 }
@@ -172,7 +311,6 @@ if (file_exists($customCSS)) {
 
 // Page title
 $pageTitle = 'Theme Management';
-define('ADMIN_PANEL', true);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -182,6 +320,15 @@ define('ADMIN_PANEL', true);
     <title><?= $pageTitle ?> - Carrier Air Wing Command</title>
     <link rel="stylesheet" href="css/admin.css">
     <style>
+        /* Critical inline CSS for layout */
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow-x: hidden; }
+        .admin-wrapper { display: flex; min-height: 100vh; width: 100%; overflow-x: hidden; }
+        .admin-sidebar { width: 250px; flex-shrink: 0; background: #2a2a2a; }
+        .admin-main { flex: 1; min-width: 0; overflow-x: hidden; }
+        .admin-content { padding: 30px; max-width: 100%; overflow-x: hidden; }
+        .card { max-width: 100%; overflow-x: auto; }
+        
         .theme-section {
             background: var(--bg-secondary);
             border-radius: 8px;
@@ -300,18 +447,100 @@ define('ADMIN_PANEL', true);
         .tab-content.active {
             display: block;
         }
+        
+        /* Menu Configuration Styles */
+        .menu-items {
+            margin-top: 20px;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .menu-item.dragging {
+            opacity: 0.5;
+        }
+        
+        .menu-item.drag-over {
+            border-color: var(--accent-primary);
+            border-style: dashed;
+        }
+        
+        .menu-item-handle {
+            cursor: grab;
+            font-size: 20px;
+            color: var(--text-muted);
+            user-select: none;
+        }
+        
+        .menu-item-handle:active {
+            cursor: grabbing;
+        }
+        
+        .menu-item-fields {
+            display: flex;
+            gap: 15px;
+            flex: 1;
+            align-items: center;
+        }
+        
+        .menu-item-fields input[type="text"] {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
+        }
+        
+        .menu-item-fields input[type="text"]:focus {
+            border-color: var(--accent-primary);
+            outline: none;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
     </style>
 </head>
-<body>
+<body class="admin-body">
     <div class="admin-wrapper">
-        <?php include 'nav.php'; ?>
+        <?php include __DIR__ . '/nav.php'; ?>
         
         <main class="admin-main">
+            <!-- Header -->
+            <header class="admin-header">
+                <h1><?= $pageTitle ?></h1>
+                <div class="admin-user-menu">
+                    <div class="admin-user-info">
+                        <div class="admin-username"><?= e($currentAdmin['username']) ?></div>
+                        <div class="admin-role"><?= getRoleBadge($currentAdmin['role']) ?></div>
+                    </div>
+                    <a href="logout.php" class="btn btn-secondary btn-small">Logout</a>
+                </div>
+            </header>
+            
+            <!-- Content -->
             <div class="admin-content">
                 <div class="card">
-                    <div class="card-header">
-                        <h1 class="card-title"><?= $pageTitle ?></h1>
-                    </div>
                 <?php if ($message): ?>
                     <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>
                 <?php endif; ?>
@@ -335,6 +564,7 @@ define('ADMIN_PANEL', true);
                 <!-- Theme Tabs -->
                 <div class="theme-tabs">
                     <button class="theme-tab active" onclick="switchTab('simple')">Simple Customization</button>
+                    <button class="theme-tab" onclick="switchTab('menu')">Menu Configuration</button>
                     <?php if ($isAirBoss): ?>
                     <button class="theme-tab" onclick="switchTab('advanced')">Advanced CSS Upload</button>
                     <button class="theme-tab" onclick="switchTab('backups')">Backup & Restore</button>
@@ -390,6 +620,44 @@ define('ADMIN_PANEL', true);
                             </div>
                             
                             <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Update Colors</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Menu Configuration Tab -->
+                <div id="menu-tab" class="tab-content">
+                    <div class="theme-section">
+                        <h2>Navigation Menu Configuration</h2>
+                        <p>Customize the navigation menu by renaming items, changing their order, or hiding them.</p>
+                        
+                        <form method="POST" action="" id="menu-form">
+                            <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                            <input type="hidden" name="action" value="update_menu">
+                            
+                            <div class="menu-items" id="menu-items">
+                                <?php foreach ($menuItems as $index => $item): ?>
+                                <div class="menu-item" data-index="<?= $index ?>">
+                                    <div class="menu-item-handle">☰</div>
+                                    <input type="hidden" name="menu_order[]" value="<?= $index ?>">
+                                    <input type="hidden" name="menu_types[<?= $index ?>]" value="<?= htmlspecialchars($item['type'] ?? 'page') ?>">
+                                    <div class="menu-item-fields">
+                                        <input type="text" name="menu_names[<?= $index ?>]" value="<?= htmlspecialchars($item['name']) ?>" placeholder="Menu Name" required>
+                                        <?php if (in_array($item['type'] ?? 'page', ['discord', 'squadron_homepage'])): ?>
+                                            <input type="text" name="menu_urls[<?= $index ?>]" value="<?= htmlspecialchars($item['url']) ?>" placeholder="URL" required title="External URL">
+                                        <?php else: ?>
+                                            <input type="text" name="menu_urls[<?= $index ?>]" value="<?= htmlspecialchars($item['url']) ?>" placeholder="URL" required readonly>
+                                        <?php endif; ?>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" name="menu_enabled[<?= $index ?>]" <?= $item['enabled'] ? 'checked' : '' ?>>
+                                            <span>Enabled</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Save Menu Configuration</button>
+                            <button type="button" class="btn btn-secondary" onclick="resetMenu()" style="margin-top: 20px;">Reset to Default</button>
                         </form>
                     </div>
                 </div>
@@ -499,6 +767,130 @@ define('ADMIN_PANEL', true);
             input.addEventListener('input', function() {
                 // Could implement live preview here
             });
+        });
+        
+        // Menu drag and drop functionality
+        let draggedElement = null;
+        
+        function initMenuDragDrop() {
+            const menuItems = document.querySelectorAll('.menu-item');
+            
+            menuItems.forEach(item => {
+                item.draggable = true;
+                
+                item.addEventListener('dragstart', function(e) {
+                    draggedElement = this;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', this.innerHTML);
+                });
+                
+                item.addEventListener('dragend', function() {
+                    this.classList.remove('dragging');
+                });
+                
+                item.addEventListener('dragover', function(e) {
+                    if (e.preventDefault) {
+                        e.preventDefault();
+                    }
+                    e.dataTransfer.dropEffect = 'move';
+                    this.classList.add('drag-over');
+                    return false;
+                });
+                
+                item.addEventListener('dragleave', function() {
+                    this.classList.remove('drag-over');
+                });
+                
+                item.addEventListener('drop', function(e) {
+                    if (e.stopPropagation) {
+                        e.stopPropagation();
+                    }
+                    
+                    this.classList.remove('drag-over');
+                    
+                    if (draggedElement !== this) {
+                        const container = document.getElementById('menu-items');
+                        const allItems = Array.from(container.querySelectorAll('.menu-item'));
+                        const draggedIndex = allItems.indexOf(draggedElement);
+                        const targetIndex = allItems.indexOf(this);
+                        
+                        if (draggedIndex < targetIndex) {
+                            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+                        } else {
+                            this.parentNode.insertBefore(draggedElement, this);
+                        }
+                        
+                        // Update order inputs
+                        updateMenuOrder();
+                    }
+                    
+                    return false;
+                });
+            });
+        }
+        
+        function updateMenuOrder() {
+            const menuItems = document.querySelectorAll('.menu-item');
+            menuItems.forEach((item, index) => {
+                const orderInput = item.querySelector('input[name="menu_order[]"]');
+                orderInput.value = index;
+                
+                // Update field names to match new order
+                const nameInput = item.querySelector('input[name^="menu_names"]');
+                const urlInput = item.querySelector('input[name^="menu_urls"]');
+                const enabledInput = item.querySelector('input[name^="menu_enabled"]');
+                const typeInput = item.querySelector('input[name^="menu_types"]');
+                
+                nameInput.name = `menu_names[${index}]`;
+                urlInput.name = `menu_urls[${index}]`;
+                enabledInput.name = `menu_enabled[${index}]`;
+                typeInput.name = `menu_types[${index}]`;
+            });
+        }
+        
+        function resetMenu() {
+            if (confirm('Are you sure you want to reset the menu to default settings?')) {
+                // Create a form to submit reset action
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.innerHTML = `
+                    <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
+                    <input type="hidden" name="action" value="update_menu">
+                    <?php 
+                    // Rebuild default menu items for reset
+                    $resetMenuItems = [
+                        ['name' => 'Home', 'url' => 'index.php', 'enabled' => true, 'type' => 'page'],
+                        ['name' => 'Leaderboard', 'url' => 'leaderboard.php', 'enabled' => true, 'type' => 'page'],
+                        ['name' => 'Pilot Statistics', 'url' => 'pilot_statistics.php', 'enabled' => true, 'type' => 'page'],
+                        ['name' => 'Pilot Credits', 'url' => 'pilot_credits.php', 'enabled' => true, 'type' => 'page'],
+                        ['name' => 'Squadrons', 'url' => 'squadrons.php', 'enabled' => true, 'type' => 'page'],
+                        ['name' => 'Servers', 'url' => 'servers.php', 'enabled' => true, 'type' => 'page']
+                    ];
+                    if (isFeatureEnabled('show_discord_link')) {
+                        $resetMenuItems[] = ['name' => 'Discord', 'url' => getFeatureValue('discord_link_url', 'https://discord.gg/DNENf6pUNX'), 'enabled' => true, 'type' => 'discord'];
+                    }
+                    if (isFeatureEnabled('show_squadron_homepage') && !empty(getFeatureValue('squadron_homepage_url'))) {
+                        $resetMenuItems[] = ['name' => getFeatureValue('squadron_homepage_text', 'Squadron'), 'url' => getFeatureValue('squadron_homepage_url'), 'enabled' => true, 'type' => 'squadron_homepage'];
+                    }
+                    foreach ($resetMenuItems as $index => $item): ?>
+                    <input type="hidden" name="menu_order[]" value="<?= $index ?>">
+                    <input type="hidden" name="menu_names[<?= $index ?>]" value="<?= htmlspecialchars($item['name']) ?>">
+                    <input type="hidden" name="menu_urls[<?= $index ?>]" value="<?= htmlspecialchars($item['url']) ?>">
+                    <input type="hidden" name="menu_types[<?= $index ?>]" value="<?= htmlspecialchars($item['type']) ?>">
+                    <?php if ($item['enabled']): ?>
+                    <input type="hidden" name="menu_enabled[<?= $index ?>]" value="1">
+                    <?php endif; ?>
+                    <?php endforeach; ?>
+                `;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+        
+        // Initialize drag and drop when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initMenuDragDrop();
         });
     </script>
 </body>

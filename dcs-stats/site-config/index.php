@@ -26,6 +26,78 @@ $pageTitle = 'Flight Deck Operations';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $pageTitle ?> - Carrier Air Wing Command</title>
     <link rel="stylesheet" href="css/admin.css">
+    <style>
+        /* Critical inline CSS for layout */
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; overflow-x: hidden; }
+        .admin-wrapper { display: flex; min-height: 100vh; width: 100%; overflow-x: hidden; }
+        .admin-sidebar { width: 250px; flex-shrink: 0; background: #2a2a2a; }
+        .admin-main { flex: 1; min-width: 0; overflow-x: hidden; }
+        .admin-content { padding: 30px; max-width: 100%; overflow-x: hidden; }
+        .card { max-width: 100%; overflow-x: auto; }
+        .data-table { width: 100%; table-layout: fixed; }
+        .data-table td { word-wrap: break-word; overflow-wrap: break-word; }
+        
+        /* Bridge Log / Activity List Styles */
+        .activity-list { max-width: 100%; }
+        .activity-item {
+            padding: 15px;
+            border-bottom: 1px solid #444;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            transition: background-color 0.2s;
+        }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-item:hover { background-color: #333; }
+        .activity-time {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+            font-style: italic;
+        }
+        .activity-action {
+            margin-bottom: 5px;
+            word-break: break-word;
+            line-height: 1.6;
+        }
+        .activity-action strong {
+            color: #4CAF50;
+            margin-right: 5px;
+        }
+        .activity-details {
+            font-size: 12px;
+            color: #aaa;
+            background: #1a1a1a;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 8px;
+            word-break: break-all;
+            max-width: 100%;
+            overflow-x: auto;
+            border-left: 3px solid #4CAF50;
+        }
+        code {
+            background: #1a1a1a;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #ff9800;
+            word-break: break-all;
+            display: inline-block;
+            max-width: 100%;
+        }
+        .text-muted {
+            color: #888;
+            font-size: 13px;
+        }
+        @media (max-width: 768px) {
+            .admin-sidebar { display: none; }
+            .admin-wrapper { flex-direction: column; }
+            .admin-content { padding: 15px; }
+            .activity-item { padding: 10px; }
+            .activity-details { font-size: 11px; padding: 5px; }
+        }
+    </style>
 </head>
 <body>
     <div class="admin-wrapper">
@@ -83,12 +155,20 @@ $pageTitle = 'Flight Deck Operations';
                                         <strong><?= e($activity['admin_username']) ?></strong>
                                         <?= e(LOG_ACTIONS[$activity['action']] ?? $activity['action']) ?>
                                         <?php if ($activity['target_type']): ?>
-                                            <span class="text-muted">(<?= e($activity['target_type']) ?>: <?= e($activity['target_id']) ?>)</span>
+                                            <div style="margin-top: 5px;">
+                                                <span class="text-muted">Target: <?= e($activity['target_type']) ?></span>
+                                                <?php if ($activity['target_id']): ?>
+                                                    <code style="font-size: 11px;"><?= e(substr($activity['target_id'], 0, 50)) ?><?= strlen($activity['target_id']) > 50 ? '...' : '' ?></code>
+                                                <?php endif; ?>
+                                            </div>
                                         <?php endif; ?>
                                     </div>
-                                    <?php if ($activity['details']): ?>
+                                    <?php if ($activity['details'] && !empty($activity['details'])): ?>
                                         <div class="activity-details">
-                                            <?= e(is_array($activity['details']) ? json_encode($activity['details']) : $activity['details']) ?>
+                                            <?php 
+                                            $details = is_array($activity['details']) ? json_encode($activity['details']) : $activity['details'];
+                                            echo e(substr($details, 0, 100)) . (strlen($details) > 100 ? '...' : '');
+                                            ?>
                                         </div>
                                     <?php endif; ?>
                                 </div>
@@ -127,15 +207,15 @@ $pageTitle = 'Flight Deck Operations';
                         </tr>
                         <tr>
                             <td>PHP Version</td>
-                            <td><?= PHP_VERSION ?></td>
+                            <td><?= phpversion() ?></td>
                         </tr>
                         <tr>
                             <td>Storage Mode</td>
-                            <td><?= USE_DATABASE ? 'Database' : 'JSON Files' ?></td>
+                            <td><?= USE_DATABASE ? 'Database' : 'File-based' ?></td>
                         </tr>
                         <tr>
                             <td>Data Directory</td>
-                            <td><?= ADMIN_DATA_DIR ?></td>
+                            <td title="<?= htmlspecialchars(ADMIN_DATA_DIR) ?>"><?= basename(rtrim(ADMIN_DATA_DIR, '/')) ?>/</td>
                         </tr>
                         <tr>
                             <td>Log Retention</td>

@@ -5,7 +5,7 @@ error_reporting(0);
 
 // Include security functions and API client
 require_once __DIR__ . '/security_functions.php';
-require_once __DIR__ . '/api_client.php';
+require_once __DIR__ . '/api_client_enhanced.php';
 
 // Rate limiting: 120 requests per minute
 if (!checkRateLimit(120, 60)) {
@@ -59,8 +59,6 @@ try {
     ]);
     
 } catch (Exception $e) {
-    // Log error but don't expose it
-    error_log('API Error in get_leaderboard_api.php: ' . $e->getMessage());
     
     // Return error response
     echo json_encode([

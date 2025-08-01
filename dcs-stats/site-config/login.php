@@ -3,6 +3,9 @@
  * Admin Login Page
  */
 
+// Start output buffering to prevent header errors
+ob_start();
+
 require_once __DIR__ . '/auth.php';
 
 // Redirect if already logged in
@@ -27,6 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = attemptLogin($username, $password, $remember);
         
         if ($result['success']) {
+            // Clear any output before redirect
+            ob_end_clean();
             header('Location: index.php');
             exit;
         } else {
@@ -246,7 +251,7 @@ if (isset($_GET['logout']) && $_GET['logout'] === 'success') {
         </form>
         
         <div class="footer-links">
-            <a href="../index.php">← Back to Statistics</a>
+            <a href="<?php echo dirname(dirname($_SERVER['SCRIPT_NAME'])) . '/index.php'; ?>">← Back to Statistics</a>
         </div>
         
         <div class="security-notice">

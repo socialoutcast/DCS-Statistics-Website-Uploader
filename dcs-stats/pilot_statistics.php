@@ -318,7 +318,9 @@ async function loadPilotStats(playerName) {
                 const config = await window.dcsAPI.loadConfig();
                 if (config.use_api && config.api_base_url) {
                     // Call credits endpoint with player name and current date
-                    const response = await fetch('api_proxy.php?endpoint=' + encodeURIComponent('/credits') + '&method=POST', {
+                    const basePath = window.DCS_CONFIG ? window.DCS_CONFIG.basePath : '';
+                    const buildUrl = (path) => basePath ? `${basePath}/${path}` : path;
+                    const response = await fetch(buildUrl('api_proxy.php?endpoint=' + encodeURIComponent('/credits') + '&method=POST'), {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -347,9 +349,76 @@ async function loadPilotStats(playerName) {
             }
         }
         
-        // Squadron data not available in API-only mode
-        let squadron = undefined;
+        // Get squadron data - simplified approach
+        let squadron = 'None';
         let squadronLogo = null;
+        
+        // Use the actual player name from stats
+        const actualPlayerName = finalStats.name || playerName;
+        
+        // buildUrl should already be defined from earlier in the code
+        const basePath = window.DCS_CONFIG ? window.DCS_CONFIG.basePath : '';
+        const buildUrl = (path) => basePath ? `${basePath}/${path}` : path;
+        
+        // Create a helper function to find the pilot's squadron
+        async function findPilotSquadron(pilotName) {
+            try {
+                // Get all squadrons
+                const squadronsResp = await fetch(buildUrl('get_squadrons.php'));
+                if (!squadronsResp.ok) {
+                    console.error('Failed to fetch squadrons');
+                    return null;
+                }
+                
+                const squadronsData = await squadronsResp.json();
+                
+                if (!squadronsData.data || !Array.isArray(squadronsData.data)) {
+                    console.error('Invalid squadrons data format');
+                    return null;
+                }
+                
+                
+                // Check each squadron's members
+                for (const squadron of squadronsData.data) {
+                    
+                    const membersResp = await fetch(buildUrl('get_squadron_members.php'), {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ name: squadron.name })
+                    });
+                    
+                    if (membersResp.ok) {
+                        const membersData = await membersResp.json();
+                        
+                        if (membersData.data && Array.isArray(membersData.data)) {
+                            // Log each member comparison
+                            for (const member of membersData.data) {
+                                if (member.name.toLowerCase() === pilotName.toLowerCase()) {
+                                    return {
+                                        name: squadron.name,
+                                        logo: squadron.image_url
+                                    };
+                                }
+                            }
+                        }
+                    } else {
+                        console.error(`Failed to fetch members for ${squadron.name}`);
+                    }
+                }
+                
+                return null;
+            } catch (e) {
+                console.error('Squadron lookup error:', e);
+                return null;
+            }
+        }
+        
+        // Try to find squadron for the pilot
+        const squadronInfo = await findPilotSquadron(actualPlayerName);
+        if (squadronInfo) {
+            squadron = squadronInfo.name;
+            squadronLogo = squadronInfo.logo;
+        }
         
         // Helper function to safely update element text
         function updateElement(id, value) {
@@ -907,6 +976,22 @@ function createTrapScoresChart(trapScores) {
 document.getElementById('playerSearchInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         searchForPlayers();
+    }
+});
+
+// Check for search parameter in URL and auto-search
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get('search');
+    
+    if (searchParam) {
+        // Set the search input value
+        const searchInput = document.getElementById('playerSearchInput');
+        if (searchInput) {
+            searchInput.value = searchParam;
+            // Trigger the search automatically
+            searchForPlayers();
+        }
     }
 });
 </script>

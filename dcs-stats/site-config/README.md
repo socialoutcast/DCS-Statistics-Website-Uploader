@@ -35,22 +35,22 @@ A secure administrative interface for managing the DCS Statistics website.
 
 ## Installation
 
-### 1. Basic Setup (JSON-based)
+### 1. Basic Setup
+
+The admin panel automatically configures itself on first access:
 
 ```bash
-# 1. Ensure admin directories exist and are writable
-chmod 755 admin/
-chmod 777 admin/data/
-
-# 2. Access admin panel
+# Access admin panel
 https://yoursite.com/dcs-stats/site-config/
 
-# 3. Login with default credentials
+# Login with default credentials
 Username: admin
 Password: changeme123
 
-# 4. IMMEDIATELY change the default password!
+# IMMEDIATELY change the default password!
 ```
+
+**Note:** The system will automatically create necessary directories and handle all configuration. No manual setup required!
 
 ### 2. Database Setup (Optional)
 
@@ -155,8 +155,8 @@ admin/
 ## API Integration
 
 The admin panel integrates with:
-- DCSServerBot REST API (when available)
-- Local JSON files (fallback)
+- DCSServerBot REST API exclusively
+- Auto-detects HTTP/HTTPS protocols
 
 ## Support
 

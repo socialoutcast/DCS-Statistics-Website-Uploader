@@ -1,8 +1,8 @@
 <?php
 /**
- * Server Status Endpoint
+ * Squadrons Endpoint
  * API-only implementation
  */
 
 // Always use API version
-include __DIR__ . '/get_servers_api.php';
+include __DIR__ . '/get_squadrons_api.php';

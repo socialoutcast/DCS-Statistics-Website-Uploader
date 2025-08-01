@@ -5,7 +5,7 @@ error_reporting(0);
 
 // Include security functions and API client
 require_once __DIR__ . '/security_functions.php';
-require_once __DIR__ . '/api_client.php';
+require_once __DIR__ . '/api_client_enhanced.php';
 
 // Rate limiting
 if (!checkRateLimit(60, 60)) {
@@ -91,8 +91,6 @@ try {
     }
     
 } catch (Exception $e) {
-    // General error
-    error_log('Error in search_players_api.php: ' . $e->getMessage());
     
     echo json_encode([
         'error' => 'Search service error',

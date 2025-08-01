@@ -21,17 +21,25 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-x: hidden;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: var(--bg-primary);
     color: var(--text-primary);
     line-height: 1.6;
+    overflow-x: hidden;
+    width: 100%;
 }
 
 /* Layout */
 .admin-wrapper {
     display: flex;
     min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
 }
 
 /* Sidebar */
@@ -40,6 +48,8 @@ body {
     background-color: var(--bg-secondary);
     padding: 20px 0;
     flex-shrink: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .admin-logo {
@@ -135,6 +145,8 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-width: 0; /* Allow flex item to shrink below content size */
+    overflow-x: hidden;
 }
 
 /* Header */
@@ -145,11 +157,15 @@ body {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .admin-header h1 {
     font-size: 24px;
     font-weight: 500;
+    word-wrap: break-word;
+    max-width: 100%;
 }
 
 .admin-user-menu {
@@ -176,6 +192,8 @@ body {
     flex: 1;
     padding: 30px;
     overflow-y: auto;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 /* Cards */
@@ -185,6 +203,8 @@ body {
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: var(--shadow);
+    overflow-x: auto; /* Allow horizontal scroll if content is too wide */
+    max-width: 100%;
 }
 
 .card-header {
@@ -232,6 +252,7 @@ body {
 .data-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed; /* Prevent table from expanding beyond container */
 }
 
 .data-table th,
@@ -239,6 +260,9 @@ body {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 300px; /* Prevent extremely wide columns */
 }
 
 .data-table th {
@@ -482,9 +506,35 @@ textarea.form-control {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .admin-sidebar {
-        display: none;
+        width: 200px;
+    }
+    
+    .admin-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .admin-user-menu {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-wrapper {
+        flex-direction: column;
+    }
+    
+    .admin-sidebar {
+        width: 100%;
+        display: none; /* Hide by default on mobile */
+    }
+    
+    .admin-main {
+        width: 100%;
     }
     
     .stats-grid {
@@ -492,17 +542,71 @@ textarea.form-control {
     }
     
     .admin-content {
-        padding: 20px;
+        padding: 15px;
     }
     
     .data-table {
-        font-size: 14px;
+        font-size: 12px;
+        table-layout: auto;
     }
     
     .data-table th,
     .data-table td {
-        padding: 8px;
+        padding: 6px;
+        word-break: break-word;
     }
+    
+    /* Make forms stack vertically on mobile */
+    .form-group {
+        width: 100%;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        width: 100%;
+    }
+    
+    /* Hide less important columns on mobile */
+    .hide-mobile {
+        display: none;
+    }
+}
+
+/* Form adjustments for better layout */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.filter-form {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+/* Activity logs specific */
+.logs-list {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.log-entry {
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
+
+.log-header {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Code blocks */
+code {
+    word-break: break-all;
+    display: inline-block;
+    max-width: 100%;
 }
 
 /* Utilities */

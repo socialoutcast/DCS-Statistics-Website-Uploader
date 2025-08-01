@@ -80,8 +80,6 @@ try {
     ]);
     
 } catch (Exception $e) {
-    // Log error but don't expose it
-    error_log('API Error in get_server_stats.php: ' . $e->getMessage());
     
     // Return error response
     echo json_encode([
