@@ -376,85 +376,26 @@ $pageTitle = 'API Settings';
                 </div>
 
 <script>
-    // Enhanced test functionality
-    document.addEventListener(\'DOMContentLoaded\', function() {
-        const testBtn = document.querySelector(\'button[value="test"]\');
-        const apiHostInput = document.getElementById(\'api_host\');
+    // Handle test button - remove the complex AJAX functionality since test_api_connection.php doesn't exist
+    // The test is handled server-side when the form is submitted with action=test
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form.api-form');
+        const actionInput = form.querySelector('input[name="action"]');
+        const testBtn = document.querySelector('button[value="test"]');
         
         if (testBtn) {
-            testBtn.addEventListener(\'click\', async function(e) {
+            testBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 
-                const apiHost = apiHostInput.value.trim();
-                if (!apiHost) {
-                    alert(\'Please enter an API host first\');
+                const apiHostInput = document.getElementById('api_host');
+                if (!apiHostInput.value.trim()) {
+                    alert('Please enter an API host first');
                     return;
                 }
                 
-                // Show loading state
-                testBtn.disabled = true;
-                testBtn.textContent = \'Testing...\';
-                
-                try {
-                    // Use our test endpoint
-                    const response = await fetch(\'' . url("test_api_connection.php") . '\', {
-                        method: \'POST\',
-                        headers: {
-                            \'Content-Type\': \'application/x-www-form-urlencoded\'
-                        },
-                        body: new URLSearchParams({
-                            api_host: apiHost,
-                            endpoint: \'/stats\'
-                        })
-                    });
-                    
-                    const result = await response.json();
-                    
-                    // Display results
-                    let message = \'\';
-                    
-                    if (result.recommended_protocol) {
-                        if (result.recommendation_reason && result.recommendation_reason.includes(\'SSL errors\')) {
-                            message = `⚠️ SSL Error Detected!\n\n`;
-                            message += `The API server is using HTTP, not HTTPS.\n`;
-                            message += `Detected: ${result.recommended_protocol}://${apiHost}\n\n`;
-                            message += `Click OK to save and test again with the correct protocol.`;
-                            
-                            if (confirm(message)) {
-                                // Submit the form to save with auto-detection
-                                const form = testBtn.closest(\'form\');
-                                if (form) {
-                                    // The server-side test will handle the SSL error and auto-configure
-                                    form.submit();
-                                }
-                            }
-                        } else {
-                            message = `✅ Connection Successful!\n\n`;
-                            message += `Protocol: ${result.recommended_protocol}\n`;
-                            message += `API URL: ${result.recommended_url}\n`;
-                            message += `Reason: ${result.recommendation_reason}`;
-                            alert(message);
-                        }
-                    } else {
-                        message = \'❌ Could not connect to API\\n\\n\';
-                        message += \'Details:\\n\';
-                        for (const [protocol, test] of Object.entries(result.results)) {
-                            if (test.ssl_error) {
-                                message += `${protocol}: SSL Error - Server is using HTTP\\n`;
-                            } else {
-                                message += `${protocol}: ${test.error || \'HTTP \' + test.http_code}\\n`;
-                            }
-                        }
-                        message += \'\\nMake sure the API server is running and accessible.\';
-                        alert(message);
-                    }
-                    
-                } catch (error) {
-                    alert(\'Test failed: \' + error.message);
-                } finally {
-                    testBtn.disabled = false;
-                    testBtn.textContent = \'Test Connection\';
-                }
+                // Set the action to test and submit the form
+                actionInput.value = 'test';
+                form.submit();
             });
         }
     });
