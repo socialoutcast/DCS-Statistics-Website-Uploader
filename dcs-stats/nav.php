@@ -156,7 +156,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (menuClose) {
-        menuClose.addEventListener('click', closeMenu);
+        menuClose.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeMenu();
+        });
     }
     
     if (overlay) {
