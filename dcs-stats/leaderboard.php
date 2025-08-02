@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include "header.php"; 
 require_once __DIR__ . '/site_features.php';
+require_once __DIR__ . '/table-responsive.php';
 include "nav.php"; ?>
 
 <style>
@@ -73,6 +74,8 @@ include "nav.php"; ?>
     letter-spacing: 0.5px;
   }
 </style>
+
+<?php tableResponsiveStyles(); ?>
 
 <main class="container">
   <div class="dashboard-header">

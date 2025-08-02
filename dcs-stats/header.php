@@ -49,6 +49,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DCS Statistics Dashboard</title>
   <link rel="stylesheet" href="<?php echo url('styles.php'); ?>" />
+  <link rel="stylesheet" href="<?php echo url('styles-mobile.css'); ?>" />
   <?php if (file_exists(__DIR__ . '/custom_theme.css')): ?>
   <link rel="stylesheet" href="<?php echo url('custom_theme.css'); ?>" />
   <?php endif; ?>
@@ -64,6 +65,7 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
     }
   </script>
   <script src="<?php echo url('js/api-client.js'); ?>"></script>
+  <script src="<?php echo url('mobile-enhancements.js'); ?>"></script>
 </head>
 <body>
   <header class="main-header">
@@ -76,6 +78,11 @@ header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-i
           <p class="site-subtitle">Combat Data & Analytics Platform</p>
         </div>
       </div>
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
       <div class="header-actions">
         <div class="status-indicator">
           <span class="status-dot"></span>

@@ -1,0 +1,536 @@
+/* Mobile-First Responsive Styles for DCS Statistics */
+
+/* Mobile Menu Button */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    z-index: 1001;
+    position: relative;
+}
+
+.hamburger-line {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: #fff;
+    margin: 5px 0;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+/* Mobile Menu Header */
+.mobile-menu-header {
+    display: none;
+    padding: 20px;
+    background: #1a1a1a;
+    border-bottom: 2px solid #4CAF50;
+    position: relative;
+}
+
+.mobile-menu-title {
+    color: #4CAF50;
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.mobile-menu-close {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.3s ease;
+}
+
+.mobile-menu-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile Menu Overlay */
+.mobile-menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mobile-menu-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Base Mobile Styles */
+@media screen and (max-width: 768px) {
+    /* Show mobile menu toggle */
+    .mobile-menu-toggle {
+        display: block;
+    }
+    
+    /* Header adjustments */
+    .main-header {
+        min-height: 80px;
+        position: fixed;
+        width: 100%;
+    }
+    
+    .header-container {
+        padding: 1rem;
+        min-height: 80px;
+        width: 100%;
+    }
+    
+    .site-title {
+        font-size: 1.5rem;
+    }
+    
+    .site-subtitle {
+        font-size: 0.7rem;
+    }
+    
+    .header-actions {
+        display: none; /* Hide status indicator on mobile */
+    }
+    
+    /* Navigation Mobile Styles */
+    .nav-bar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        width: 80%;
+        max-width: 300px;
+        height: 100vh;
+        background: #1a1a1a;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+        transition: left 0.3s ease;
+        z-index: 999;
+        overflow-y: auto;
+    }
+    
+    .nav-bar.mobile-menu-open {
+        left: 0;
+    }
+    
+    .mobile-menu-header {
+        display: flex;
+    }
+    
+    .nav-menu {
+        flex-direction: column;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .nav-menu li {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .nav-link {
+        display: block;
+        padding: 15px 20px;
+        font-size: 1.1rem;
+        transition: background 0.3s ease;
+    }
+    
+    .nav-link:hover {
+        background: rgba(76, 175, 80, 0.2);
+    }
+    
+    /* Main content adjustments */
+    body {
+        padding-top: 80px; /* Account for fixed header */
+    }
+    
+    main {
+        padding: 1rem;
+        max-width: 100%;
+    }
+    
+    /* Tables - Make them responsive */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -1rem;
+        padding: 0 1rem;
+    }
+    
+    table {
+        min-width: 600px;
+        font-size: 0.9rem;
+    }
+    
+    th, td {
+        padding: 8px 5px;
+        white-space: nowrap;
+    }
+    
+    /* Stats Cards - Stack vertically on mobile */
+    .stats-cards {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+        padding: 0;
+    }
+    
+    .stat-card {
+        padding: 20px !important;
+    }
+    
+    .stat-icon {
+        font-size: 2rem !important;
+    }
+    
+    .stat-number {
+        font-size: 2rem !important;
+    }
+    
+    /* Charts - Optimize for mobile */
+    .charts-dashboard {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+        padding: 0 !important;
+    }
+    
+    .chart-container {
+        padding: 20px !important;
+    }
+    
+    .chart-container h2 {
+        font-size: 1.2rem !important;
+    }
+    
+    .chart-container canvas {
+        max-height: 250px !important;
+    }
+    
+    /* Forms and inputs */
+    input[type="text"],
+    input[type="search"],
+    input[type="email"],
+    input[type="password"],
+    select {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    button {
+        min-height: 44px; /* Touch-friendly size */
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+    
+    /* Search forms */
+    .search-form {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .search-form input {
+        width: 100%;
+    }
+    
+    .search-form button {
+        width: 100%;
+    }
+    
+    /* Dashboard header */
+    .dashboard-header {
+        text-align: center;
+        padding: 0;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 0.9rem;
+    }
+    
+    /* Pilot statistics page */
+    .pilot-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .pilot-avatar {
+        width: 80px;
+        height: 80px;
+    }
+    
+    /* Squadron page */
+    .squadron-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .squadron-card {
+        padding: 15px;
+    }
+    
+    /* Loading overlay */
+    .loading-overlay {
+        font-size: 1rem;
+    }
+    
+    .loader {
+        width: 40px;
+        height: 40px;
+    }
+    
+    /* Footer adjustments */
+    footer {
+        padding: 20px 10px;
+        font-size: 0.8rem;
+    }
+    
+    /* Utility classes for mobile */
+    .hide-mobile {
+        display: none !important;
+    }
+    
+    .show-mobile {
+        display: block !important;
+    }
+    
+    /* Leaderboard specific */
+    .leaderboard-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .leaderboard-controls button {
+        width: 100%;
+    }
+    
+    /* Modal adjustments */
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    /* Error messages */
+    .error-message,
+    .success-message,
+    .warning-message {
+        margin: 10px;
+        padding: 15px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Small Mobile Devices */
+@media screen and (max-width: 480px) {
+    .site-title {
+        font-size: 1.2rem;
+    }
+    
+    .site-subtitle {
+        display: none;
+    }
+    
+    .nav-bar {
+        width: 85%;
+    }
+    
+    table {
+        font-size: 0.8rem;
+    }
+    
+    th, td {
+        padding: 5px 3px;
+    }
+    
+    .stat-card {
+        padding: 15px !important;
+    }
+    
+    .chart-container {
+        padding: 15px !important;
+    }
+    
+    .chart-container canvas {
+        max-height: 200px !important;
+    }
+}
+
+/* Landscape Mobile */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+    .main-header {
+        min-height: 60px;
+    }
+    
+    .header-container {
+        min-height: 60px;
+        padding: 0.5rem 1rem;
+    }
+    
+    body {
+        padding-top: 60px;
+    }
+    
+    .site-title {
+        font-size: 1.3rem;
+    }
+    
+    .charts-dashboard {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+/* Touch-friendly hover states */
+@media (hover: none) and (pointer: coarse) {
+    .nav-link:hover {
+        background: transparent;
+    }
+    
+    .nav-link:active {
+        background: rgba(76, 175, 80, 0.3);
+    }
+    
+    button:hover {
+        transform: none;
+    }
+    
+    button:active {
+        transform: scale(0.95);
+    }
+}
+
+/* Scroll indicator for tables */
+.scroll-indicator {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    pointer-events: none;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+}
+
+/* Custom scrollbar for mobile */
+@media screen and (max-width: 768px) {
+    *::-webkit-scrollbar {
+        height: 6px;
+        width: 6px;
+    }
+    
+    *::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+    }
+    
+    *::-webkit-scrollbar-thumb {
+        background: #4CAF50;
+        border-radius: 3px;
+    }
+    
+    /* Fix for iOS rubber band scrolling */
+    body {
+        position: fixed;
+        width: 100%;
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        overflow: hidden;
+    }
+    
+    main {
+        height: calc(100vh - 80px);
+        height: calc(calc(var(--vh, 1vh) * 100) - 80px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Better form styling for mobile */
+@media screen and (max-width: 768px) {
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #4CAF50;
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn-group button {
+        width: 100%;
+    }
+}
+
+/* Improve readability on small screens */
+@media screen and (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+    
+    p {
+        line-height: 1.6;
+    }
+    
+    /* Stack stat cards better */
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .stat-icon {
+        margin: 0 auto;
+    }
+}
+
+/* Print styles for mobile */
+@media print {
+    .mobile-menu-toggle,
+    .mobile-menu-overlay,
+    .nav-bar {
+        display: none !important;
+    }
+    
+    body {
+        padding-top: 0 !important;
+        position: static !important;
+        height: auto !important;
+    }
+    
+    main {
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    .main-header {
+        position: relative !important;
+    }
+}

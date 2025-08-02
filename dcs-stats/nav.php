@@ -86,7 +86,13 @@ if (!$hasSquadronInMenu && isFeatureEnabled('show_squadron_homepage') && !empty(
     ];
 }
 ?>
-<nav class="nav-bar">
+<nav class="nav-bar" id="navBar">
+  <div class="mobile-menu-header">
+    <span class="mobile-menu-title">Navigation</span>
+    <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close navigation menu">
+      <span>&times;</span>
+    </button>
+  </div>
   <ul class="nav-menu">
     <?php foreach ($menuItems as $item): ?>
       <?php if ($item['enabled']): ?>
@@ -123,3 +129,48 @@ if (!$hasSquadronInMenu && isFeatureEnabled('show_squadron_homepage') && !empty(
     <?php endif; ?>
   </ul>
 </nav>
+<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+<script>
+// Mobile menu functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const menuToggle = document.getElementById('mobileMenuToggle');
+    const menuClose = document.getElementById('mobileMenuClose');
+    const navBar = document.getElementById('navBar');
+    const overlay = document.getElementById('mobileMenuOverlay');
+    const body = document.body;
+    
+    function openMenu() {
+        navBar.classList.add('mobile-menu-open');
+        overlay.classList.add('active');
+        body.style.overflow = 'hidden';
+    }
+    
+    function closeMenu() {
+        navBar.classList.remove('mobile-menu-open');
+        overlay.classList.remove('active');
+        body.style.overflow = '';
+    }
+    
+    if (menuToggle) {
+        menuToggle.addEventListener('click', openMenu);
+    }
+    
+    if (menuClose) {
+        menuClose.addEventListener('click', closeMenu);
+    }
+    
+    if (overlay) {
+        overlay.addEventListener('click', closeMenu);
+    }
+    
+    // Close menu when clicking on a link
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            if (window.innerWidth <= 768) {
+                closeMenu();
+            }
+        });
+    });
+});
+</script>
