@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include 'header.php';
 require_once __DIR__ . '/site_features.php';
+require_once __DIR__ . '/table-responsive.php';
 include 'nav.php';
 
 if (!isFeatureEnabled('nav_servers')):
@@ -29,18 +30,18 @@ if (!isFeatureEnabled('nav_servers')):
     </div>
     
     <div id="servers-container" style="display: none;">
-        <div class="table-responsive">
+        <div class="table-wrapper">
             <table id="serversTable">
                 <thead>
                     <tr>
                         <th>Server Name</th>
                         <th>Status</th>
-                        <th>Address</th>
-                        <th>Password</th>
+                        <th class="hide-mobile">Address</th>
+                        <th class="hide-mobile">Password</th>
                         <th>Mission</th>
-                        <th>Theatre</th>
+                        <th class="hide-mobile">Theatre</th>
                         <th>Players</th>
-                        <th>Uptime</th>
+                        <th class="hide-mobile">Uptime</th>
                     </tr>
                 </thead>
                 <tbody id="serversTableBody"></tbody>
@@ -117,12 +118,12 @@ async function loadServers() {
             const cells = [
                 `<td>${escapeHtml(server.name || 'Unknown')}</td>`,
                 `<td><span class="${statusClass}">${escapeHtml(server.status || 'Unknown')}</span></td>`,
-                `<td>${escapeHtml(server.address || 'N/A')}</td>`,
-                `<td>${passwordStatus}</td>`,
+                `<td class="hide-mobile">${escapeHtml(server.address || 'N/A')}</td>`,
+                `<td class="hide-mobile">${passwordStatus}</td>`,
                 `<td>${escapeHtml(missionName)}</td>`,
-                `<td>${escapeHtml(theatre)}</td>`,
+                `<td class="hide-mobile">${escapeHtml(theatre)}</td>`,
                 `<td>${escapeHtml(playerCount)}</td>`,
-                `<td>${escapeHtml(uptime)}</td>`
+                `<td class="hide-mobile">${escapeHtml(uptime)}</td>`
             ];
             
             row.innerHTML = cells.join('');
@@ -202,6 +203,113 @@ setInterval(loadServers, 30000);
     color: #9e9e9e;
     font-weight: bold;
 }
+
+/* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+    /* Dashboard header mobile */
+    .dashboard-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 0.9rem;
+        padding: 0 10px;
+    }
+    
+    /* Table adjustments */
+    #serversTable {
+        font-size: 0.85rem;
+    }
+    
+    #serversTable th,
+    #serversTable td {
+        padding: 8px 5px;
+        white-space: nowrap;
+    }
+    
+    /* Server name wrapping on mobile */
+    #serversTable td:first-child {
+        white-space: normal;
+        max-width: 150px;
+        word-wrap: break-word;
+    }
+    
+    /* Status column */
+    #serversTable td:nth-child(2) {
+        min-width: 60px;
+    }
+    
+    /* Mission name wrapping */
+    #serversTable td:nth-child(5) {
+        white-space: normal;
+        max-width: 120px;
+        word-wrap: break-word;
+    }
+    
+    /* Player count smaller */
+    #serversTable td:nth-child(7) {
+        font-size: 0.8rem;
+    }
+    
+    /* Loading and no-servers messages */
+    #servers-loading,
+    #no-servers {
+        padding: 30px 15px !important;
+        font-size: 1rem;
+    }
+}
+
+/* Very small devices - show only essential columns */
+@media screen and (max-width: 480px) {
+    #serversTable {
+        font-size: 0.8rem;
+    }
+    
+    #serversTable th,
+    #serversTable td {
+        padding: 6px 3px;
+    }
+    
+    /* Even smaller server name on very small screens */
+    #serversTable td:first-child {
+        max-width: 100px;
+        font-size: 0.85rem;
+    }
+    
+    /* Simplify player count display */
+    #serversTable td:nth-child(7) {
+        font-size: 0.75rem;
+    }
+    
+    /* Hide detailed player counts, show only total */
+    @media screen and (max-width: 480px) {
+        #serversTable td:nth-child(7) {
+            text-overflow: ellipsis;
+            overflow: hidden;
+            max-width: 50px;
+        }
+    }
+}
+
+/* Ensure hide-mobile works */
+@media screen and (max-width: 768px) {
+    .hide-mobile {
+        display: none !important;
+    }
+}
+
+/* Touch-friendly hover states */
+@media (hover: none) and (pointer: coarse) {
+    #serversTable tr:hover {
+        background-color: transparent;
+    }
+    
+    #serversTable tr:active {
+        background-color: #3a3a3a;
+    }
+}
 </style>
+
+<?php tableResponsiveStyles(); ?>
 
 <?php include 'footer.php'; ?>

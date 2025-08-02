@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 include 'header.php'; 
 ?>
 <?php require_once __DIR__ . '/site_features.php'; ?>
+<?php require_once __DIR__ . '/table-responsive.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php include 'nav.php'; ?>
 
@@ -1130,6 +1131,150 @@ document.addEventListener('DOMContentLoaded', function() {
         opacity: 1;
     }
 }
+
+/* Mobile Responsive Styles */
+@media screen and (max-width: 768px) {
+    /* Search container mobile optimization */
+    .search-container {
+        padding: 0 15px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    #playerSearchInput {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        border-radius: 25px;
+    }
+    
+    .search-container button {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 1rem;
+        border-radius: 25px;
+        min-height: 44px;
+    }
+    
+    /* Results list mobile optimization */
+    .results-list {
+        padding: 0 10px;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .result-item {
+        padding: 15px;
+        margin: 8px 0;
+        font-size: 1rem;
+    }
+    
+    /* Pilot card mobile optimization */
+    .pilot-card {
+        padding: 15px;
+        margin: 15px;
+    }
+    
+    .pilot-card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+    
+    /* Stats grid mobile layout */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
+    }
+    
+    .stat-label {
+        font-weight: 600;
+        color: #4CAF50;
+    }
+    
+    .stat-value {
+        font-weight: bold;
+    }
+    
+    /* Charts mobile optimization */
+    .charts-container {
+        grid-template-columns: 1fr !important;
+        gap: 20px;
+        margin: 20px 0;
+    }
+    
+    .chart-wrapper {
+        padding: 15px;
+    }
+    
+    .chart-wrapper h4 {
+        font-size: 1rem;
+        margin-bottom: 15px;
+    }
+    
+    .chart-wrapper canvas {
+        max-height: 200px !important;
+    }
+    
+    /* Stat groups */
+    .stat-group h4 {
+        font-size: 1.1rem;
+        margin: 20px 0 10px 0;
+        color: #4CAF50;
+    }
+    
+    /* Dashboard header mobile */
+    .dashboard-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 0.9rem;
+        padding: 0 10px;
+    }
+}
+
+/* Very small devices */
+@media screen and (max-width: 480px) {
+    .pilot-card {
+        margin: 10px;
+        padding: 10px;
+    }
+    
+    .pilot-card h3 {
+        font-size: 1.2rem;
+    }
+    
+    .stat-item {
+        font-size: 0.9rem;
+    }
+    
+    .chart-wrapper canvas {
+        max-height: 180px !important;
+    }
+}
+
+/* Touch-friendly hover states */
+@media (hover: none) and (pointer: coarse) {
+    .result-item:hover {
+        background-color: transparent;
+    }
+    
+    .result-item:active {
+        background-color: rgba(76, 175, 80, 0.3);
+    }
+}
 </style>
+
+<?php tableResponsiveStyles(); ?>
 
 <?php include 'footer.php'; ?>

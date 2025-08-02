@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include 'header.php';
 require_once __DIR__ . '/site_features.php';
+require_once __DIR__ . '/table-responsive.php';
 include 'nav.php';
 
 if (!isFeatureEnabled('squadrons_enabled')):
@@ -180,7 +181,127 @@ if (!isFeatureEnabled('squadrons_enabled')):
         font-size: 0.85rem;
         margin-left: 10px;
     }
+    
+    /* Mobile Responsive Styles */
+    @media screen and (max-width: 768px) {
+        /* Remove fixed widths on mobile */
+        #squadronsTable th,
+        #squadronsTable td,
+        #membersTable th,
+        #membersTable td,
+        #leaderboardTable th,
+        #leaderboardTable td {
+            width: auto !important;
+        }
+        
+        /* Stack squadron info vertically on mobile */
+        #squadronsTable td:first-child img {
+            width: 50px !important;
+            height: 50px !important;
+            object-fit: cover;
+        }
+        
+        #membersTable td:first-child img,
+        #leaderboardTable td:first-child img {
+            width: 40px !important;
+            height: 40px !important;
+            object-fit: cover;
+        }
+        
+        /* Adjust font sizes */
+        h2 {
+            font-size: 1.2rem;
+            margin: 20px 0 15px 0;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+        }
+        
+        .dashboard-subtitle {
+            font-size: 0.9rem;
+        }
+        
+        /* Make search container mobile-friendly */
+        .search-container {
+            padding: 0 10px;
+            margin-bottom: 20px;
+        }
+        
+        #searchInput {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px; /* Prevents zoom on iOS */
+        }
+        
+        /* Adjust table text */
+        table {
+            font-size: 0.85rem;
+        }
+        
+        /* Hide descriptions on very small screens */
+        @media screen and (max-width: 480px) {
+            #squadronsTable td:last-child {
+                display: none;
+            }
+            
+            #squadronsTable th:last-child {
+                display: none;
+            }
+            
+            .member-name small {
+                display: block;
+                margin-left: 0;
+                margin-top: 5px;
+            }
+        }
+        
+        /* Improve toggle header on mobile */
+        .toggle-header td {
+            padding: 15px 10px;
+        }
+        
+        .toggle-header em {
+            font-size: 0.8rem;
+        }
+        
+        /* Better member row styling on mobile */
+        #membersTable tbody tr:not(.toggle-header) td {
+            padding-left: 20px;
+        }
+    }
+    
+    /* Search container styling */
+    .search-container {
+        margin: 20px auto;
+        max-width: 600px;
+        text-align: center;
+    }
+    
+    #searchInput {
+        width: 100%;
+        max-width: 100%;
+        padding: 10px 15px;
+        font-size: 1rem;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        color: #fff;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+    }
+    
+    #searchInput:focus {
+        outline: none;
+        border-color: #4CAF50;
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+    }
+    
+    #searchInput::placeholder {
+        color: #999;
+    }
 </style>
+
+<?php tableResponsiveStyles(); ?>
 
 <main>
     <div class="dashboard-header">
@@ -192,13 +313,13 @@ if (!isFeatureEnabled('squadrons_enabled')):
         <input type="text" id="searchInput" placeholder="Search squadrons, members, or credits...">
     </div>
 
-    <div class="table-responsive">
-        <table id="squadronsTable" style="width: 100%;">
+    <div class="table-wrapper">
+        <table id="squadronsTable">
             <thead>
                 <tr>
-                    <th style="width: 10%;">Logo</th>
-                    <th style="width: 40%;">Name</th>
-                    <th style="width: 50%;">Description</th>
+                    <th>Logo</th>
+                    <th>Name</th>
+                    <th>Description</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -207,13 +328,13 @@ if (!isFeatureEnabled('squadrons_enabled')):
 
     <?php if (isFeatureEnabled('squadron_management')): ?>
     <h2>Squadron Members</h2>
-    <div class="table-responsive">
-        <table id="membersTable" style="width: 100%;">
+    <div class="table-wrapper">
+        <table id="membersTable">
             <thead>
                 <tr>
-                    <th style="width: 10%;">Logo</th>
-                    <th style="width: 30%;">Squadron Name</th>
-                    <th style="width: 60%;">Member</th>
+                    <th>Logo</th>
+                    <th>Squadron Name</th>
+                    <th>Member</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -223,13 +344,13 @@ if (!isFeatureEnabled('squadrons_enabled')):
 
     <?php if (isFeatureEnabled('squadron_statistics') && isFeatureEnabled('credits_enabled')): ?>
     <h2>Squadron Leaderboard</h2>
-    <div class="table-responsive">
-        <table id="leaderboardTable" style="width: 100%;">
+    <div class="table-wrapper">
+        <table id="leaderboardTable">
             <thead>
                 <tr>
-                    <th style="width: 10%;">Logo</th>
-                    <th style="width: 60%;">Squadron Name</th>
-                    <th style="width: 30%;">Credits</th>
+                    <th>Logo</th>
+                    <th>Squadron Name</th>
+                    <th>Credits</th>
                 </tr>
             </thead>
             <tbody></tbody>

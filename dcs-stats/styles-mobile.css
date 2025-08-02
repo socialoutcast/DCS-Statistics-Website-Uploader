@@ -448,20 +448,14 @@
         border-radius: 3px;
     }
     
-    /* Fix for iOS rubber band scrolling */
+    /* Better scrolling for mobile */
     body {
-        position: fixed;
-        width: 100%;
-        height: 100vh;
-        height: calc(var(--vh, 1vh) * 100);
-        overflow: hidden;
+        -webkit-overflow-scrolling: touch;
     }
     
     main {
-        height: calc(100vh - 80px);
-        height: calc(calc(var(--vh, 1vh) * 100) - 80px);
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        min-height: calc(100vh - 80px);
+        padding-bottom: 60px; /* Account for footer */
     }
 }
 
@@ -508,6 +502,254 @@
     
     .stat-icon {
         margin: 0 auto;
+    }
+}
+
+/* Global search container styles for all pages */
+@media screen and (max-width: 768px) {
+    .search-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 0 15px;
+        margin: 20px auto;
+        max-width: 100%;
+    }
+    
+    .search-container input[type="text"],
+    .search-container input[type="search"],
+    .search-container input {
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        border-radius: 25px;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        color: #fff;
+    }
+    
+    .search-container button {
+        width: 100%;
+        padding: 12px 20px;
+        font-size: 1rem;
+        border-radius: 25px;
+        min-height: 44px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    
+    /* Results list for all pages */
+    .results-list {
+        padding: 0 10px;
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 10px;
+    }
+    
+    .result-item {
+        padding: 15px;
+        margin: 8px 0;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    /* Pilot card styles for all pages */
+    .pilot-card {
+        padding: 15px;
+        margin: 15px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 12px;
+    }
+    
+    .pilot-card h3 {
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+        color: #4CAF50;
+    }
+    
+    /* Stats grid for all pages */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
+    }
+    
+    .stat-group {
+        margin-bottom: 20px;
+    }
+    
+    .stat-group h4 {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+        color: #4CAF50;
+    }
+    
+    /* Dashboard headers for all pages */
+    .dashboard-header {
+        text-align: center;
+        padding: 0 15px;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 0.9rem;
+        color: #ccc;
+    }
+    
+    /* Alert messages */
+    .alert {
+        padding: 30px 15px !important;
+        margin: 15px;
+    }
+    
+    .alert h2 {
+        font-size: 1.5rem;
+    }
+    
+    .alert p {
+        font-size: 1rem;
+    }
+    
+    /* Container adjustments */
+    .container {
+        padding: 0 15px;
+        max-width: 100%;
+    }
+    
+    /* Trophy boxes on leaderboard */
+    .trophy-box {
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .top-3-container {
+        flex-direction: column;
+    }
+    
+    /* General form elements */
+    input, select, textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Buttons */
+    button, .button, .btn {
+        min-height: 44px;
+        padding: 12px 20px;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+    
+    /* Error and success messages */
+    .error-message,
+    .success-message,
+    .warning-message,
+    .no-results {
+        padding: 20px 15px;
+        margin: 15px;
+        border-radius: 8px;
+    }
+}
+
+/* Landscape adjustments */
+@media screen and (max-width: 768px) and (orientation: landscape) {
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .main-header {
+        min-height: 60px;
+    }
+    
+    body {
+        padding-top: 60px;
+    }
+}
+
+/* Very small devices additional styles */
+@media screen and (max-width: 480px) {
+    /* Even smaller text */
+    body {
+        font-size: 14px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.4rem;
+    }
+    
+    .dashboard-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    /* Smaller padding on containers */
+    main {
+        padding: 10px;
+    }
+    
+    .pilot-card,
+    .alert,
+    .no-results {
+        margin: 10px;
+        padding: 10px;
+    }
+    
+    /* Smaller stat items */
+    .stat-item {
+        padding: 8px;
+        font-size: 0.85rem;
+    }
+    
+    /* Adjust button sizes */
+    button, .button, .btn {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Footer mobile styles */
+@media screen and (max-width: 768px) {
+    footer {
+        padding: 20px 15px;
+        font-size: 0.85rem;
+        text-align: center;
+        line-height: 1.6;
+    }
+    
+    footer p {
+        margin: 0;
+    }
+    
+    footer a {
+        display: inline-block;
+        margin: 0 5px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    footer {
+        font-size: 0.75rem;
+        padding: 15px 10px;
+    }
+    
+    footer a {
+        display: block;
+        margin: 5px 0;
     }
 }
 
