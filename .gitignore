@@ -37,7 +37,6 @@ dcs-stats/api_config.json
 
 # Docker related
 docker-compose.override.yml
-.dockerignore
 *.dockerfile
 .docker/
 
