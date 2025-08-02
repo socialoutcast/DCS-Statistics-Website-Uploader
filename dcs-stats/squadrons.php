@@ -224,14 +224,18 @@ if (!isFeatureEnabled('squadrons_enabled')):
         
         /* Make search container mobile-friendly */
         .search-container {
-            padding: 0 10px;
+            padding: 0 15px;
             margin-bottom: 20px;
+            width: 100%;
+            max-width: 100%;
         }
         
         #searchInput {
             width: 100%;
-            padding: 12px;
+            max-width: 100%;
+            padding: 12px 15px;
             font-size: 16px; /* Prevents zoom on iOS */
+            box-sizing: border-box;
         }
         
         /* Adjust table text */
@@ -276,6 +280,7 @@ if (!isFeatureEnabled('squadrons_enabled')):
         margin: 20px auto;
         max-width: 600px;
         text-align: center;
+        box-sizing: border-box;
     }
     
     #searchInput {
@@ -288,6 +293,7 @@ if (!isFeatureEnabled('squadrons_enabled')):
         color: #fff;
         border-radius: 25px;
         transition: all 0.3s ease;
+        box-sizing: border-box;
     }
     
     #searchInput:focus {
@@ -298,6 +304,132 @@ if (!isFeatureEnabled('squadrons_enabled')):
     
     #searchInput::placeholder {
         color: #999;
+    }
+    
+    /* Mobile-specific squadron card styles */
+    @media screen and (max-width: 768px) {
+        /* Squadron members mobile card */
+        .squadron-members-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .squadron-members-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .squadron-members-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .squadron-members-count {
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 3px;
+        }
+        
+        .expand-indicator {
+            font-size: 1.2rem;
+            color: #4CAF50;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .squadron-members-list {
+            border-top: 1px solid rgba(76, 175, 80, 0.2);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .member-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .member-item:active {
+            background: rgba(76, 175, 80, 0.1);
+        }
+        
+        .member-name {
+            color: #fff;
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+        
+        .member-date {
+            font-size: 0.8rem;
+            color: #999;
+        }
+        
+        /* Leaderboard mobile card */
+        .leaderboard-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 12px;
+        }
+        
+        .leaderboard-card-rank {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4CAF50;
+            min-width: 50px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .leaderboard-card-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .leaderboard-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .squadron-credits {
+            font-size: 0.9rem;
+            color: #999;
+            margin-top: 3px;
+        }
+        
+        /* Ensure squadron logos don't overflow */
+        .squadron-card-logo {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            flex-shrink: 0;
+        }
+        
+        /* Fix squadron name overflow */
+        .squadron-card-name {
+            font-size: 1.1rem;
+            color: #4CAF50;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 </style>
 
@@ -532,6 +664,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // === Members Table ===
             if (membersBody) {
+                // Clear mobile cards for members
+                if (membersCards) membersCards.innerHTML = '';
                 squadrons.forEach((sq, index) => {
                 const groupId = "group-" + index;
                 const lowerName = sq.name.toLowerCase();
@@ -592,11 +726,38 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                     headerRow.classList.toggle('expanded', !isExpanded);
                 });
+                
+                // Create mobile card for squadron members
+                if (membersCards) {
+                    const squadCard = document.createElement('div');
+                    squadCard.className = 'mobile-card squadron-members-card';
+                    squadCard.innerHTML = `
+                        <div class="squadron-members-header" onclick="toggleMobileMembers('${groupId}')">
+                            <img src="${escapeHtml(sq.image_url || '')}" alt="${escapeHtml(sq.name || '')}" class="squadron-card-logo">
+                            <div class="squadron-members-info">
+                                <div class="squadron-card-name">${escapeHtml(sq.name || '')}</div>
+                                <div class="squadron-members-count">${sq.member_count || 0} members</div>
+                            </div>
+                            <div class="expand-indicator" id="expand-${groupId}">▼</div>
+                        </div>
+                        <div class="squadron-members-list" id="members-${groupId}" style="display: none;">
+                            ${sq.members.map(member => `
+                                <div class="member-item" onclick="window.location.href='pilot_statistics.php?search=${encodeURIComponent(member.name || '')}'">
+                                    <div class="member-name">${escapeHtml(member.name || '')}</div>
+                                    <div class="member-date">Last seen: ${new Date(member.date).toLocaleDateString()}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    membersCards.appendChild(squadCard);
+                }
                 });
             }
 
             // === Leaderboard Table ===
             if (leaderboardBody) {
+                // Clear mobile cards for leaderboard
+                if (leaderboardCards) leaderboardCards.innerHTML = '';
                 squadrons
                 .filter(sq => sq.name.toLowerCase().includes(filter))
                 .sort((a, b) => b.totalCredits - a.totalCredits)
@@ -609,6 +770,23 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td>${escapeHtml(String(squadron.totalCredits || 0))}</td>
                     `;
                     leaderboardBody.appendChild(row);
+                    
+                    // Create mobile card for leaderboard
+                    if (leaderboardCards) {
+                        const card = document.createElement('div');
+                        card.className = 'mobile-card leaderboard-card';
+                        card.innerHTML = `
+                            <div class="leaderboard-card-rank">${medal || `#${index + 1}`}</div>
+                            <div class="leaderboard-card-content">
+                                <img src="${escapeHtml(squadron.image_url || '')}" alt="${escapeHtml(squadron.name || '')}" class="squadron-card-logo">
+                                <div class="leaderboard-card-info">
+                                    <div class="squadron-card-name">${escapeHtml(squadron.name || '')}</div>
+                                    <div class="squadron-credits">${escapeHtml(String(squadron.totalCredits || 0))} credits</div>
+                                </div>
+                            </div>
+                        `;
+                        leaderboardCards.appendChild(card);
+                    }
                 });
             }
         }
@@ -619,6 +797,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         renderTables(); // Initial load
+        
+        // Add toggle function for mobile members
+        window.toggleMobileMembers = function(groupId) {
+            const membersList = document.getElementById('members-' + groupId);
+            const indicator = document.getElementById('expand-' + groupId);
+            if (membersList) {
+                const isVisible = membersList.style.display !== 'none';
+                membersList.style.display = isVisible ? 'none' : 'block';
+                if (indicator) {
+                    indicator.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+                }
+            }
+        };
     }).catch(err => {
         console.error('Error loading squadron data:', err);
         document.querySelector('main').innerHTML = `
