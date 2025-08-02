@@ -61,8 +61,5 @@ Dockerfile*
 docker-compose*.yml
 .dockerignore
 
-# Python uploader (not needed for Docker)
-Stats-Uploader/
-
 # Integration examples
 integrations/
