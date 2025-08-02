@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include "header.php"; 
 require_once __DIR__ . '/site_features.php';
+require_once __DIR__ . '/table-responsive.php';
 include "nav.php"; ?>
 
 <style>
@@ -74,6 +75,8 @@ include "nav.php"; ?>
   }
 </style>
 
+<?php tableResponsiveStyles(); ?>
+
 <main class="container">
   <div class="dashboard-header">
     <h1>Leaderboard</h1>
@@ -109,6 +112,9 @@ include "nav.php"; ?>
       <tbody></tbody>
     </table>
   </div>
+  
+  <!-- Mobile Cards Container -->
+  <div class="mobile-cards" id="leaderboardCards"></div>
 </main>
 
 <script>
@@ -116,11 +122,14 @@ let leaderboardData = [];
 
 function renderTable() {
   const tbody = document.querySelector("#leaderboardTable tbody");
+  const mobileCards = document.querySelector("#leaderboardCards");
   
   // Only show top 10 players
   const top10Data = leaderboardData.slice(0, 10);
 
   tbody.innerHTML = "";
+  mobileCards.innerHTML = "";
+  
   top10Data.forEach(player => {
     const row = document.createElement("tr");
     row.style.cursor = "pointer";
@@ -168,6 +177,44 @@ function renderTable() {
     });
     
     tbody.appendChild(row);
+    
+    // Create mobile card
+    const card = document.createElement('div');
+    card.className = 'mobile-card leaderboard-card';
+    card.style.cursor = 'pointer';
+    
+    let cardHtml = `
+      <div class="leaderboard-card-left">
+        <div class="leaderboard-card-rank">#${escapeHtml(String(player.rank))}</div>
+        <div class="leaderboard-card-name">${escapeHtml(player.name || '')}</div>
+        <div class="leaderboard-card-stats">
+    `;
+    
+    <?php if (isFeatureEnabled('leaderboard_kills')): ?>
+    cardHtml += `<div class="leaderboard-card-stat">Kills: <span>${escapeHtml(String(player.kills || 0))}</span></div>`;
+    <?php endif; ?>
+    
+    <?php if (isFeatureEnabled('leaderboard_deaths')): ?>
+    cardHtml += `<div class="leaderboard-card-stat">Deaths: <span>${escapeHtml(String(player.deaths || 0))}</span></div>`;
+    <?php endif; ?>
+    
+    <?php if (isFeatureEnabled('leaderboard_kd_ratio')): ?>
+    cardHtml += `<div class="leaderboard-card-stat">K/D: <span>${escapeHtml(String(player.kd_ratio || 0))}</span></div>`;
+    <?php endif; ?>
+    
+    cardHtml += `
+        </div>
+      </div>
+    `;
+    
+    card.innerHTML = cardHtml;
+    
+    // Add click handler for card
+    card.addEventListener('click', function() {
+      window.location.href = `pilot_statistics.php?search=${encodeURIComponent(player.name || '')}`;
+    });
+    
+    mobileCards.appendChild(card);
   });
 }
 
