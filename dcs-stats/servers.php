@@ -47,6 +47,9 @@ if (!isFeatureEnabled('nav_servers')):
                 <tbody id="serversTableBody"></tbody>
             </table>
         </div>
+        
+        <!-- Mobile Cards Container -->
+        <div class="mobile-cards" id="serversCards"></div>
     </div>
     
     <div id="no-servers" style="display: none; text-align: center; padding: 50px;">
@@ -71,7 +74,9 @@ async function loadServers() {
         }
         
         const tbody = document.getElementById('serversTableBody');
+        const serversCards = document.getElementById('serversCards');
         tbody.innerHTML = '';
+        if (serversCards) serversCards.innerHTML = '';
         
         // Handle both array and object with servers property
         const servers = Array.isArray(data) ? data : (data.servers || []);
@@ -128,6 +133,47 @@ async function loadServers() {
             
             row.innerHTML = cells.join('');
             tbody.appendChild(row);
+            
+            // Create mobile card
+            if (serversCards) {
+                const card = document.createElement('div');
+                card.className = 'mobile-card server-card';
+                
+                const statusLower = (server.status || 'unknown').toLowerCase();
+                const statusClass = statusLower === 'running' || statusLower === 'online' ? 'online' : 'offline';
+                
+                card.innerHTML = `
+                    <div class="server-card-header">
+                        <div>
+                            <div class="server-card-name">${escapeHtml(server.name || 'Unknown')}</div>
+                            <div class="server-card-mission">${escapeHtml(missionName)}</div>
+                        </div>
+                        <div class="server-card-status ${statusClass}">
+                            ${escapeHtml(server.status || 'Unknown')}
+                        </div>
+                    </div>
+                    <div class="server-card-info">
+                        <div class="server-card-info-item">
+                            <strong>Players</strong>
+                            ${escapeHtml(playerCount)}
+                        </div>
+                        <div class="server-card-info-item">
+                            <strong>Theatre</strong>
+                            ${escapeHtml(theatre)}
+                        </div>
+                        <div class="server-card-info-item">
+                            <strong>Password</strong>
+                            ${passwordStatus}
+                        </div>
+                        <div class="server-card-info-item">
+                            <strong>Uptime</strong>
+                            ${escapeHtml(uptime)}
+                        </div>
+                    </div>
+                `;
+                
+                serversCards.appendChild(card);
+            }
         });
         
         document.getElementById('servers-container').style.display = 'block';

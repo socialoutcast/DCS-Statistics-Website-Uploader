@@ -325,6 +325,9 @@ if (!isFeatureEnabled('squadrons_enabled')):
             <tbody></tbody>
         </table>
     </div>
+    
+    <!-- Mobile Cards Container -->
+    <div class="mobile-cards" id="squadronsCards"></div>
 
     <?php if (isFeatureEnabled('squadron_management')): ?>
     <h2>Squadron Members</h2>
@@ -340,6 +343,9 @@ if (!isFeatureEnabled('squadrons_enabled')):
             <tbody></tbody>
         </table>
     </div>
+    
+    <!-- Mobile Cards Container -->
+    <div class="mobile-cards" id="membersCards"></div>
     <?php endif; ?>
 
     <?php if (isFeatureEnabled('squadron_statistics') && isFeatureEnabled('credits_enabled')): ?>
@@ -356,6 +362,9 @@ if (!isFeatureEnabled('squadrons_enabled')):
             <tbody></tbody>
         </table>
     </div>
+    
+    <!-- Mobile Cards Container -->
+    <div class="mobile-cards" id="leaderboardCards"></div>
     <?php endif; ?>
 
     <div id="error-message" style="color: red; text-align: center;"></div>
@@ -476,9 +485,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const medals = ['🥇', '🥈', '🥉'];
 
         function renderTables(filter = '') {
+            // Get mobile card containers
+            const squadronsCards = document.querySelector('#squadronsCards');
+            const membersCards = document.querySelector('#membersCards');
+            const leaderboardCards = document.querySelector('#leaderboardCards');
+            
+            // Clear all content
             if (squadronBody) squadronBody.innerHTML = '';
             if (membersBody) membersBody.innerHTML = '';
             if (leaderboardBody) leaderboardBody.innerHTML = '';
+            if (squadronsCards) squadronsCards.innerHTML = '';
+            if (membersCards) membersCards.innerHTML = '';
+            if (leaderboardCards) leaderboardCards.innerHTML = '';
 
             // === Squadrons Table ===
             if (squadronBody) {
@@ -492,6 +510,23 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td>${escapeHtml(sq.description || '')}</td>
                     `;
                     squadronBody.appendChild(row);
+                    
+                    // Create mobile card for squadron
+                    if (squadronsCards) {
+                        const card = document.createElement('div');
+                        card.className = 'mobile-card squadron-card';
+                        card.innerHTML = `
+                            <div class="squadron-card-header">
+                                <img src="${escapeHtml(sq.image_url || '')}" alt="${escapeHtml(sq.name || '')}" class="squadron-card-logo">
+                                <div class="squadron-card-info">
+                                    <div class="squadron-card-name">${escapeHtml(sq.name || '')}</div>
+                                    <div class="squadron-card-description">${escapeHtml(sq.description || '')}</div>
+                                </div>
+                            </div>
+                            <div class="squadron-card-members">${sq.member_count || 0} members</div>
+                        `;
+                        squadronsCards.appendChild(card);
+                    }
                 });
             }
 

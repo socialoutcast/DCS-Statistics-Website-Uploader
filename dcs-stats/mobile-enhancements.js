@@ -40,38 +40,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
- * Enhance table scrolling with indicators
+ * Enhance table scrolling (removed indicators per user request)
  */
 function enhanceTableScrolling() {
-    const tableWrappers = document.querySelectorAll('.table-wrapper, .table-responsive');
-    
-    tableWrappers.forEach(wrapper => {
-        const table = wrapper.querySelector('table');
-        if (!table) return;
-        
-        // Add scroll indicators
-        const scrollIndicator = document.createElement('div');
-        scrollIndicator.className = 'scroll-indicator';
-        scrollIndicator.innerHTML = '<span>← Swipe to scroll →</span>';
-        wrapper.appendChild(scrollIndicator);
-        
-        // Hide indicator when scrolled
-        let scrollTimeout;
-        wrapper.addEventListener('scroll', function() {
-            scrollIndicator.style.opacity = '0';
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                if (wrapper.scrollLeft === 0) {
-                    scrollIndicator.style.opacity = '0.7';
-                }
-            }, 1000);
-        });
-        
-        // Check if table needs scrolling
-        if (table.offsetWidth <= wrapper.offsetWidth) {
-            scrollIndicator.style.display = 'none';
-        }
-    });
+    // Function kept for compatibility but indicators removed
 }
 
 /**

@@ -416,20 +416,183 @@
     }
 }
 
-/* Scroll indicator for tables */
-.scroll-indicator {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    background: rgba(76, 175, 80, 0.9);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    pointer-events: none;
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
-    z-index: 10;
+/* Mobile Card Layouts for Tables */
+.mobile-cards {
+    display: none;
+}
+
+@media screen and (max-width: 768px) {
+    /* Hide tables on mobile, show cards instead */
+    .table-wrapper table,
+    .table-responsive table {
+        display: none;
+    }
+    
+    .mobile-cards {
+        display: block;
+        padding: 0 10px;
+    }
+    
+    /* Card base styles */
+    .mobile-card {
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .mobile-card:active {
+        transform: scale(0.98);
+        background: rgba(76, 175, 80, 0.1);
+    }
+    
+    /* Leaderboard cards */
+    .leaderboard-card {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .leaderboard-card-left {
+        flex: 1;
+    }
+    
+    .leaderboard-card-rank {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #4CAF50;
+        margin-bottom: 5px;
+    }
+    
+    .leaderboard-card-name {
+        font-size: 1.1rem;
+        color: #fff;
+        margin-bottom: 5px;
+    }
+    
+    .leaderboard-card-stats {
+        display: flex;
+        gap: 15px;
+        font-size: 0.9rem;
+    }
+    
+    .leaderboard-card-stat {
+        color: #ccc;
+    }
+    
+    .leaderboard-card-stat span {
+        color: #4CAF50;
+        font-weight: bold;
+    }
+    
+    /* Squadron cards */
+    .squadron-card {
+        position: relative;
+    }
+    
+    .squadron-card-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .squadron-card-logo {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+    
+    .squadron-card-info {
+        flex: 1;
+    }
+    
+    .squadron-card-name {
+        font-size: 1.2rem;
+        color: #4CAF50;
+        margin-bottom: 5px;
+    }
+    
+    .squadron-card-description {
+        font-size: 0.85rem;
+        color: #ccc;
+        line-height: 1.4;
+    }
+    
+    .squadron-card-members {
+        font-size: 0.9rem;
+        color: #999;
+        margin-top: 10px;
+    }
+    
+    /* Server cards */
+    .server-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 10px;
+    }
+    
+    .server-card-name {
+        font-size: 1.1rem;
+        color: #fff;
+        margin-bottom: 3px;
+    }
+    
+    .server-card-mission {
+        font-size: 0.85rem;
+        color: #999;
+        margin-bottom: 5px;
+    }
+    
+    .server-card-status {
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+    
+    .server-card-status.online {
+        background: rgba(76, 175, 80, 0.2);
+        color: #4CAF50;
+    }
+    
+    .server-card-status.offline {
+        background: rgba(244, 67, 54, 0.2);
+        color: #f44336;
+    }
+    
+    .server-card-info {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .server-card-info-item {
+        color: #ccc;
+    }
+    
+    .server-card-info-item strong {
+        color: #4CAF50;
+        display: block;
+        font-size: 0.8rem;
+        margin-bottom: 2px;
+    }
+    
+    /* Remove scroll indicators completely */
+    .scroll-indicator {
+        display: none !important;
+    }
+    
+    /* Remove table wrapper styles on mobile */
+    .table-wrapper::after {
+        display: none !important;
+    }
 }
 
 /* Custom scrollbar for mobile */
