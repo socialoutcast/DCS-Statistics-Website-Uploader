@@ -41,6 +41,37 @@ if (file_exists($configFile)) {
 $cspConnectSrc .= " http://localhost:* https://localhost:*";
 
 header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src {$cspConnectSrc};");
+
+// Maintenance mode check
+$maintenanceFile = __DIR__ . '/site-config/data/maintenance.json';
+if (file_exists($maintenanceFile)) {
+    $maintenance = json_decode(file_get_contents($maintenanceFile), true);
+    if (!empty($maintenance['enabled'])) {
+        $allowed = $maintenance['ip_whitelist'] ?? [];
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        if (!in_array($ip, $allowed)) {
+            http_response_code(503);
+            ?>
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>DCS Statistics Dashboard</title>
+                <link rel="stylesheet" href="<?php echo url('styles.php'); ?>">
+                <link rel="stylesheet" href="<?php echo url('styles-mobile.css'); ?>">
+            </head>
+            <body>
+            <div class="maintenance-page">
+                <div class="maintenance-icon">✖</div>
+                <p>DCS Statistics Dashboard is unavailable please try again later</p>
+            </div>
+            </body>
+            </html>
+            <?php
+            exit;
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
