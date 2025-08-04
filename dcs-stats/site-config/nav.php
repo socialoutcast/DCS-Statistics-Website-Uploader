@@ -45,7 +45,7 @@ if (!isset($currentAdmin)) {
                 </a>
             </li>
             <?php endif; ?>
-            <?php if (hasPermission('change_settings')): ?>
+            <?php if (hasPermission('change_settings') || hasPermission('manage_admins') || hasPermission('manage_permissions') || hasPermission('manage_api') || hasPermission('manage_features') || hasPermission('manage_maintenance') || hasPermission('manage_updates') || hasPermission('manage_discord') || hasPermission('manage_squadrons') || hasPermission('manage_themes')): ?>
 <?php $isSettingsPage = in_array(basename($_SERVER['PHP_SELF']), ['settings.php', 'api_settings.php', 'themes.php', 'discord_settings.php', 'squadron_settings.php', 'admins.php', 'permissions.php', 'maintenance.php', 'update.php']); ?>
             <li class="nav-dropdown <?= $isSettingsPage ? 'open' : '' ?>">
                 <a href="#" class="nav-dropdown-toggle <?= $isSettingsPage ? 'active' : '' ?>">

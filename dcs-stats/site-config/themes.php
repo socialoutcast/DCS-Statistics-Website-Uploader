@@ -9,7 +9,7 @@ require_once __DIR__ . '/admin_functions.php';
 
 // Require admin login and permission
 requireAdmin();
-requirePermission('change_settings');
+requirePermission('manage_themes');
 
 // Get current admin to check specific permissions
 $currentAdmin = getCurrentAdmin();
