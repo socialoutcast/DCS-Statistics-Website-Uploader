@@ -86,6 +86,7 @@ if (!isset($currentAdmin)) {
                         </a>
                     </li>
                     <?php endif; ?>
+                    <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): ?>
                     <li>
                         <a href="maintenance.php" <?= basename($_SERVER['PHP_SELF']) === 'maintenance.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🛠️</span>
@@ -98,6 +99,7 @@ if (!isset($currentAdmin)) {
                             Update
                         </a>
                     </li>
+                    <?php endif; ?>
                     <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): // Only Air Boss can access Navigation Settings ?>
                     <li>
                         <a href="discord_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'discord_settings.php' ? 'class="active"' : '' ?>>

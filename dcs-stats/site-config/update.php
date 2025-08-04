@@ -9,6 +9,11 @@ requireAdmin();
 requirePermission('change_settings');
 
 $currentAdmin = getCurrentAdmin();
+if ($currentAdmin['role'] !== ROLE_AIR_BOSS) {
+    header('Location: index.php?error=access_denied');
+    exit();
+}
+
 $pageTitle = 'Update Dashboard';
 ?>
 <!DOCTYPE html>

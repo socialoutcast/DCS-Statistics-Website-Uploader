@@ -13,6 +13,11 @@ requirePermission('change_settings');
 // Current admin
 $currentAdmin = getCurrentAdmin();
 
+if ($currentAdmin['role'] !== ROLE_AIR_BOSS) {
+    header('Location: index.php?error=access_denied');
+    exit();
+}
+
 // Load current configuration
 $maintenance = loadMaintenanceConfig();
 
