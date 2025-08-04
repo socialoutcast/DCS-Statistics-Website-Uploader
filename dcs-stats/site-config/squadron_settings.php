@@ -9,7 +9,7 @@ require_once dirname(__DIR__) . '/site_features.php';
 
 // Require admin login and permission
 requireAdmin();
-requirePermission('change_settings');
+requirePermission('manage_squadrons');
 
 // Get current admin
 $currentAdmin = getCurrentAdmin();
