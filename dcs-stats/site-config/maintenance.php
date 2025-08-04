@@ -8,7 +8,7 @@ require_once __DIR__ . '/admin_functions.php';
 
 // Require admin login and permission
 requireAdmin();
-requirePermission('change_settings');
+requirePermission('manage_maintenance');
 
 // Current admin
 $currentAdmin = getCurrentAdmin();

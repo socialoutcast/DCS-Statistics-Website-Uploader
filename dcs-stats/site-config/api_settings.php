@@ -9,16 +9,10 @@ require_once __DIR__ . '/../api_config_helper.php';
 
 // Require admin login and permission
 requireAdmin();
-requirePermission('change_settings');
+requirePermission('manage_api');
 
 // Get current admin
 $currentAdmin = getCurrentAdmin();
-
-// Only Air Boss can change API settings
-if ($currentAdmin['role'] !== ROLE_AIR_BOSS) {
-    header('Location: index.php?error=access_denied');
-    exit();
-}
 
 // Load current API configuration with auto-fixing
 $configResult = loadApiConfigWithFix();

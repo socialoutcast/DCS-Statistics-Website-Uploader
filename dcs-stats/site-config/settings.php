@@ -9,16 +9,10 @@ require_once dirname(__DIR__) . '/site_features.php';
 
 // Require admin login and permission
 requireAdmin();
-requirePermission('change_settings');
+requirePermission('manage_features');
 
 // Get current admin
 $currentAdmin = getCurrentAdmin();
-
-// Only Air Boss can change site features
-if ($currentAdmin['role'] !== ROLE_AIR_BOSS) {
-    header('Location: index.php?error=access_denied');
-    exit();
-}
 
 // Handle form submission
 $message = '';
