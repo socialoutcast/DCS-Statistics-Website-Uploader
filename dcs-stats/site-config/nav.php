@@ -62,7 +62,7 @@ if (!isset($currentAdmin)) {
                         </a>
                     </li>
                     <?php endif; ?>
-                    <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): // Only Air Boss can manage permissions ?>
+                    <?php if (hasPermission('manage_permissions')): ?>
                     <li>
                         <a href="permissions.php" <?= basename($_SERVER['PHP_SELF']) === 'permissions.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🛡️</span>
@@ -70,7 +70,7 @@ if (!isset($currentAdmin)) {
                         </a>
                     </li>
                     <?php endif; ?>
-                    <?php if (hasPermission('manage_api') || $currentAdmin['role'] === ROLE_AIR_BOSS): ?>
+                    <?php if (hasPermission('manage_api')): ?>
                     <li>
                         <a href="api_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'api_settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🔌</span>
@@ -78,7 +78,7 @@ if (!isset($currentAdmin)) {
                         </a>
                     </li>
                     <?php endif; ?>
-                    <?php if (hasPermission('manage_features') || hasPermission('change_settings')): ?>
+                    <?php if (hasPermission('manage_features')): ?>
                     <li>
                         <a href="settings.php" <?= basename($_SERVER['PHP_SELF']) === 'settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🎛️</span>
@@ -86,13 +86,15 @@ if (!isset($currentAdmin)) {
                         </a>
                     </li>
                     <?php endif; ?>
-                    <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): ?>
+                    <?php if (hasPermission('manage_maintenance')): ?>
                     <li>
                         <a href="maintenance.php" <?= basename($_SERVER['PHP_SELF']) === 'maintenance.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🛠️</span>
                             Maintenance
                         </a>
                     </li>
+                    <?php endif; ?>
+                    <?php if (hasPermission('manage_updates')): ?>
                     <li>
                         <a href="update.php" <?= basename($_SERVER['PHP_SELF']) === 'update.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🔄</span>
@@ -100,13 +102,15 @@ if (!isset($currentAdmin)) {
                         </a>
                     </li>
                     <?php endif; ?>
-                    <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): // Only Air Boss can access Navigation Settings ?>
+                    <?php if (hasPermission('manage_discord')): ?>
                     <li>
                         <a href="discord_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'discord_settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🎮</span>
                             Discord Link
                         </a>
                     </li>
+                    <?php endif; ?>
+                    <?php if (hasPermission('manage_squadrons')): ?>
                     <li>
                         <a href="squadron_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'squadron_settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">✈️</span>
@@ -114,7 +118,7 @@ if (!isset($currentAdmin)) {
                         </a>
                     </li>
                     <?php endif; ?>
-                    <?php if (hasPermission('manage_themes') || hasPermission('change_settings')): ?>
+                    <?php if (hasPermission('manage_themes')): ?>
                     <li>
                         <a href="themes.php" <?= basename($_SERVER['PHP_SELF']) === 'themes.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🎨</span>
