@@ -39,7 +39,15 @@ const ROLE_PERMISSIONS = [
         'export_data',
         'view_logs',
         'manage_admins',
-        'change_settings'
+        'change_settings',
+        'manage_maintenance',
+        'manage_updates',
+        'manage_api',
+        'manage_themes',
+        'manage_features',
+        'manage_permissions',
+        'manage_discord',
+        'manage_squadrons'
     ],
     ROLE_LSO => [             // Monitors pilot statistics and landings
         'view_dashboard',

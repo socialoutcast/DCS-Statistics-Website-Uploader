@@ -8,15 +8,10 @@ require_once __DIR__ . '/admin_functions.php';
 
 // Require admin login and permission
 requireAdmin();
-requirePermission('change_settings');
+requirePermission('manage_maintenance');
 
 // Current admin
 $currentAdmin = getCurrentAdmin();
-
-if ($currentAdmin['role'] !== ROLE_AIR_BOSS) {
-    header('Location: index.php?error=access_denied');
-    exit();
-}
 
 // Load current configuration
 $maintenance = loadMaintenanceConfig();
