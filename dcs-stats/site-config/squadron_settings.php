@@ -14,12 +14,6 @@ requirePermission('manage_squadrons');
 // Get current admin
 $currentAdmin = getCurrentAdmin();
 
-// Only Air Boss can change Squadron settings
-if ($currentAdmin['role'] !== ROLE_AIR_BOSS) {
-    header('Location: index.php?error=access_denied');
-    exit();
-}
-
 // Handle form submission
 $message = '';
 $messageType = '';
