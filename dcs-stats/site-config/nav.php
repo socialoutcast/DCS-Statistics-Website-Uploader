@@ -92,14 +92,12 @@ if (!isset($currentAdmin)) {
                             Maintenance
                         </a>
                     </li>
-                    <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): ?>
                     <li>
                         <a href="update.php" <?= basename($_SERVER['PHP_SELF']) === 'update.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🔄</span>
                             Update
                         </a>
                     </li>
-                    <?php endif; ?>
                     <li>
                         <a href="squadron_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'squadron_settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">✈️</span>

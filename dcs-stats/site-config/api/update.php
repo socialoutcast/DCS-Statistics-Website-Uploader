@@ -5,12 +5,6 @@ require_once __DIR__ . '/../admin_functions.php';
 requireAdmin();
 requirePermission('change_settings');
 
-$currentAdmin = getCurrentAdmin();
-if ($currentAdmin['role'] !== ROLE_AIR_BOSS) {
-    http_response_code(403);
-    die('Access denied');
-}
-
 set_time_limit(0);
 header('Content-Type: text/plain; charset=utf-8');
 header('Cache-Control: no-cache');
