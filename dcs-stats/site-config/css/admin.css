@@ -120,7 +120,7 @@ body {
 }
 
 .nav-dropdown-menu.open {
-    max-height: 300px;
+    max-height: 500px;
 }
 
 .nav-dropdown-menu li a {

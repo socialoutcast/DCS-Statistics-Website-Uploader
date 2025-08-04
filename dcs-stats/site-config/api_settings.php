@@ -14,12 +14,6 @@ requirePermission('manage_api');
 // Get current admin
 $currentAdmin = getCurrentAdmin();
 
-// Only Air Boss can change API settings
-if ($currentAdmin['role'] !== ROLE_AIR_BOSS) {
-    header('Location: index.php?error=access_denied');
-    exit();
-}
-
 // Load current API configuration with auto-fixing
 $configResult = loadApiConfigWithFix();
 $apiConfig = $configResult['config'];

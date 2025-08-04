@@ -20,7 +20,7 @@ if (!isAdminLoggedIn()) {
 }
 
 // Check permissions
-if (!hasPermission('change_settings')) {
+if (!hasPermission('manage_features')) {
     http_response_code(403);
     echo json_encode(['error' => 'Insufficient permissions']);
     exit;

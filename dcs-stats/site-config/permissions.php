@@ -7,13 +7,9 @@
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/admin_functions.php';
 
-// Require admin login and Air Boss role
+// Require admin login and permission
 requireAdmin();
-if (getCurrentAdmin()['role'] !== ROLE_AIR_BOSS) {
-    $_SESSION['error'] = 'Only Air Boss can manage permissions';
-    header('Location: ' . url('site-config/'));
-    exit;
-}
+requirePermission('manage_permissions');
 
 $message = '';
 $error = '';
