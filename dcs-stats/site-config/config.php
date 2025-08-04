@@ -47,8 +47,7 @@ const ROLE_PERMISSIONS = [
         'manage_features',
         'manage_permissions',
         'manage_discord',
-        'manage_squadrons',
-        'ban_players'
+        'manage_squadrons'
     ],
     ROLE_LSO => [             // Monitors pilot statistics and landings
         'view_dashboard',
