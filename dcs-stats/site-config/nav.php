@@ -98,17 +98,17 @@ if (!isset($currentAdmin)) {
                             Update
                         </a>
                     </li>
-                    <li>
-                        <a href="squadron_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'squadron_settings.php' ? 'class="active"' : '' ?>>
-                            <span class="nav-icon">✈️</span>
-                            Squadron Homepage
-                        </a>
-                    </li>
                     <?php if ($currentAdmin['role'] === ROLE_AIR_BOSS): // Only Air Boss can access Navigation Settings ?>
                     <li>
                         <a href="discord_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'discord_settings.php' ? 'class="active"' : '' ?>>
                             <span class="nav-icon">🎮</span>
                             Discord Link
+                        </a>
+                    </li>
+                    <li>
+                        <a href="squadron_settings.php" <?= basename($_SERVER['PHP_SELF']) === 'squadron_settings.php' ? 'class="active"' : '' ?>>
+                            <span class="nav-icon">✈️</span>
+                            Squadron Homepage
                         </a>
                     </li>
                     <?php endif; ?>
