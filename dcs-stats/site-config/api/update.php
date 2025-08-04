@@ -64,7 +64,11 @@ if (empty($extractedDirs)) {
     logMessage('No extracted directory found');
     exit;
 }
-$newCodeDir = $extractedDirs[0];
+$newCodeDir = $extractedDirs[0] . '/dcs-stats';
+if (!is_dir($newCodeDir)) {
+    logMessage('dcs-stats directory not found in archive');
+    exit;
+}
 
 if ($backup) {
     $backupFile = $backupDir . '/backup-' . date('Ymd-His') . '.zip';
