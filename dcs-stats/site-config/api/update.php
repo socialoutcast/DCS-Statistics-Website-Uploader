@@ -16,11 +16,30 @@ function logMessage($msg) {
     flush();
 }
 
-$branch = $_POST['branch'] === 'Dev' ? 'Dev' : 'main';
-$backup = isset($_POST['backup']) && $_POST['backup'] === '1';
+// Always use main branch for updates
+$branch = 'main';
+// ALWAYS backup before updates, regardless of user choice
+$backup = true; // Force backup for safety
+$specificVersion = !empty($_POST['version']) ? $_POST['version'] : null;
 
+// Repository configuration
+// Note: GitHub redirects from Website-Uploader to Dashboard
 $repo = 'Penfold-88/DCS-Statistics-Dashboard';
-$apiUrl = "https://api.github.com/repos/$repo/zipball/$branch";
+
+// Get current version
+$currentVersion = defined('ADMIN_PANEL_VERSION') ? ADMIN_PANEL_VERSION : '1.0.0';
+logMessage("Current version: $currentVersion");
+
+// Determine download URL
+if ($specificVersion) {
+    // Download specific version/tag
+    $apiUrl = "https://api.github.com/repos/$repo/zipball/$specificVersion";
+    logMessage("Downloading specific version: $specificVersion");
+} else {
+    // Download latest from branch
+    $apiUrl = "https://api.github.com/repos/$repo/zipball/$branch";
+    logMessage("Downloading latest from branch: $branch");
+}
 
 $rootPath = dirname(__DIR__, 2); // path to dcs-stats
 $upgradeDir = $rootPath . '/UPGRADE';
@@ -34,18 +53,87 @@ if ($backup && !is_dir($backupDir)) {
     mkdir($backupDir, 0755, true);
 }
 
-logMessage("Downloading $branch branch...");
+// Always check for latest release
+logMessage("Checking for latest release...");
+$releaseUrl = "https://api.github.com/repos/$repo/releases/latest";
+$ch = curl_init($releaseUrl);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_USERAGENT, 'DCS-Stats-Updater');
+$releaseData = curl_exec($ch);
+curl_close($ch);
+
+if ($releaseData) {
+    $release = json_decode($releaseData, true);
+    if (isset($release['tag_name'])) {
+        logMessage("Latest release: " . $release['tag_name']);
+        // Compare versions (handle V prefix)
+        $current = ltrim($currentVersion, 'Vv');
+        $latest = ltrim($release['tag_name'], 'Vv');
+        if (version_compare($current, $latest, '>=') && !$specificVersion) {
+            logMessage("You are already running the latest version.");
+            exit;
+        }
+    }
+}
+
+// CRITICAL: Backup config files before ANY update
+logMessage("Backing up configuration files...");
+$configBackupDir = $backupDir . '/config-backup-' . date('Ymd-His');
+if (!is_dir($configBackupDir)) {
+    mkdir($configBackupDir, 0755, true);
+}
+
+// List of critical config files to backup
+$configFiles = [
+    '/api_config.json',
+    '/site_config.json',
+    '/.version_meta.json',
+    '/site-config/data/users.json',
+    '/site-config/data/logs.json',
+    '/site-config/data/bans.json',
+    '/site-config/data/sessions.json',
+    '/.env',
+    '/docker-compose.yml',
+    '/Dockerfile',
+    '/Dockerfile.simple'
+];
+
+foreach ($configFiles as $file) {
+    $sourcePath = $rootPath . $file;
+    if (file_exists($sourcePath)) {
+        $destPath = $configBackupDir . $file;
+        $destDir = dirname($destPath);
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+        if (copy($sourcePath, $destPath)) {
+            logMessage("✓ Backed up: $file");
+        } else {
+            logMessage("⚠ Failed to backup: $file");
+        }
+    }
+}
+logMessage("Config backup complete: $configBackupDir");
+
+$downloadLabel = $specificVersion ? "version $specificVersion" : "latest release";
+logMessage("Downloading $downloadLabel...");
 $zipFile = $upgradeDir . '/update.zip';
 $ch = curl_init($apiUrl);
 $fp = fopen($zipFile, 'w');
 curl_setopt($ch, CURLOPT_FILE, $fp);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_USERAGENT, 'DCS-Stats-Updater');
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Accept: application/vnd.github.v3+json'
+]);
 $download = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 fclose($fp);
-if ($download === false) {
-    logMessage('Download failed');
+
+if ($download === false || $httpCode !== 200) {
+    logMessage('Download failed. HTTP Code: ' . $httpCode);
+    @unlink($zipFile);
     exit;
 }
 logMessage('Download complete.');
@@ -93,15 +181,45 @@ if ($backup) {
         }
         $backupZip->close();
         logMessage('Backup saved to ' . $backupFile);
+        
+        // Clean up old backups - keep only the 5 most recent
+        cleanupOldBackups($backupDir, 5);
     } else {
         logMessage('Failed to create backup');
     }
 }
 
+// Directories and files to NEVER overwrite during update
 $exceptions = [
+    // Data directories
     'site-config/data',
+    'data',
     'backups',
-    'UPGRADE'
+    'UPGRADE',
+    
+    // Configuration files
+    'api_config.json',
+    'site_config.json',
+    '.version_meta.json',
+    '.env',
+    '.dev',
+    
+    // Docker files (user customized)
+    'docker-compose.yml',
+    'docker-compose.override.yml',
+    'Dockerfile',
+    'Dockerfile.simple',
+    '.dockerignore',
+    
+    // User uploads or custom files
+    'uploads',
+    'custom',
+    'logs',
+    
+    // Git files
+    '.git',
+    '.gitignore',
+    '.gitattributes'
 ];
 
 $newFiles = [];
@@ -115,6 +233,20 @@ foreach ($files as $file) {
     $targetPath = $rootPath . '/' . $relPath;
     $newFiles[] = $relPath;
 
+    // Check if this file/directory should be preserved
+    $shouldSkip = false;
+    foreach ($exceptions as $ex) {
+        if ($relPath === $ex || strpos($relPath, $ex . '/') === 0) {
+            $shouldSkip = true;
+            break;
+        }
+    }
+    
+    if ($shouldSkip) {
+        logMessage('Preserving: ' . $relPath);
+        continue;
+    }
+    
     if ($file->isDir()) {
         if (!is_dir($targetPath)) {
             mkdir($targetPath, 0755, true);
@@ -124,6 +256,13 @@ foreach ($files as $file) {
         if (!is_dir(dirname($targetPath))) {
             mkdir(dirname($targetPath), 0755, true);
         }
+        
+        // Extra safety: Don't overwrite critical config files
+        if (file_exists($targetPath) && in_array(basename($targetPath), ['api_config.json', 'site_config.json', '.env', 'users.json'])) {
+            logMessage('⚠ Skipping config file: ' . $relPath);
+            continue;
+        }
+        
         copy($filePath, $targetPath);
         logMessage('Updated file: ' . $relPath);
     }
@@ -170,4 +309,71 @@ function rrmdir($dir) {
     rmdir($dir);
 }
 rrmdir($upgradeDir);
+
+// Update version metadata using tracker
+require_once dirname(__DIR__) . '/version_tracker.php';
+updateVersionMetadata(
+    $specificVersion ?? ($release['tag_name'] ?? $currentVersion),
+    $branch,
+    getCurrentAdmin()['username']
+);
+
+// Update version in config file if we have a new version number
+$newVersion = $specificVersion ?? ($release['tag_name'] ?? null);
+if ($newVersion && $newVersion !== $currentVersion) {
+    $configFile = dirname(__DIR__) . '/config.php';
+    if (file_exists($configFile)) {
+        $config = file_get_contents($configFile);
+        $config = preg_replace(
+            "/define\('ADMIN_PANEL_VERSION', '[^']+'/",
+            "define('ADMIN_PANEL_VERSION', '$newVersion'",
+            $config
+        );
+        file_put_contents($configFile, $config);
+        logMessage("Updated version to: $newVersion");
+    }
+}
+
+// Log the update action
+logAdminAction('SYSTEM_UPDATE', [
+    'from_version' => $currentVersion,
+    'to_version' => $newVersion ?? 'latest',
+    'branch' => $branch,
+    'admin' => getCurrentAdmin()['username']
+]);
+
 logMessage('Update complete.');
+logMessage('Please refresh your browser to see the changes.');
+
+/**
+ * Clean up old backups, keeping only the most recent ones
+ */
+function cleanupOldBackups($backupDir, $maxBackups = 5) {
+    if (!is_dir($backupDir)) {
+        return;
+    }
+    
+    // Get all backup files
+    $backups = glob($backupDir . '/backup-*.zip');
+    if (!$backups || count($backups) <= $maxBackups) {
+        return;
+    }
+    
+    // Sort by modification time (newest first)
+    usort($backups, function($a, $b) {
+        return filemtime($b) - filemtime($a);
+    });
+    
+    // Delete old backups
+    $deleted = 0;
+    for ($i = $maxBackups; $i < count($backups); $i++) {
+        if (unlink($backups[$i])) {
+            $deleted++;
+            logMessage('Deleted old backup: ' . basename($backups[$i]));
+        }
+    }
+    
+    if ($deleted > 0) {
+        logMessage("Cleaned up $deleted old backup(s). Keeping $maxBackups most recent.");
+    }
+}

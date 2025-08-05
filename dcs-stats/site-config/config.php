@@ -10,7 +10,7 @@ if (!defined('ADMIN_PANEL')) {
 }
 
 // Admin panel settings
-define('ADMIN_PANEL_VERSION', '1.0.0');
+define('ADMIN_PANEL_VERSION', 'V0.0.04');
 define('ADMIN_SESSION_NAME', 'dcs_admin_session');
 define('ADMIN_COOKIE_NAME', 'dcs_admin_remember');
 define('ADMIN_COOKIE_LIFETIME', 30 * 24 * 60 * 60); // 30 days
@@ -104,7 +104,11 @@ const LOG_ACTIONS = [
     'ADMIN_CREATE' => 'Created Admin User',
     'ADMIN_EDIT' => 'Updated Admin User',
     'ADMIN_DELETE' => 'Deleted Admin User',
-    'SETTINGS_CHANGE' => 'Changed Settings'
+    'SETTINGS_CHANGE' => 'Changed Settings',
+    'BACKUP_CREATE' => 'Created Backup',
+    'BACKUP_DELETE' => 'Deleted Backup',
+    'BACKUP_RESTORE' => 'Restored Backup',
+    'SYSTEM_UPDATE' => 'Updated System'
 ];
 
 // Error messages

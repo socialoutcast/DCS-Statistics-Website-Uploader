@@ -39,6 +39,8 @@ dcs-stats/api_config.json
 docker-compose.override.yml
 *.dockerfile
 .docker/
+data/
+!data/.gitkeep
 
 # Claude AI related
 .claude/
@@ -59,6 +61,7 @@ dcs-stats/docker/sample-data/
 test_*.php
 *.test.php
 testing/
+dcs-stats/.dev
 
 # OS files
 .DS_Store

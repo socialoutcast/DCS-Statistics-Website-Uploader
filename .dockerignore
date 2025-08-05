@@ -3,63 +3,31 @@
 .gitignore
 .gitattributes
 
-# Documentation
-*.md
-LICENSE
-docs/
-*.pdf
-
-# Development files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-
-# Logs
-*.log
-logs/
-
-# Local configuration
-.env
-.env.local
-.env.*.local
-
-# Test files
-test/
-tests/
-*.test.js
-*.spec.js
-
-# Temporary files
-tmp/
-temp/
-
-# Build artifacts
-dist/
-build/
-
-# Node modules (if any)
-node_modules/
-
-# Docker files themselves
-Dockerfile*
-docker-compose*.yml
+# Docker files
+Dockerfile
+docker-compose.yml
 .dockerignore
 
-# Integration examples
-integrations/
+# Documentation
+README.md
+CLAUDE.md
+*.md
+
+# Development files
+.vscode
+.idea
+*.log
+*.tmp
+.DS_Store
+
+# Local data directories (will be mounted as volumes)
+data/
+dcs-stats/site-config/data/
+dcs-stats/data/
+dcs-stats/api_config.json
+dcs-stats/site_config.json
+
+# Backup files
+*.bak
+*.backup
+*~

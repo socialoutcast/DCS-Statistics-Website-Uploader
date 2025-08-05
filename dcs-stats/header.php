@@ -2,6 +2,18 @@
 // Include path configuration
 require_once __DIR__ . '/config_path.php';
 
+// Load site configuration
+$siteConfig = [];
+$siteConfigFile = __DIR__ . '/site_config.json';
+if (file_exists($siteConfigFile)) {
+    $content = @file_get_contents($siteConfigFile);
+    if ($content) {
+        $siteConfig = json_decode($content, true) ?: [];
+    }
+}
+
+$siteName = $siteConfig['site_name'] ?? 'DCS Statistics';
+
 // Security headers for protection against common web vulnerabilities
 header("X-Content-Type-Options: nosniff");
 header("X-Frame-Options: DENY");
@@ -65,7 +77,7 @@ if (file_exists($maintenanceFile)) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DCS Statistics Dashboard</title>
+  <title><?php echo htmlspecialchars($siteName); ?> Dashboard</title>
   <link rel="stylesheet" href="<?php echo url('styles.php'); ?>" />
   <link rel="stylesheet" href="<?php echo url('styles-mobile.css'); ?>" />
   <?php if (file_exists(__DIR__ . '/custom_theme.css')): ?>
@@ -92,7 +104,7 @@ if (file_exists($maintenanceFile)) {
     <div class="header-container">
       <div class="header-brand">
         <div class="brand-text">
-          <h1 class="site-title">DCS Statistics</h1>
+          <h1 class="site-title"><?php echo htmlspecialchars($siteName); ?></h1>
           <p class="site-subtitle">Combat Data & Analytics Platform</p>
         </div>
       </div>

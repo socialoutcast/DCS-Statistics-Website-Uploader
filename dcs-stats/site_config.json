@@ -1,0 +1,9 @@
+{
+    "site_name": "Testing",
+    "discord_invite_url": "",
+    "theme": "dark",
+    "maintenance_mode": false,
+    "allow_player_search": true,
+    "show_squadron_tab": true,
+    "show_servers_tab": true
+}
