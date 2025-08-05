@@ -639,7 +639,10 @@ $pageTitle = 'Theme Management';
                                 </div>
                             </div>
                             
-                            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Update Colors</button>
+                            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                                <button type="submit" class="btn btn-primary">Update Colors</button>
+                                <button type="button" class="btn btn-secondary" onclick="restoreDefaultColors()">Restore Defaults</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -968,6 +971,34 @@ $pageTitle = 'Theme Management';
                 document.body.appendChild(form);
                 form.submit();
             }
+        }
+        
+        // Restore default colors
+        function restoreDefaultColors() {
+            const defaults = {
+                'primary_color': '#1a1a1a',
+                'secondary_color': '#2a2a2a',
+                'background_color': '#121212',
+                'text_color': '#ffffff',
+                'link_color': '#4a9eff',
+                'border_color': '#556b2f'
+            };
+            
+            // Set the color inputs to default values
+            for (const [id, value] of Object.entries(defaults)) {
+                document.getElementById(id).value = value;
+            }
+            
+            // Update preview immediately
+            updatePreviewColors();
+            
+            // Show status message
+            const status = document.getElementById('preview-status');
+            status.textContent = '🔄 Colors restored to defaults';
+            status.style.color = '#2196F3';
+            setTimeout(() => {
+                status.textContent = '';
+            }, 3000);
         }
         
         // Initialize drag and drop when page loads
