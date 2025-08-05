@@ -764,35 +764,62 @@ $pageTitle = 'Theme Management';
             iframe.src = iframe.src;
         }
         
+        // Debounce function to prevent too many updates
+        let updateTimeout;
+        function debounce(func, wait) {
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(updateTimeout);
+                    func(...args);
+                };
+                clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(later, wait);
+            };
+        }
+        
         // Live color preview
         function updatePreviewColors() {
             const iframe = document.getElementById('preview-frame');
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
             
-            if (iframeDoc) {
-                // Get current color values
-                const colors = {
-                    '--primary_color': document.getElementById('primary_color').value,
-                    '--secondary_color': document.getElementById('secondary_color').value,
-                    '--background_color': document.getElementById('background_color').value,
-                    '--text_color': document.getElementById('text_color').value,
-                    '--link_color': document.getElementById('link_color').value,
-                    '--border_color': document.getElementById('border_color').value
-                };
-                
-                // Update CSS variables in the iframe
-                const root = iframeDoc.documentElement;
-                for (const [property, value] of Object.entries(colors)) {
-                    root.style.setProperty(property, value);
-                }
+            // Get current color values (remove # from hex colors for URL)
+            const colors = {
+                'primary': document.getElementById('primary_color').value.replace('#', ''),
+                'secondary': document.getElementById('secondary_color').value.replace('#', ''),
+                'background': document.getElementById('background_color').value.replace('#', ''),
+                'text': document.getElementById('text_color').value.replace('#', ''),
+                'link': document.getElementById('link_color').value.replace('#', ''),
+                'border': document.getElementById('border_color').value.replace('#', '')
+            };
+            
+            // Build URL with preview parameters
+            const params = new URLSearchParams();
+            params.set('preview', '1');
+            for (const [key, value] of Object.entries(colors)) {
+                params.set(key, value);
             }
+            
+            // Update iframe source with preview parameters
+            const baseUrl = '<?= url('index.php') ?>';
+            iframe.src = baseUrl + '?' + params.toString();
         }
+        
+        // Debounced version of updatePreviewColors
+        const debouncedUpdate = debounce(updatePreviewColors, 500);
         
         // Add event listeners for real-time updates
         document.querySelectorAll('input[type="color"]').forEach(input => {
             input.addEventListener('input', function() {
-                updatePreviewColors();
-                // Show status message
+                // Show status message immediately
+                const status = document.getElementById('preview-status');
+                status.textContent = '⏳ Updating preview...';
+                status.style.color = '#ff9800';
+                
+                // Update preview with debounce
+                debouncedUpdate();
+            });
+            
+            input.addEventListener('change', function() {
+                // Show completed message
                 const status = document.getElementById('preview-status');
                 status.textContent = '✨ Preview updated';
                 status.style.color = '#4CAF50';
@@ -800,11 +827,6 @@ $pageTitle = 'Theme Management';
                     status.textContent = '';
                 }, 2000);
             });
-        });
-        
-        // Update preview colors when iframe loads
-        document.getElementById('preview-frame').addEventListener('load', function() {
-            setTimeout(updatePreviewColors, 100); // Small delay to ensure styles are loaded
         });
         
         // Menu drag and drop functionality
