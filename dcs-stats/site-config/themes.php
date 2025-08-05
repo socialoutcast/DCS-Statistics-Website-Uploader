@@ -559,6 +559,7 @@ $pageTitle = 'Theme Management';
                     
                     <div style="margin-top: 10px;">
                         <button type="button" class="btn btn-sm" onclick="refreshPreview()">Refresh Preview</button>
+                        <span id="preview-status" style="margin-left: 10px; color: var(--text-muted); font-size: 0.9em;"></span>
                     </div>
                 </div>
                 
@@ -763,11 +764,47 @@ $pageTitle = 'Theme Management';
             iframe.src = iframe.src;
         }
         
-        // Live color preview (optional enhancement)
+        // Live color preview
+        function updatePreviewColors() {
+            const iframe = document.getElementById('preview-frame');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            
+            if (iframeDoc) {
+                // Get current color values
+                const colors = {
+                    '--primary_color': document.getElementById('primary_color').value,
+                    '--secondary_color': document.getElementById('secondary_color').value,
+                    '--background_color': document.getElementById('background_color').value,
+                    '--text_color': document.getElementById('text_color').value,
+                    '--link_color': document.getElementById('link_color').value,
+                    '--border_color': document.getElementById('border_color').value
+                };
+                
+                // Update CSS variables in the iframe
+                const root = iframeDoc.documentElement;
+                for (const [property, value] of Object.entries(colors)) {
+                    root.style.setProperty(property, value);
+                }
+            }
+        }
+        
+        // Add event listeners for real-time updates
         document.querySelectorAll('input[type="color"]').forEach(input => {
             input.addEventListener('input', function() {
-                // Could implement live preview here
+                updatePreviewColors();
+                // Show status message
+                const status = document.getElementById('preview-status');
+                status.textContent = '✨ Preview updated';
+                status.style.color = '#4CAF50';
+                setTimeout(() => {
+                    status.textContent = '';
+                }, 2000);
             });
+        });
+        
+        // Update preview colors when iframe loads
+        document.getElementById('preview-frame').addEventListener('load', function() {
+            setTimeout(updatePreviewColors, 100); // Small delay to ensure styles are loaded
         });
         
         // Menu drag and drop functionality
