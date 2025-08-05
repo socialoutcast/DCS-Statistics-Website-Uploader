@@ -566,7 +566,12 @@ $pageTitle = 'Theme Management';
                         'link' => substr($customColors['link_color'], 1),
                         'border' => substr($customColors['border_color'], 1),
                     ];
-                    $previewUrl = url('index.php') . '?' . http_build_query($previewParams);
+                    // Build URL to parent directory
+                    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+                    $host = $_SERVER['HTTP_HOST'];
+                    $currentPath = dirname($_SERVER['SCRIPT_NAME']);
+                    $parentPath = dirname($currentPath);
+                    $previewUrl = $protocol . $host . ($parentPath === '/' ? '' : $parentPath) . '/index.php?' . http_build_query($previewParams);
                     ?>
                     <iframe src="<?= $previewUrl ?>" class="preview-frame" id="preview-frame"></iframe>
                     
@@ -811,7 +816,12 @@ $pageTitle = 'Theme Management';
             }
             
             // Update iframe source with preview parameters
-            const baseUrl = '<?= url('index.php') ?>';
+            // Build URL to parent directory  
+            const protocol = window.location.protocol;
+            const host = window.location.host;
+            const currentPath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+            const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+            const baseUrl = protocol + '//' + host + parentPath + '/index.php';
             iframe.src = baseUrl + '?' + params.toString();
         }
         
