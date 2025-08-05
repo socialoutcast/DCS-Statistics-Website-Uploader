@@ -603,37 +603,37 @@ $pageTitle = 'Theme Management';
                             
                             <div class="color-inputs">
                                 <div class="color-input-group">
-                                    <label for="primary_color">Primary Color:</label>
+                                    <label for="primary_color" title="Navigation bar background">Primary Color (Nav Bar):</label>
                                     <input type="color" id="primary_color" name="primary_color" 
                                            value="<?= htmlspecialchars($customColors['primary_color']) ?>">
                                 </div>
                                 
                                 <div class="color-input-group">
-                                    <label for="secondary_color">Secondary Color:</label>
+                                    <label for="secondary_color" title="Footer and card backgrounds">Secondary Color (Footer):</label>
                                     <input type="color" id="secondary_color" name="secondary_color" 
                                            value="<?= htmlspecialchars($customColors['secondary_color']) ?>">
                                 </div>
                                 
                                 <div class="color-input-group">
-                                    <label for="background_color">Background Color:</label>
+                                    <label for="background_color" title="Main page background">Background Color (Page):</label>
                                     <input type="color" id="background_color" name="background_color" 
                                            value="<?= htmlspecialchars($customColors['background_color']) ?>">
                                 </div>
                                 
                                 <div class="color-input-group">
-                                    <label for="text_color">Text Color:</label>
+                                    <label for="text_color" title="General text color">Text Color:</label>
                                     <input type="color" id="text_color" name="text_color" 
                                            value="<?= htmlspecialchars($customColors['text_color']) ?>">
                                 </div>
                                 
                                 <div class="color-input-group">
-                                    <label for="link_color">Link Color:</label>
+                                    <label for="link_color" title="Hyperlink color">Link Color:</label>
                                     <input type="color" id="link_color" name="link_color" 
                                            value="<?= htmlspecialchars($customColors['link_color']) ?>">
                                 </div>
                                 
                                 <div class="color-input-group">
-                                    <label for="border_color">Border Color:</label>
+                                    <label for="border_color" title="Border and accent color">Border/Accent Color:</label>
                                     <input type="color" id="border_color" name="border_color" 
                                            value="<?= htmlspecialchars($customColors['border_color']) ?>">
                                 </div>
