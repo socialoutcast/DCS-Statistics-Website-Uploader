@@ -339,27 +339,64 @@ $pageTitle = 'Theme Management';
         
         .color-inputs {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+            max-width: 600px;
         }
         
         .color-input-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            background: var(--bg-tertiary);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        
+        .color-input-group:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
         
         .color-input-group label {
             flex: 1;
+            font-size: 0.95em;
+            font-weight: 500;
+            cursor: pointer;
         }
         
         .color-input-group input[type="color"] {
-            width: 50px;
-            height: 35px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
+            width: 60px;
+            height: 40px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
             cursor: pointer;
+            padding: 2px;
+            background: var(--bg-secondary);
+            transition: all 0.2s ease;
+        }
+        
+        .color-input-group input[type="color"]:hover {
+            border-color: var(--accent-primary);
+            transform: scale(1.05);
+        }
+        
+        .color-input-group input[type="color"]::-webkit-color-swatch {
+            border-radius: 4px;
+            border: none;
+        }
+        
+        .color-input-group input[type="color"]::-moz-color-swatch {
+            border-radius: 4px;
+            border: none;
+        }
+        
+        @media (max-width: 600px) {
+            .color-inputs {
+                grid-template-columns: 1fr;
+            }
         }
         
         .upload-section {
@@ -596,6 +633,9 @@ $pageTitle = 'Theme Management';
                     <div class="theme-section">
                         <h2>Color Customization</h2>
                         <p>Customize the main colors used throughout the site. Changes will be applied immediately.</p>
+                        <p style="font-size: 0.9em; color: var(--text-muted); margin-top: 10px;">
+                            💡 Tip: Click on a color box to open the color picker. Hover over labels for more details.
+                        </p>
                         
                         <form method="POST" action="">
                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
