@@ -9,6 +9,40 @@ include 'header.php';
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php include 'nav.php'; ?>
 
+<?php
+// Check if this is a fresh install
+$isConfigured = file_exists(__DIR__ . '/api_config.json') || 
+                file_exists(__DIR__ . '/site-config/data/users.json');
+
+if (!$isConfigured):
+?>
+<main>
+    <div class="welcome-container" style="max-width: 800px; margin: 50px auto; padding: 40px; background: var(--card-bg); border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); text-align: center;">
+        <h1 style="color: var(--primary-color); margin-bottom: 20px;">🎉 Welcome to DCS Statistics Dashboard!</h1>
+        <p style="font-size: 1.2em; color: var(--text-secondary); margin-bottom: 30px;">
+            It looks like this is your first time here. Let's get you set up!
+        </p>
+        
+        <div style="background: rgba(0, 123, 255, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h2 style="color: var(--accent-primary); margin-bottom: 15px;">Quick Setup Guide</h2>
+            <ol style="text-align: left; max-width: 500px; margin: 0 auto; line-height: 1.8;">
+                <li>Create your admin account</li>
+                <li>Configure your DCSServerBot API connection</li>
+                <li>Customize your dashboard settings</li>
+                <li>Start viewing your server statistics!</li>
+            </ol>
+        </div>
+        
+        <a href="/site-config/install.php" class="btn btn-primary" style="font-size: 1.2em; padding: 15px 40px; display: inline-block; text-decoration: none;">
+            🚀 Start Setup
+        </a>
+        
+        <p style="margin-top: 30px; font-size: 0.9em; color: var(--text-muted);">
+            Need help? Check out the <a href="https://github.com/SocialOutcast-DCS/DCS-Statistics" target="_blank">documentation</a>
+        </p>
+    </div>
+</main>
+<?php else: ?>
 <main>
     <div class="dashboard-header">
         <h1>DCS Server Statistics Dashboard</h1>
@@ -908,4 +942,5 @@ main {
 }
 </style>
 
+<?php endif; ?>
 <?php include 'footer.php'; ?>

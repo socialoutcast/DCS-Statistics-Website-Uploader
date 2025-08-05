@@ -43,6 +43,16 @@ function getSettingsPath() {
 
 // Load settings from JSON file
 function loadSiteFeatures() {
+    // Load site configuration if exists
+    $siteConfigFile = __DIR__ . '/site_config.json';
+    $siteConfig = [];
+    if (file_exists($siteConfigFile)) {
+        $content = @file_get_contents($siteConfigFile);
+        if ($content) {
+            $siteConfig = json_decode($content, true) ?: [];
+        }
+    }
+    
     // Default features (all enabled)
     $defaults = [
         // Navigation Items
@@ -97,7 +107,7 @@ function loadSiteFeatures() {
         
         // Custom Links
         'show_squadron_homepage' => false,
-        'discord_link_url' => 'https://discord.gg/DNENf6pUNX',
+        'discord_link_url' => $siteConfig['discord_invite_url'] ?? 'https://discord.gg/DNENf6pUNX',
         'squadron_homepage_url' => '',
         'squadron_homepage_text' => 'Squadron'
     ];

@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.nav-dropdown')) {
             const currentPath = window.location.pathname;
-            const settingsPages = ['settings.php', 'api_settings.php', 'themes.php', 'discord_settings.php', 'squadron_settings.php', 'admins.php', 'maintenance.php'];
+            const settingsPages = ['settings.php', 'api_settings.php', 'themes.php', 'discord_settings.php', 'squadron_settings.php', 'admins.php', 'permissions.php', 'maintenance.php', 'update.php'];
             const isOnSettingsPage = settingsPages.some(page => currentPath.includes(page));
             
             if (!isOnSettingsPage) {

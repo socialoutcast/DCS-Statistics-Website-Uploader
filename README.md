@@ -7,7 +7,14 @@
 [![Security](https://img.shields.io/badge/🔒_Security-Enterprise_Grade-red?style=for-the-badge)](#-security-features)
 [![Responsive](https://img.shields.io/badge/📱_Design-Fully_Responsive-purple?style=for-the-badge)](#-responsive-design)
 
-## 🎯 What's New in 2025
+## 🎯 What's New in v1.0.0
+
+### 🚀 **Advanced Admin Panel**
+- 🎛️ **Role-Based Access Control** - Multi-tier permission system (Air Boss, Squadron Leader, Pilot)
+- 🔐 **Secure Authentication** - Modern login system with session management
+- 🔄 **Auto-Update System** - One-click updates from GitHub with version tracking
+- 💾 **Backup & Restore** - Automatic backups before updates with version metadata
+- 🎨 **Theme Manager** - Pre-built themes (Sky Pirates, Grim Reapers, Blue Angels, more!)
 
 ### ✨ **Modern Professional Interface**
 - 🖼️ **Cinematic Header** - Epic DCS combat scene background with professional overlay
@@ -15,17 +22,11 @@
 - 📱 **Dynamic Responsive Layout** - Adapts fluidly to any screen size (98% mobile width to 1400px desktop)
 - 🔍 **Unified Search Experience** - Consistent search bars with advanced functionality
 
-### 🚀 **Real-Time API Integration**
-- ⚡ **API-Only Architecture** - Direct integration with DCSServerBot REST API
-- 🎛️ **Admin Panel Configuration** - Easy API endpoint setup through web interface
-- 🔍 **Advanced Search** - Real-time pilot lookup with fuzzy matching
-- 📊 **Live Statistics** - Instant updates without file transfers
-
-### 🎯 **User Experience Improvements**
-- 🎪 **Consistent Pilot Cards** - Unified design for credits and statistics pages
-- 🌈 **Green Theme Integration** - Professional military-inspired color scheme
-- ⚙️ **Adaptive Charts** - Charts only display when data is available
-- 🔄 **Smart Loading States** - Proper error handling and user feedback
+### 🛡️ **Advanced Features**
+- 📊 **Feature Management** - Granular control over every dashboard element
+- 🌐 **Enhanced API Client** - Bulletproof error handling and retry logic
+- 🐳 **Zero-Config Docker** - Complete containerized deployment with auto-setup
+- 📈 **Performance Monitoring** - Built-in API health checks and status indicators
 
 ## 📸 Modern Dashboard Preview
 
@@ -51,80 +52,172 @@ Experience a professional-grade statistics platform featuring:
 1. **Download** the latest release and extract
 2. **Upload** the `dcs-stats/` folder to your web server
 3. **Access** `https://yourdomain.com/dcs-stats/`
-4. **Configure** your DCSServerBot API endpoint in the admin panel
+4. **Follow the setup wizard** to create your admin account
+5. **Configure** your DCSServerBot API endpoint
 
-#### Option 2: Docker Deployment
+#### Option 2: Docker Deployment (Zero Configuration!)
 
-See the [Docker Setup](#-docker-deployment) section below for containerized deployment.
+```bash
+# Clone the repository
+git clone https://github.com/Penfold-88/DCS-Statistics-Website-Uploader.git
+cd DCS-Statistics-Website-Uploader
 
-### ⚙️ Configuration
+# Start with Docker (that's it!)
+docker compose up -d
 
-1. **Access the admin panel** at `/dcs-stats/admin`
-2. **Enter your DCSServerBot REST API URL**
-   - Example: `http://localhost:8080/api`
-   - For Docker: `http://host.docker.internal:8080/api` (Windows/Mac)
-3. **Save configuration** - The system automatically creates `api_config.json`
-4. **Verify connection** - Check the status indicator turns green
+# Access at http://localhost:8080
+```
+
+The Docker setup automatically:
+- ✅ Creates all required directories
+- ✅ Sets proper permissions
+- ✅ Initializes the database
+- ✅ Configures the web server
+- ✅ No manual configuration needed!
+
+### ⚙️ First-Time Setup
+
+1. **Access your dashboard** at `http://yourdomain.com/dcs-stats/`
+2. **Click "Start Setup"** on the welcome screen
+3. **Create your admin account** (you'll be the Air Boss!)
+4. **Configure DCSServerBot API**:
+   - Enter your API URL (e.g., `http://localhost:8080`)
+   - Test the connection
+   - Save configuration
+5. **Customize your dashboard**:
+   - Choose a theme
+   - Enable/disable features
+   - Set your Discord link
 
 **🎉 That's it!** Your dashboard now displays real-time data from DCSServerBot.
 
-## 🌟 Real-Time API Architecture
+## 🎛️ Admin Panel Features
 
-### Direct API Integration
+### 🔐 Secure Access
+Access the admin panel at `/dcs-stats/site-config/` (NOT `/admin`!)
 
-The website connects directly to DCSServerBot's REST API for all data:
+### 👥 Role-Based Permissions
 
-```json
-{
-    "api_base_url": "http://localhost:8080/api",
-    "use_api": true,
-    "enabled_endpoints": [
-        "get_leaderboard.php",
-        "get_player_stats.php", 
-        "search_players.php",
-        "get_credits.php",
-        "get_servers.php",
-        "get_squadrons.php"
-    ]
-}
+| Role | Dashboard Access | API Config | Updates | User Management | Themes |
+|------|-----------------|------------|---------|-----------------|---------|
+| **Air Boss** | ✅ Full | ✅ | ✅ | ✅ | ✅ |
+| **Squadron Leader** | ✅ View | ❌ | ❌ | ✅ Limited | ✅ |
+| **Pilot** | ✅ View Only | ❌ | ❌ | ❌ | ❌ |
+
+### 🚀 Auto-Update System
+
+1. **Version Tracking** - Know exactly what version you're running
+2. **Update Notifications** - Get alerts when updates are available
+3. **One-Click Updates** - Update directly from the admin panel
+4. **Automatic Backups** - Creates backup before every update
+5. **Version History** - Track all updates and changes
+6. **Branch Support** - Switch between stable and development branches
+
+### 💾 Backup Management
+
+- **Automatic Backups** - Before updates and on schedule
+- **Manual Backups** - Create snapshots anytime
+- **Version Metadata** - Each backup includes version and branch info
+- **Easy Restore** - One-click restore to any backup
+- **Auto-Cleanup** - Keeps only the 5 most recent backups
+- **Download Backups** - Export for external storage
+
+### 🎨 Theme System
+
+Pre-built professional themes included:
+- 🏴‍☠️ **Sky Pirates** - Dark theme with green accents
+- 💀 **Grim Reapers** - High contrast red theme
+- 🔵 **Blue Angels** - Navy blue professional theme
+- 🌊 **Navy** - Classic military styling
+- 🎖️ **Air Force** - Light blue aviation theme
+- 🔥 **Danger Zone** - Bold orange accents
+- 🌙 **Night Ops** - Ultra-dark stealth mode
+- ❄️ **Arctic** - Cool blue winter theme
+
+## 🐳 Docker Deployment
+
+### Zero-Configuration Setup
+
+Our Docker setup is completely automated - just run and go!
+
+```bash
+# Clone the repository
+git clone https://github.com/Penfold-88/DCS-Statistics-Website-Uploader.git
+cd DCS-Statistics-Website-Uploader
+
+# Start the container (that's it!)
+docker compose up -d
+
+# Access at http://localhost:8080
 ```
 
-### 🔥 API Features
-- ⚡ **Real-time updates** - Data refreshes instantly
-- 🔍 **Advanced search** - Find pilots with partial names and typo tolerance
-- 📊 **Live statistics** - Combat data updates in real-time
-- 💰 **Credits integration** - Real-time points and rankings
-- 🖥️ **Server status** - Live mission and player information
+### What Docker Does Automatically
 
-## 🎨 Professional Design System
+✅ **Directory Creation** - All folders created with correct permissions  
+✅ **File Permissions** - Automatically set for web server access  
+✅ **Database Init** - User database created if not exists  
+✅ **Config Templates** - Default configs generated  
+✅ **Health Checks** - Monitors container status  
+✅ **Auto-Restart** - Recovers from crashes  
+✅ **Volume Persistence** - Data survives container updates  
 
-### 🖼️ **Modern Header**
-- Epic DCS combat scene background with professional overlay
-- Gradient text effects with glowing shadows
-- Live API status indicator with pulsing animation
-- Sticky header that follows users while scrolling
+### Docker Commands
 
-### 📊 **Unified Interface**
-| Component | Design | Features |
-|-----------|--------|----------|
-| **Pilot Cards** | Consistent dark theme with green accents | Dynamic stat tiles, responsive grids |
-| **Search Bars** | Centered, professional styling | Unified across all pages, perfect alignment |
-| **Tables** | Modern gradients with hover effects | Responsive design, consistent spacing |
-| **Charts** | Dark theme with green highlights | Only display when data available |
+```bash
+# View logs
+docker compose logs -f
 
-### 📱 **Responsive Excellence**
-- **Extra Large (1400px+)**: 80% width, maximum features
-- **Large (1200px-1399px)**: 90% width, full functionality  
-- **Medium (769px-1199px)**: 92% width, optimized layout
-- **Small (481px-768px)**: 95% width, stacked search
-- **Mobile (≤480px)**: 98% width, minimal padding
+# Stop the container
+docker compose down
 
-## 🎛️ Smart Feature Management
+# Update to latest version
+docker compose pull
+docker compose up -d
+
+# Access container shell
+docker compose exec dcs-stats-web bash
+```
+
+### Custom Ports
+
+Edit `.env` file:
+```bash
+# Change from default 8080
+WEB_PORT=8090
+```
+
+## 🔒 Security Features
+
+### Multi-Layer Protection
+✅ **Authentication System** - Secure login with bcrypt password hashing  
+✅ **Session Management** - Secure session handling with CSRF tokens  
+✅ **Role-Based Access** - Granular permissions for every feature  
+✅ **XSS Prevention** - All inputs sanitized and escaped  
+✅ **Rate Limiting** - API abuse prevention with throttling  
+✅ **Security Headers** - CSP, XSS protection, clickjacking prevention  
+✅ **Input Validation** - Comprehensive data filtering  
+✅ **Secure File Access** - Protected directories and files  
+
+### Admin Security
+- Password strength requirements
+- Failed login tracking
+- Session timeout
+- Activity logging
+- IP-based restrictions (optional)
+
+## 🎯 Feature Management
 
 ### Granular Control System
-Configure exactly what your community sees:
+
+Control exactly what your community sees:
 
 ```php
+// Homepage Features
+'home_server_stats' => true,      // Server statistics cards
+'home_top_pilots' => true,        // Top 5 pilots chart
+'home_mission_stats' => true,     // Combat statistics
+'home_player_activity' => true,   // Activity overview
+
 // Combat Statistics
 'pilot_combat_stats' => true,     // Kills, deaths, K/D ratio
 'pilot_flight_stats' => true,     // Takeoffs, landings, crashes
@@ -141,365 +234,62 @@ Configure exactly what your community sees:
 'squadron_statistics' => true,    // Squadron stats
 ```
 
-### 🎯 **Benefits**
-- **Clean Interface**: Only enabled features display
-- **No Null Errors**: Missing elements handled gracefully  
-- **Performance**: Disabled features don't make API calls
-- **Customization**: Tailor the platform to your community
-
-## 🔍 Advanced Search System
-
-### Bulletproof Search Features
-- **Direct Lookup**: Instant exact name matching via `/getuser` API
-- **Fuzzy Matching**: Handles typos and partial names intelligently
-- **Multi-Endpoint**: Falls back to `/topkills` and `/topkdr` for comprehensive coverage
-- **Smart Results**: Multiple matches display selection interface
-
-### Search Flow
-```
-User Input → Direct API Lookup → Fuzzy Search → Multi-Endpoint Fallback → Results
-```
-
-### Error Handling
-- Graceful API failures with user-friendly messages
-- Automatic retry logic for transient failures
-- Debug logging for troubleshooting
-- Consistent experience across all pages
-
-## 🐳 Docker Deployment
-
-### Prerequisites
-
-#### Install Docker
-
-**Windows:**
-1. Download [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
-2. Run the installer (Docker Desktop Installer.exe)
-3. Follow the installation wizard
-4. Restart your computer
-5. Start Docker Desktop from the Start menu
-
-**Linux (Ubuntu/Debian):**
-```bash
-# Update package index
-sudo apt update
-
-# Install prerequisites
-sudo apt install apt-transport-https ca-certificates curl software-properties-common
-
-# Add Docker's official GPG key
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
-# Add Docker repository
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# Install Docker
-sudo apt update
-sudo apt install docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
-# Add your user to docker group (logout/login required)
-sudo usermod -aG docker $USER
-```
-
-**macOS:**
-1. Download [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
-2. Open the .dmg file
-3. Drag Docker to Applications
-4. Start Docker from Applications
-
-**Verify Installation:**
-```bash
-docker --version
-docker compose version
-```
-
-### Complete Docker Setup Process
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Penfold-88/DCS-Statistics-Website-Uploader.git
-   cd DCS-Statistics-Website-Uploader
-   ```
-
-2. **Create environment configuration**
-   ```bash
-   # Copy the example environment file
-   cp .env.docker.example .env
-   
-   # The default configuration works for most users
-   # Port 8080 is used by default
-   ```
-
-3. **Build and start the container**
-   ```bash
-   # Build the Docker image and start the container
-   docker compose up -d --build
-   
-   # This will:
-   # - Download the PHP/Apache base image
-   # - Install required dependencies
-   # - Copy the website files
-   # - Start the web server
-   ```
-
-4. **Verify the deployment**
-   ```bash
-   # Check if container is running
-   docker compose ps
-   
-   # You should see:
-   # NAME                STATUS              PORTS
-   # dcs-stats-website   Up (healthy)        0.0.0.0:8080->80/tcp
-   ```
-
-5. **Access the website**
-   - Open your browser to http://localhost:8080
-   - You should see the DCS Statistics Dashboard
-   - Navigate to the admin panel to configure your API
-
-### Troubleshooting Docker Setup
-
-**Port Already in Use:**
-If you see "bind: address already in use", port 8080 is taken:
-```bash
-# Option 1: Stop the conflicting service
-# Option 2: Use a different port
-nano .env  # or your preferred editor
-# Change WEB_PORT=8080 to WEB_PORT=8090
-docker compose up -d
-```
-
-**Permission Denied (Linux):**
-```bash
-# If you get permission errors, ensure you're in the docker group
-sudo usermod -aG docker $USER
-# Then logout and login again
-```
-
-**Container Not Starting:**
-```bash
-# Check logs for errors
-docker compose logs dcs-stats-web
-
-# Rebuild from scratch
-docker compose down
-docker compose build --no-cache
-docker compose up -d
-```
-
-### Docker Configuration Options
-
-**Environment Variables (.env):**
-```bash
-# Web server port (default: 8080)
-WEB_PORT=8080
-
-# PHP Configuration
-PHP_MEMORY_LIMIT=256M
-PHP_MAX_UPLOAD=50M
-PHP_MAX_FILE_UPLOADS=20
-
-# Timezone
-TZ=UTC
-```
-
-**Useful Docker Commands:**
-```bash
-# Start services
-docker compose up -d
-
-# Stop services
-docker compose down
-
-# View logs
-docker compose logs -f
-
-# Restart service
-docker compose restart
-
-# Rebuild after code changes
-docker compose up -d --build
-
-# Enter container shell
-docker compose exec dcs-stats-web bash
-
-# Check resource usage
-docker stats
-```
-
-### Development Mode
-
-For active development with live code updates:
-
-1. Edit `docker-compose.yml`
-2. Uncomment the volume mount:
-   ```yaml
-   # volumes:
-   #   # For development: mount source code (uncomment for development)
-   #   - ./dcs-stats:/var/www/html:rw
-   ```
-   Change to:
-   ```yaml
-   volumes:
-     # For development: mount source code (uncomment for development)
-     - ./dcs-stats:/var/www/html:rw
-   ```
-
-3. Restart the container:
-   ```bash
-   docker compose restart
-   ```
-
-Now changes to files in `dcs-stats/` will be reflected immediately.
-
-## 🔒 Enterprise Security
-
-### Multi-Layer Protection
-✅ **XSS Prevention** - All inputs sanitized and escaped  
-✅ **CSRF Protection** - Request validation and tokens
-✅ **Rate Limiting** - API abuse prevention with throttling
-✅ **Input Validation** - Comprehensive data filtering
-✅ **Security Headers** - CSP, XSS protection, clickjacking prevention
-✅ **Access Controls** - Admin panel protected
-✅ **API Security** - Secure proxy for API requests
-✅ **Safe DOM Updates** - Null reference protection
-
-### Dynamic CSP Headers
-```php
-// Automatically configures CSP based on API settings
-header("Content-Security-Policy: default-src 'self'; 
-       connect-src 'self' {$apiUrl}; 
-       script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;");
-```
-
-## 🚀 Performance Features
-
-### Optimized Loading
-- **Lazy Loading**: Resources load only when needed
-- **API Caching**: Smart caching reduces API calls
-- **Efficient Updates**: Only changed data refreshes
-- **Minified Assets**: Reduced payload sizes
-- **CDN Integration**: Fast loading of external resources
-
-### Real-Time Updates
-- **Live Data**: Statistics update without page refresh
-- **WebSocket Ready**: Architecture supports future WebSocket integration
-- **Efficient Polling**: Smart intervals prevent API overload
-- **Progressive Enhancement**: Core functionality loads first
-
-## 🎯 Advanced Customization
-
-### Theme System
-```css
-/* Easy color customization */
-:root {
-    --primary-color: #4CAF50;    /* Green accent */
-    --background-color: #121212;  /* Dark background */
-    --text-color: #ffffff;        /* White text */
-    --card-color: #2c2c2c;       /* Card backgrounds */
-}
-```
-
-### Custom Branding
-- **Header Background**: Replace `dcs-header-image.jpg` with your image
-- **Site Title**: Edit header.php for custom branding
-- **Discord Integration**: Update nav.php with your server link
-- **Color Scheme**: Modify CSS variables for custom themes
-
 ## 🔧 Troubleshooting Guide
 
-### 🔍 **API Connection Issues**
+### 🔍 **Admin Panel Access**
+- The admin panel is at `/dcs-stats/site-config/` (NOT `/admin`)
+- First user to register becomes the Air Boss
+- Default permissions are set during first setup
+
+### 📊 **API Connection Issues**
 ```bash
 # Test API directly
-curl http://localhost:8080/api/ping
+curl http://localhost:8080/ping
 
-# Check browser console
-F12 → Console Tab → Look for errors
+# Check admin panel
+Dashboard → API Configuration → Test Connection
 
-# Verify CORS settings in DCSServerBot
-# Ensure your domain is allowed
+# For Docker users
+Use http://host.docker.internal:8080 on Windows/Mac
+Use http://172.17.0.1:8080 on Linux
 ```
 
-### 📊 **Missing Statistics**
-1. **Check API status** in the header (should be green)
-2. **Verify feature toggles** in `site_features.php`
-3. **Test API endpoints** directly in browser
-4. **Review browser console** for JavaScript errors
+### 🎨 **Theme Not Applying**
+1. Clear browser cache (Ctrl+F5)
+2. Check theme selection saved in admin panel
+3. Verify CSS file permissions
+4. Check browser console for errors
 
-### 🎨 **Styling Issues**
-```bash
-# Clear browser cache
-Ctrl+F5 (Windows) or Cmd+Shift+R (Mac)
+### 🔄 **Update Failures**
+1. Check file permissions on web server
+2. Ensure backup directory is writable
+3. Verify GitHub connectivity
+4. Check PHP error logs
+5. Manual update via Docker: `docker compose pull && docker compose up -d`
 
-# Check CSS loading
-Browser DevTools → Network Tab → Reload Page
-
-# Verify file permissions
-chmod 644 dcs-stats/styles.css
-```
-
-## 📁 Modern File Structure
+## 📁 Project Structure
 
 ```
 DCS-Statistics-Website-Uploader/
-├── 📁 dcs-stats/                  # Web dashboard
-│   ├── 🏠 index.php              # Homepage with server stats
-│   ├── 🏆 leaderboard.php        # Top 10 combat rankings  
-│   ├── 💰 pilot_credits.php      # Credits system
-│   ├── 👨‍✈️ pilot_statistics.php   # Individual pilot lookup
-│   ├── 🛡️ squadrons.php          # Squadron management
-│   ├── 🖥️ servers.php            # Live server status
-│   ├── 🎛️ admin/                 # Admin panel for API config
-│   ├── 🎨 styles.css             # Unified design system
-│   ├── 🔧 api_proxy.php          # Secure API proxy
-│   ├── 🧠 js/api-client.js       # Frontend API client
-│   ├── ⚙️ site_features.php      # Feature toggles
-│   ├── 🔒 security_functions.php # Security utilities
-│   └── 🖼️ dcs-header-image.jpg   # Header background
-├── 🐳 Dockerfile                 # Docker container setup
+├── 📁 dcs-stats/                  # Main web application
+│   ├── 📁 site-config/            # Admin panel (NEW!)
+│   │   ├── 🔐 index.php          # Admin dashboard
+│   │   ├── 🎨 themes.php         # Theme manager
+│   │   ├── 🔄 update.php         # Update system
+│   │   ├── 💾 backups.php        # Backup management
+│   │   ├── 👥 users.php          # User management
+│   │   └── 📁 api/               # Admin API endpoints
+│   ├── 🏠 index.php              # Homepage 
+│   ├── 🏆 leaderboard.php        # Combat rankings
+│   ├── 💰 pilot_credits.php      # Credits leaderboard
+│   ├── 👨‍✈️ pilot_statistics.php   # Pilot profiles
+│   ├── 🛡️ squadrons.php          # Squadron system
+│   ├── 🖥️ servers.php            # Server status
+│   └── 🎨 themes/                # Theme files
+├── 🐳 Dockerfile                 # Production container
 ├── 🐳 docker-compose.yml         # Docker orchestration
-├── 📋 .env.docker.example        # Docker config template
 └── 📚 README.md                  # This guide
 ```
-
-## 🌐 API Endpoints
-
-### Available Endpoints
-```javascript
-// Direct API access for developers
-GET  /dcs-stats/get_leaderboard.php     // Top pilots
-GET  /dcs-stats/get_player_stats.php    // Individual stats
-POST /dcs-stats/search_players.php      // Search pilots
-GET  /dcs-stats/get_credits.php         // Credits leaderboard
-GET  /dcs-stats/get_servers.php         // Server status
-GET  /dcs-stats/get_squadrons.php       // Squadron data
-```
-
-### Integration Example
-```javascript
-// Fetch player statistics
-async function getPlayerStats(playerName) {
-    const response = await fetch(`/dcs-stats/get_player_stats.php?name=${playerName}`);
-    const data = await response.json();
-    return data;
-}
-```
-
-## 🎯 Roadmap & Future Features
-
-### Coming Soon
-- 🔄 **WebSocket Support** - Real-time combat updates
-- 📊 **Advanced Analytics** - Trend analysis and insights
-- 🎮 **Mission Integration** - Detailed mission breakdowns
-- 🏆 **Tournament Mode** - Competition management
-- 📱 **Mobile App** - Native iOS/Android companion
-- 🤖 **Discord Bot** - Live stats in Discord
-
-### Community Requests
-- 🎨 **Theme Marketplace** - Share custom themes
-- 📈 **Historical Data** - Long-term statistics
-- 🎯 **Achievement System** - Automated awards
-- 🔗 **Multi-Server** - Federation support
 
 ## 🤝 Contributing
 
@@ -534,9 +324,6 @@ This project is licensed under the **MIT License** - see [LICENSE](LICENSE) file
 - **Sky Pirates Squadron** - Original development and testing
 - **DCS Community** - Continuous feedback and improvements
 - **Eagle Dynamics** - For creating DCS World
-
-### 🎖️ Community Recognition
-Special thanks to server administrators worldwide using this system!
 
 ---
 

@@ -36,6 +36,34 @@ function formatDate($date, $format = null) {
 }
 
 /**
+ * Log admin action
+ */
+function logAdminAction($action, $details = []) {
+    $logFile = __DIR__ . '/data/logs.json';
+    $logs = [];
+    
+    if (file_exists($logFile)) {
+        $logs = json_decode(file_get_contents($logFile), true) ?: [];
+    }
+    
+    $logs[] = [
+        'action' => $action,
+        'admin_id' => $_SESSION['admin_id'] ?? 0,
+        'admin_username' => getCurrentAdmin()['username'] ?? 'System',
+        'details' => $details,
+        'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+        'timestamp' => date('Y-m-d H:i:s')
+    ];
+    
+    // Keep only last 1000 logs
+    if (count($logs) > 1000) {
+        $logs = array_slice($logs, -1000);
+    }
+    
+    file_put_contents($logFile, json_encode($logs, JSON_PRETTY_PRINT));
+}
+
+/**
  * Get player data from API
  */
 function getPlayers($search = null, $limit = null, $offset = 0) {

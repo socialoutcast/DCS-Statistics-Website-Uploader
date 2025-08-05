@@ -6,6 +6,11 @@
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/admin_functions.php';
 
+// Debug: Check current user
+$currentUser = getCurrentAdmin();
+error_log("Current user: " . json_encode($currentUser));
+error_log("Has view_dashboard permission: " . (hasPermission('view_dashboard') ? 'yes' : 'no'));
+
 // Require admin login
 requireAdmin();
 requirePermission('view_dashboard');

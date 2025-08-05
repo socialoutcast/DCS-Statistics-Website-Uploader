@@ -41,12 +41,22 @@ function getPermissionsConfigPath() {
 
 // Default LSO permissions
 $defaultLSOPermissions = [
+    // Core Permissions
     'view_dashboard' => ['enabled' => true, 'label' => 'View Dashboard', 'description' => 'Access the main dashboard and statistics'],
     'export_data' => ['enabled' => true, 'label' => 'Export Data', 'description' => 'Export player and mission data'],
     'view_logs' => ['enabled' => true, 'label' => 'View Logs', 'description' => 'View activity logs and audit trails'],
-    'manage_features' => ['enabled' => false, 'label' => 'Manage Features', 'description' => 'Enable/disable site features'],
+    
+    // Management Permissions
     'manage_api' => ['enabled' => false, 'label' => 'Manage API', 'description' => 'Configure API settings and connections'],
-    'manage_themes' => ['enabled' => false, 'label' => 'Manage Themes', 'description' => 'Customize site appearance and menus']
+    'manage_features' => ['enabled' => false, 'label' => 'Manage Features', 'description' => 'Enable/disable site features'],
+    'manage_themes' => ['enabled' => false, 'label' => 'Manage Themes', 'description' => 'Customize site appearance and themes'],
+    'manage_discord' => ['enabled' => false, 'label' => 'Manage Discord', 'description' => 'Configure Discord integration and links'],
+    'manage_squadrons' => ['enabled' => false, 'label' => 'Manage Squadrons', 'description' => 'Configure squadron homepage settings'],
+    'manage_maintenance' => ['enabled' => false, 'label' => 'Manage Maintenance', 'description' => 'Configure maintenance mode settings'],
+    'manage_updates' => ['enabled' => false, 'label' => 'Manage Updates', 'description' => 'Install updates and manage backups'],
+    
+    // Additional Permissions
+    'change_settings' => ['enabled' => false, 'label' => 'Change Settings', 'description' => 'General permission to access settings menu']
 ];
 
 // Load current permissions
@@ -115,90 +125,126 @@ $pageTitle = 'LSO Permissions Management';
     <style>
         .permissions-grid {
             display: grid;
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 15px;
             margin-top: 20px;
         }
         
         .permission-item {
             background: var(--bg-secondary);
-            padding: 20px;
-            border-radius: 8px;
+            padding: 15px;
+            border-radius: 6px;
             border: 1px solid var(--border-color);
             display: flex;
-            align-items: flex-start;
-            gap: 15px;
+            align-items: center;
+            gap: 12px;
             transition: all 0.2s;
+            min-height: 60px;
         }
         
         .permission-item:hover {
             border-color: var(--accent-primary);
             box-shadow: 0 2px 8px rgba(76, 175, 80, 0.1);
+            transform: translateY(-1px);
         }
         
         .permission-checkbox {
-            margin-top: 2px;
+            flex-shrink: 0;
         }
         
         .permission-checkbox input {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             cursor: pointer;
+            accent-color: var(--accent-primary);
         }
         
         .permission-details {
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
         
         .permission-label {
             font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: 5px;
-            font-size: 16px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .permission-description {
             color: var(--text-muted);
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
+            opacity: 0.8;
         }
         
         .permission-item.enabled {
-            background: rgba(76, 175, 80, 0.05);
-            border-color: rgba(76, 175, 80, 0.3);
+            background: rgba(76, 175, 80, 0.08);
+            border-color: rgba(76, 175, 80, 0.4);
+        }
+        
+        .permission-item.enabled .permission-label {
+            color: var(--accent-primary);
         }
         
         .section-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin: 30px 0 20px 0;
+            justify-content: space-between;
+            margin: 25px 0 15px 0;
             padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color);
         }
         
         .section-header h3 {
             margin: 0;
             color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 600;
         }
         
         .permission-count {
             background: var(--accent-primary);
             color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
+            padding: 3px 10px;
+            border-radius: 14px;
             font-size: 12px;
             font-weight: 600;
+            min-width: 24px;
+            text-align: center;
         }
         
         .quick-actions {
             display: flex;
             gap: 10px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
         
         .quick-actions button {
             padding: 8px 16px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        
+        .permissions-info {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
             font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        @media (max-width: 768px) {
+            .permissions-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -230,7 +276,11 @@ $pageTitle = 'LSO Permissions Management';
                         <div class="alert alert-error"><?= htmlspecialchars($error) ?></div>
                     <?php endif; ?>
                     
-                    <p>Configure what members of the LSO group can access in the admin panel. These permissions apply to all LSO users.</p>
+                    <div class="permissions-info">
+                        <strong>About LSO Permissions:</strong><br>
+                        Configure what members of the Landing Signal Officer (LSO) group can access in the admin panel. 
+                        These permissions apply to all users with the LSO role. Air Boss users always have full access to all features.
+                    </div>
                     
                     <form method="POST" action="">
                         <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
@@ -281,7 +331,7 @@ $pageTitle = 'LSO Permissions Management';
                         
                         <div class="permissions-grid" id="mgmt-permissions">
                             <?php 
-                            $mgmtPerms = ['manage_features', 'manage_api', 'manage_themes'];
+                            $mgmtPerms = ['manage_api', 'manage_features', 'manage_themes', 'manage_discord', 'manage_squadrons', 'manage_maintenance', 'manage_updates', 'change_settings'];
                             foreach ($mgmtPerms as $key): 
                                 if (isset($lsoPermissions[$key])):
                                     $perm = $lsoPermissions[$key];
