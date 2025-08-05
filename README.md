@@ -263,9 +263,10 @@ Use http://172.17.0.1:8080 on Linux
 ### 🔄 **Update Failures**
 1. Check file permissions on web server
 2. Ensure backup directory is writable
-3. Verify GitHub connectivity
-4. Check PHP error logs
-5. Manual update via Docker: `docker compose pull && docker compose up -d`
+3. ```extension=zip``` Enabled in your ```php.ini``` example of a disabled extention is ```;extension=zip```
+4. Verify GitHub connectivity
+5. Check PHP error logs
+6. Manual update via Docker: `docker compose pull && docker compose up -d`
 
 ## 📁 Project Structure
 
