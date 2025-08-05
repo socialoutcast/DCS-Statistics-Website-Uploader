@@ -555,7 +555,20 @@ $pageTitle = 'Theme Management';
                     <h2>Theme Preview</h2>
                     <p>Preview how the site looks with current theme settings:</p>
                     
-                    <iframe src="<?= url('index.php') ?>" class="preview-frame" id="preview-frame"></iframe>
+                    <?php
+                    // Build initial preview URL with current colors
+                    $previewParams = [
+                        'preview' => '1',
+                        'primary' => substr($customColors['primary_color'], 1),
+                        'secondary' => substr($customColors['secondary_color'], 1),
+                        'background' => substr($customColors['background_color'], 1),
+                        'text' => substr($customColors['text_color'], 1),
+                        'link' => substr($customColors['link_color'], 1),
+                        'border' => substr($customColors['border_color'], 1),
+                    ];
+                    $previewUrl = url('index.php') . '?' . http_build_query($previewParams);
+                    ?>
+                    <iframe src="<?= $previewUrl ?>" class="preview-frame" id="preview-frame"></iframe>
                     
                     <div style="margin-top: 10px;">
                         <button type="button" class="btn btn-sm" onclick="refreshPreview()">Refresh Preview</button>
@@ -760,8 +773,7 @@ $pageTitle = 'Theme Management';
         
         // Refresh preview
         function refreshPreview() {
-            const iframe = document.getElementById('preview-frame');
-            iframe.src = iframe.src;
+            updatePreviewColors();
         }
         
         // Debounce function to prevent too many updates
@@ -951,6 +963,9 @@ $pageTitle = 'Theme Management';
         // Initialize drag and drop when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initMenuDragDrop();
+            
+            // Initialize preview with current colors
+            updatePreviewColors();
         });
     </script>
 </body>
