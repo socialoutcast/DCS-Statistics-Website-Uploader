@@ -613,8 +613,7 @@ $pageTitle = 'Theme Management';
                     <iframe src="<?= $previewUrl ?>" class="preview-frame" id="preview-frame"></iframe>
                     
                     <div style="margin-top: 10px;">
-                        <button type="button" class="btn btn-sm" onclick="refreshPreview()">Refresh Preview</button>
-                        <span id="preview-status" style="margin-left: 10px; color: var(--text-muted); font-size: 0.9em;"></span>
+                        <span id="preview-status" style="color: var(--text-muted); font-size: 0.9em;"></span>
                     </div>
                 </div>
                 
@@ -819,10 +818,6 @@ $pageTitle = 'Theme Management';
             document.getElementById('file-name').textContent = fileName;
         });
         
-        // Refresh preview
-        function refreshPreview() {
-            updatePreviewColors();
-        }
         
         // Debounce function to prevent too many updates
         let updateTimeout;
