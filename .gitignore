@@ -34,6 +34,7 @@ upload_log.txt
 
 # API Configuration
 dcs-stats/api_config.json
+dcs-stats/site_config.json
 
 # Docker related
 docker-compose.override.yml
@@ -55,6 +56,12 @@ dcs-stats/data/*.json
 dcs-stats/security.log
 dcs-stats/site-config/data/
 !dcs-stats/site-config/data/.gitkeep
+
+# Version and backup files
+dcs-stats/.version_meta.json
+dcs-stats/.backup_meta.json
+dcs-stats/backups/
+!dcs-stats/backups/.gitkeep
 
 # Development/Testing
 dcs-stats/docker/sample-data/

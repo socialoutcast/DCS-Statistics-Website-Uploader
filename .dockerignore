@@ -26,6 +26,9 @@ dcs-stats/site-config/data/
 dcs-stats/data/
 dcs-stats/api_config.json
 dcs-stats/site_config.json
+dcs-stats/.version_meta.json
+dcs-stats/.backup_meta.json
+dcs-stats/backups/
 
 # Backup files
 *.bak
