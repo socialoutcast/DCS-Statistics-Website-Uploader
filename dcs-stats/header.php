@@ -16,7 +16,12 @@ $siteName = $siteConfig['site_name'] ?? 'DCS Statistics';
 
 // Security headers for protection against common web vulnerabilities
 header("X-Content-Type-Options: nosniff");
-header("X-Frame-Options: DENY");
+// Allow iframe embedding for theme preview, deny for everything else
+if (isset($_GET['preview']) && $_GET['preview'] === '1') {
+    header("X-Frame-Options: SAMEORIGIN");
+} else {
+    header("X-Frame-Options: DENY");
+}
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 
@@ -52,7 +57,9 @@ if (file_exists($configFile)) {
 // Always allow localhost for development
 $cspConnectSrc .= " http://localhost:* https://localhost:*";
 
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src {$cspConnectSrc};");
+// Build CSP header with frame-ancestors for preview mode
+$frameAncestors = (isset($_GET['preview']) && $_GET['preview'] === '1') ? " frame-ancestors 'self';" : " frame-ancestors 'none';";
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src {$cspConnectSrc};" . $frameAncestors);
 
 // Handle theme preview parameters
 $previewColors = null;
