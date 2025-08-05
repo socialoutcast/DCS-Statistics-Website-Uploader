@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/admin_functions.php';
+require_once __DIR__ . '/../config_path.php';
 
 // Require admin login and permission
 requireAdmin();
@@ -554,7 +555,7 @@ $pageTitle = 'Theme Management';
                     <h2>Theme Preview</h2>
                     <p>Preview how the site looks with current theme settings:</p>
                     
-                    <iframe src="../index.php" class="preview-frame" id="preview-frame"></iframe>
+                    <iframe src="<?= url('index.php') ?>" class="preview-frame" id="preview-frame"></iframe>
                     
                     <div style="margin-top: 10px;">
                         <button type="button" class="btn btn-sm" onclick="refreshPreview()">Refresh Preview</button>
