@@ -47,8 +47,6 @@ $defaultLSOPermissions = [
     'view_logs' => ['enabled' => true, 'label' => 'View Logs', 'description' => 'View activity logs and audit trails'],
     
     // Management Permissions
-    'manage_admins' => ['enabled' => false, 'label' => 'Manage Admins', 'description' => 'Add, edit, and remove admin users'],
-    'manage_permissions' => ['enabled' => false, 'label' => 'Manage Permissions', 'description' => 'Configure LSO group permissions'],
     'manage_api' => ['enabled' => false, 'label' => 'Manage API', 'description' => 'Configure API settings and connections'],
     'manage_features' => ['enabled' => false, 'label' => 'Manage Features', 'description' => 'Enable/disable site features'],
     'manage_themes' => ['enabled' => false, 'label' => 'Manage Themes', 'description' => 'Customize site appearance and themes'],
@@ -333,7 +331,7 @@ $pageTitle = 'LSO Permissions Management';
                         
                         <div class="permissions-grid" id="mgmt-permissions">
                             <?php 
-                            $mgmtPerms = ['manage_admins', 'manage_permissions', 'manage_api', 'manage_features', 'manage_themes', 'manage_discord', 'manage_squadrons', 'manage_maintenance', 'manage_updates', 'change_settings'];
+                            $mgmtPerms = ['manage_api', 'manage_features', 'manage_themes', 'manage_discord', 'manage_squadrons', 'manage_maintenance', 'manage_updates', 'change_settings'];
                             foreach ($mgmtPerms as $key): 
                                 if (isset($lsoPermissions[$key])):
                                     $perm = $lsoPermissions[$key];
