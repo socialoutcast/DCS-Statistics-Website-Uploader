@@ -16,7 +16,12 @@ $siteName = $siteConfig['site_name'] ?? 'DCS Statistics';
 
 // Security headers for protection against common web vulnerabilities
 header("X-Content-Type-Options: nosniff");
-header("X-Frame-Options: DENY");
+// Allow iframe embedding for theme preview, deny for everything else
+if (isset($_GET['preview']) && $_GET['preview'] === '1') {
+    header("X-Frame-Options: SAMEORIGIN");
+} else {
+    header("X-Frame-Options: DENY");
+}
 header("X-XSS-Protection: 1; mode=block");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 
@@ -52,7 +57,22 @@ if (file_exists($configFile)) {
 // Always allow localhost for development
 $cspConnectSrc .= " http://localhost:* https://localhost:*";
 
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src {$cspConnectSrc};");
+// Build CSP header with frame-ancestors for preview mode
+$frameAncestors = (isset($_GET['preview']) && $_GET['preview'] === '1') ? " frame-ancestors 'self';" : " frame-ancestors 'none';";
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src {$cspConnectSrc};" . $frameAncestors);
+
+// Handle theme preview parameters
+$previewColors = null;
+if (isset($_GET['preview']) && $_GET['preview'] === '1') {
+    $previewColors = [
+        'primary_color' => isset($_GET['primary']) ? '#' . $_GET['primary'] : null,
+        'secondary_color' => isset($_GET['secondary']) ? '#' . $_GET['secondary'] : null,
+        'background_color' => isset($_GET['background']) ? '#' . $_GET['background'] : null,
+        'text_color' => isset($_GET['text']) ? '#' . $_GET['text'] : null,
+        'link_color' => isset($_GET['link']) ? '#' . $_GET['link'] : null,
+        'border_color' => isset($_GET['border']) ? '#' . $_GET['border'] : null,
+    ];
+}
 
 // Maintenance mode check
 $maintenanceFile = __DIR__ . '/site-config/data/maintenance.json';
@@ -82,6 +102,17 @@ if (file_exists($maintenanceFile)) {
   <link rel="stylesheet" href="<?php echo url('styles-mobile.css'); ?>" />
   <?php if (file_exists(__DIR__ . '/custom_theme.css')): ?>
   <link rel="stylesheet" href="<?php echo url('custom_theme.css'); ?>" />
+  <?php endif; ?>
+  <?php if ($previewColors): ?>
+  <style>
+    :root {
+      <?php foreach ($previewColors as $var => $color): ?>
+      <?php if ($color): ?>
+      --<?php echo $var; ?>: <?php echo $color; ?> !important;
+      <?php endif; ?>
+      <?php endforeach; ?>
+    }
+  </style>
   <?php endif; ?>
   <script>
     // Path configuration for JavaScript

@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/admin_functions.php';
+require_once __DIR__ . '/../config_path.php';
 
 // Require admin login and permission
 requireAdmin();
@@ -338,27 +339,64 @@ $pageTitle = 'Theme Management';
         
         .color-inputs {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+            max-width: 600px;
         }
         
         .color-input-group {
             display: flex;
             align-items: center;
-            gap: 10px;
+            background: var(--bg-tertiary);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        
+        .color-input-group:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
         
         .color-input-group label {
             flex: 1;
+            font-size: 0.95em;
+            font-weight: 500;
+            cursor: pointer;
         }
         
         .color-input-group input[type="color"] {
-            width: 50px;
-            height: 35px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
+            width: 60px;
+            height: 40px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
             cursor: pointer;
+            padding: 2px;
+            background: var(--bg-secondary);
+            transition: all 0.2s ease;
+        }
+        
+        .color-input-group input[type="color"]:hover {
+            border-color: var(--accent-primary);
+            transform: scale(1.05);
+        }
+        
+        .color-input-group input[type="color"]::-webkit-color-swatch {
+            border-radius: 4px;
+            border: none;
+        }
+        
+        .color-input-group input[type="color"]::-moz-color-swatch {
+            border-radius: 4px;
+            border: none;
+        }
+        
+        @media (max-width: 600px) {
+            .color-inputs {
+                grid-template-columns: 1fr;
+            }
         }
         
         .upload-section {
@@ -554,10 +592,28 @@ $pageTitle = 'Theme Management';
                     <h2>Theme Preview</h2>
                     <p>Preview how the site looks with current theme settings:</p>
                     
-                    <iframe src="../index.php" class="preview-frame" id="preview-frame"></iframe>
+                    <?php
+                    // Build initial preview URL with current colors
+                    $previewParams = [
+                        'preview' => '1',
+                        'primary' => substr($customColors['primary_color'], 1),
+                        'secondary' => substr($customColors['secondary_color'], 1),
+                        'background' => substr($customColors['background_color'], 1),
+                        'text' => substr($customColors['text_color'], 1),
+                        'link' => substr($customColors['link_color'], 1),
+                        'border' => substr($customColors['border_color'], 1),
+                    ];
+                    // Build URL to parent directory
+                    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+                    $host = $_SERVER['HTTP_HOST'];
+                    $currentPath = dirname($_SERVER['SCRIPT_NAME']);
+                    $parentPath = dirname($currentPath);
+                    $previewUrl = $protocol . $host . ($parentPath === '/' ? '' : $parentPath) . '/index.php?' . http_build_query($previewParams);
+                    ?>
+                    <iframe src="<?= $previewUrl ?>" class="preview-frame" id="preview-frame"></iframe>
                     
                     <div style="margin-top: 10px;">
-                        <button type="button" class="btn btn-sm" onclick="refreshPreview()">Refresh Preview</button>
+                        <span id="preview-status" style="color: var(--text-muted); font-size: 0.9em;"></span>
                     </div>
                 </div>
                 
@@ -576,6 +632,9 @@ $pageTitle = 'Theme Management';
                     <div class="theme-section">
                         <h2>Color Customization</h2>
                         <p>Customize the main colors used throughout the site. Changes will be applied immediately.</p>
+                        <p style="font-size: 0.9em; color: var(--text-muted); margin-top: 10px;">
+                            💡 Tip: Click on a color box to open the color picker. Hover over labels for more details.
+                        </p>
                         
                         <form method="POST" action="">
                             <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
@@ -583,43 +642,46 @@ $pageTitle = 'Theme Management';
                             
                             <div class="color-inputs">
                                 <div class="color-input-group">
-                                    <label for="primary_color">Primary Color:</label>
+                                    <label for="primary_color" title="Navigation bar background">Primary Color (Nav Bar):</label>
                                     <input type="color" id="primary_color" name="primary_color" 
                                            value="<?= htmlspecialchars($customColors['primary_color']) ?>">
                                 </div>
                                 
                                 <div class="color-input-group">
-                                    <label for="secondary_color">Secondary Color:</label>
+                                    <label for="secondary_color" title="Footer and card backgrounds">Secondary Color (Footer):</label>
                                     <input type="color" id="secondary_color" name="secondary_color" 
                                            value="<?= htmlspecialchars($customColors['secondary_color']) ?>">
                                 </div>
                                 
                                 <div class="color-input-group">
-                                    <label for="background_color">Background Color:</label>
+                                    <label for="background_color" title="Main page background">Background Color (Page):</label>
                                     <input type="color" id="background_color" name="background_color" 
                                            value="<?= htmlspecialchars($customColors['background_color']) ?>">
                                 </div>
                                 
                                 <div class="color-input-group">
-                                    <label for="text_color">Text Color:</label>
+                                    <label for="text_color" title="General text color">Text Color:</label>
                                     <input type="color" id="text_color" name="text_color" 
                                            value="<?= htmlspecialchars($customColors['text_color']) ?>">
                                 </div>
                                 
                                 <div class="color-input-group">
-                                    <label for="link_color">Link Color:</label>
+                                    <label for="link_color" title="Hyperlink color">Link Color:</label>
                                     <input type="color" id="link_color" name="link_color" 
                                            value="<?= htmlspecialchars($customColors['link_color']) ?>">
                                 </div>
                                 
                                 <div class="color-input-group">
-                                    <label for="border_color">Border Color:</label>
+                                    <label for="border_color" title="Border and accent color">Border/Accent Color:</label>
                                     <input type="color" id="border_color" name="border_color" 
                                            value="<?= htmlspecialchars($customColors['border_color']) ?>">
                                 </div>
                             </div>
                             
-                            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Update Colors</button>
+                            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                                <button type="submit" class="btn btn-primary">Update Colors</button>
+                                <button type="button" class="btn btn-secondary" onclick="restoreDefaultColors()">Restore Defaults</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -756,16 +818,74 @@ $pageTitle = 'Theme Management';
             document.getElementById('file-name').textContent = fileName;
         });
         
-        // Refresh preview
-        function refreshPreview() {
-            const iframe = document.getElementById('preview-frame');
-            iframe.src = iframe.src;
+        
+        // Debounce function to prevent too many updates
+        let updateTimeout;
+        function debounce(func, wait) {
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(updateTimeout);
+                    func(...args);
+                };
+                clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(later, wait);
+            };
         }
         
-        // Live color preview (optional enhancement)
+        // Live color preview
+        function updatePreviewColors() {
+            const iframe = document.getElementById('preview-frame');
+            
+            // Get current color values (remove # from hex colors for URL)
+            const colors = {
+                'primary': document.getElementById('primary_color').value.replace('#', ''),
+                'secondary': document.getElementById('secondary_color').value.replace('#', ''),
+                'background': document.getElementById('background_color').value.replace('#', ''),
+                'text': document.getElementById('text_color').value.replace('#', ''),
+                'link': document.getElementById('link_color').value.replace('#', ''),
+                'border': document.getElementById('border_color').value.replace('#', '')
+            };
+            
+            // Build URL with preview parameters
+            const params = new URLSearchParams();
+            params.set('preview', '1');
+            for (const [key, value] of Object.entries(colors)) {
+                params.set(key, value);
+            }
+            
+            // Update iframe source with preview parameters
+            // Build URL to parent directory  
+            const protocol = window.location.protocol;
+            const host = window.location.host;
+            const currentPath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+            const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+            const baseUrl = protocol + '//' + host + parentPath + '/index.php';
+            iframe.src = baseUrl + '?' + params.toString();
+        }
+        
+        // Debounced version of updatePreviewColors
+        const debouncedUpdate = debounce(updatePreviewColors, 500);
+        
+        // Add event listeners for real-time updates
         document.querySelectorAll('input[type="color"]').forEach(input => {
             input.addEventListener('input', function() {
-                // Could implement live preview here
+                // Show status message immediately
+                const status = document.getElementById('preview-status');
+                status.textContent = '⏳ Updating preview...';
+                status.style.color = '#ff9800';
+                
+                // Update preview with debounce
+                debouncedUpdate();
+            });
+            
+            input.addEventListener('change', function() {
+                // Show completed message
+                const status = document.getElementById('preview-status');
+                status.textContent = '✨ Preview updated';
+                status.style.color = '#4CAF50';
+                setTimeout(() => {
+                    status.textContent = '';
+                }, 2000);
             });
         });
         
@@ -888,9 +1008,40 @@ $pageTitle = 'Theme Management';
             }
         }
         
+        // Restore default colors
+        function restoreDefaultColors() {
+            const defaults = {
+                'primary_color': '#1a1a1a',
+                'secondary_color': '#2a2a2a',
+                'background_color': '#121212',
+                'text_color': '#ffffff',
+                'link_color': '#4a9eff',
+                'border_color': '#556b2f'
+            };
+            
+            // Set the color inputs to default values
+            for (const [id, value] of Object.entries(defaults)) {
+                document.getElementById(id).value = value;
+            }
+            
+            // Update preview immediately
+            updatePreviewColors();
+            
+            // Show status message
+            const status = document.getElementById('preview-status');
+            status.textContent = '🔄 Colors restored to defaults';
+            status.style.color = '#2196F3';
+            setTimeout(() => {
+                status.textContent = '';
+            }, 3000);
+        }
+        
         // Initialize drag and drop when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initMenuDragDrop();
+            
+            // Initialize preview with current colors
+            updatePreviewColors();
         });
     </script>
 </body>
