@@ -44,7 +44,7 @@ http_response_code(503);
 <body>
     <main>
         <div class="dashboard-header">
-            <h1>DCS Server Statistics Dashboard</h1>
+            <h1>DCS Statistics Dashboard</h1>
             <p class="dashboard-subtitle">Real-time server performance and player metrics</p>
         </div>
         <div class="maintenance-page">

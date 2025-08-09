@@ -138,8 +138,8 @@ function renderTable() {
     let cells = `
       <td>${escapeHtml(String(player.rank))}</td>
       <td class="player-name">
-        <a href="pilot_statistics.php?search=${encodeURIComponent(player.name || '')}" style="color: inherit; text-decoration: none;">
-          ${escapeHtml(player.name || '')}
+        <a href="pilot_statistics.php?search=${encodeURIComponent(player.nick || '')}" style="color: inherit; text-decoration: none;">
+          ${escapeHtml(player.nick || '')}
         </a>
       </td>`;
     
@@ -173,7 +173,7 @@ function renderTable() {
     
     // Add click handler for the entire row
     row.addEventListener('click', function() {
-      window.location.href = `pilot_statistics.php?search=${encodeURIComponent(player.name || '')}`;
+      window.location.href = `pilot_statistics.php?search=${encodeURIComponent(player.nick || '')}`;
     });
     
     tbody.appendChild(row);
@@ -186,7 +186,7 @@ function renderTable() {
     let cardHtml = `
       <div class="leaderboard-card-left">
         <div class="leaderboard-card-rank">#${escapeHtml(String(player.rank))}</div>
-        <div class="leaderboard-card-name">${escapeHtml(player.name || '')}</div>
+        <div class="leaderboard-card-name">${escapeHtml(player.nick || '')}</div>
         <div class="leaderboard-card-stats">
     `;
     
@@ -211,7 +211,7 @@ function renderTable() {
     
     // Add click handler for card
     card.addEventListener('click', function() {
-      window.location.href = `pilot_statistics.php?search=${encodeURIComponent(player.name || '')}`;
+      window.location.href = `pilot_statistics.php?search=${encodeURIComponent(player.nick || '')}`;
     });
     
     mobileCards.appendChild(card);
@@ -241,7 +241,7 @@ async function loadLeaderboardFromMissionstats() {
     leaderboardData.slice(0, 3).forEach((player, i) => {
         const box = document.createElement("div");
         box.className = "trophy-box";
-        box.innerHTML = `<span class="trophy">${trophies[i]}</span><strong>${escapeHtml(player.name || '')}</strong><br>${escapeHtml(String(player.kills || 0))} kills`;
+        box.innerHTML = `<span class="trophy">${trophies[i]}</span><strong>${escapeHtml(player.nick || '')}</strong><br>${escapeHtml(String(player.kills || 0))} kills`;
         top3Container.appendChild(box);
     });
     

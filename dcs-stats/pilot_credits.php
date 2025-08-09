@@ -24,19 +24,28 @@ include 'header.php';
         <h1>Pilot Credits Search</h1>
         <p class="dashboard-subtitle">Search for a pilot to view their current credits balance</p>
     </div>
+
+    <?php if (isFeatureEnabled('pilot_search')): ?>
     <div class="search-container">
-        <input type="text" 
-               id="pilot-name" 
-               placeholder="Search for a pilot..." 
-               autocomplete="off">
-        <button onclick="searchPilotCredits()">Search</button>
-        
-        <div id="search-results" style="display: none;">
-            <h3 style="text-align: center; color: #ccc; margin-bottom: 20px;">Search Results</h3>
-            <div id="results-list" class="results-list"></div>
-        </div>
+        <input type="text" id="playerSearchInput" placeholder="Search for a pilot..." />
+        <button onclick="searchForPlayers()">Search</button>
     </div>
-    
+    <?php else: ?>
+    <div class="alert" style="text-align: center; padding: 20px;">
+        <p>Pilot search functionality is currently disabled.</p>
+    </div>
+    <?php endif; ?>
+
+    <div id="multiple-results" style="display: none;">
+        <h3 style="text-align: center; color: #ccc;">Multiple pilots found. Please select one:</h3>
+        <div id="results-list" class="results-list"></div>
+    </div>
+
+    <div id="search-results" style="display: none;">
+        <h3 style="text-align: center; color: #ccc; margin-bottom: 20px;">Search Results</h3>
+        <div id="results-list" class="results-list"></div>
+    </div>
+
     <!-- Loading indicator -->
     <div id="loading" class="loading-spinner" style="display: none;">
         <p>Searching for pilot credits...</p>
@@ -53,10 +62,6 @@ include 'header.php';
                         <div class="stat-item credits-stat-item">
                             <span class="stat-label">Current Balance:</span>
                             <span class="stat-value credits-value" id="credits-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Last Updated:</span>
-                            <span class="stat-value" id="credits-date"></span>
                         </div>
                     </div>
                 </div>
@@ -261,57 +266,79 @@ include 'header.php';
 <?php tableResponsiveStyles(); ?>
 
 <script>
-// Handle form submission
-document.getElementById('pilot-search-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const pilotName = document.getElementById('pilot-name').value.trim();
-    if (!pilotName) return;
-    
-    // Hide all sections
-    document.getElementById('search-results').style.display = 'none';
-    document.getElementById('credits-display').style.display = 'none';
-    document.getElementById('no-results').style.display = 'none';
-    
-    // Show loading
-    document.getElementById('loading').style.display = 'block';
-    
-    // Search for pilot credits
-    await searchPilotCredits(pilotName);
+// Allow Enter key to trigger search
+document.getElementById('playerSearchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchForPlayers();
+    }
 });
 
-async function searchPilotCredits(pilotName) {
+// Check for search parameter in URL and auto-search
+document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get('search');
+
+    if (searchParam) {
+        // Set the search input value
+        const searchInput = document.getElementById('playerSearchInput');
+        if (searchInput) {
+            searchInput.value = searchParam;
+            // Trigger the search automatically
+            searchForPlayers();
+        }
+    }
+});
+
+async function searchForPlayers() {
+    const searchInput = document.getElementById('playerSearchInput');
+    const searchTerm = searchInput.value.trim();
+
+    if (!searchTerm) {
+        alert('Please enter a pilot name to search.');
+        return;
+    }
+
+    // Hide all sections
+    document.getElementById('search-results').style.display = 'none';
+    document.getElementById('multiple-results').style.display = 'none';
+    document.getElementById('no-results').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+
     try {
-        // Get API config
-        const config = await window.dcsAPI.loadConfig();
-        
-        if (!config.use_api) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('no-results-message').textContent = 'API is not enabled. Credits search requires API access.';
+        // Search for players using client-side API
+        const searchData = await window.dcsAPI.searchPlayers(searchTerm);
+
+
+        document.getElementById('loading').style.display = 'none';
+
+        if (searchData.error || searchData.count === 0) {
+            let errorMessage = searchData.error || `No pilots found matching "${searchTerm}". Try:\n• Checking the spelling\n• Using a partial name\n• Searching for the beginning of the name`;
+            if (searchData.message) {
+                errorMessage += '\n\n' + searchData.message;
+            }
+            document.getElementById('no-results-message').innerHTML = errorMessage.replace(/\n/g, '<br>');
             document.getElementById('no-results').style.display = 'block';
             return;
         }
-        
-        // First, search for the pilot to get exact name
-        const searchResults = await window.dcsAPI.searchPlayers(pilotName);
-        
-        if (searchResults.count === 0) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('no-results-message').innerHTML = `No pilots found matching "${pilotName}".<br><br>Try:<br>• Checking the spelling<br>• Using a partial name<br>• Searching for the beginning of the name`;
-            document.getElementById('no-results').style.display = 'block';
-            return;
+
+        if (searchData.count === 1) {
+            // Single result - load directly
+            await loadPilotCredits(searchData.results[0]);
+        } else {
+            // Multiple results - show selection
+            showMultipleResults(searchData.results);
         }
-        
-        // If multiple results, show selection
-        if (searchResults.count > 1) {
-            document.getElementById('loading').style.display = 'none';
-            showMultipleResults(searchResults.results);
-            return;
-        }
-        
-        // Single result - get credits for exact name
-        const exactName = searchResults.results[0].name;
-        
+
+    } catch (error) {
+        console.error('Error searching for pilots:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('no-results-message').textContent = 'Error searching for pilots: ' + error.message;
+        document.getElementById('no-results').style.display = 'block';
+    }
+}
+
+async function loadPilotCredits(pilot) {
+    try {
         // Call credits endpoint with exact name
         const basePath = window.DCS_CONFIG ? window.DCS_CONFIG.basePath : '';
         const buildUrl = (path) => basePath ? `${basePath}/${path}` : path;
@@ -321,8 +348,8 @@ async function searchPilotCredits(pilotName) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                nick: exactName,
-                date: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+                nick: pilot.nick,
+                date: pilot.date
             })
         });
         
@@ -334,33 +361,14 @@ async function searchPilotCredits(pilotName) {
         
         const creditsData = await response.json();
         
-        // Check if we got credits data
-        let credits = 0;
-        let hasCredits = false;
-        
-        if (typeof creditsData === 'number') {
-            credits = creditsData;
-            hasCredits = true;
-        } else if (creditsData && Object.keys(creditsData).length > 0) {
-            // It might return an object with player name as key
-            const playerKey = Object.keys(creditsData).find(key => 
-                key.toLowerCase() === exactName.toLowerCase()
-            );
-            if (playerKey !== undefined) {
-                credits = creditsData[playerKey];
-                hasCredits = true;
-            }
-        }
-        
-        if (hasCredits || credits >= 0) {
-            // Display credits (even if 0)
-            document.getElementById('pilot-display-name').textContent = exactName;
-            document.getElementById('credits-value').textContent = credits.toLocaleString();
-            document.getElementById('credits-date').textContent = new Date().toLocaleDateString();
+        if (creditsData && creditsData.credits !== undefined) {
+            // Display credits data
+            document.getElementById('pilot-display-name').textContent = creditsData.name;
+            document.getElementById('credits-value').textContent = creditsData.credits.toLocaleString();
             document.getElementById('credits-display').style.display = 'block';
         } else {
             // No credits found
-            document.getElementById('no-results-message').innerHTML = `No credits data found for pilot "${exactName}".<br><br>This pilot may not have any recorded transactions yet.`;
+            document.getElementById('no-results-message').innerHTML = `No credits data found for pilot "${pilot.nick}".<br><br>This pilot may not have any recorded transactions yet.`;
             document.getElementById('no-results').style.display = 'block';
         }
         
@@ -374,16 +382,22 @@ async function searchPilotCredits(pilotName) {
 
 // Add function to show multiple results
 function showMultipleResults(results) {
-    const html = `
-        <h3>Multiple pilots found. Please select one:</h3>
-        <div class="results-list">
-            ${results.map(pilot => 
-                `<div class="result-item" onclick="selectPilot('${pilot.name.replace(/'/g, "\\'")}')">${pilot.name}</div>`
-            ).join('')}
-        </div>
-    `;
-    document.getElementById('search-results').innerHTML = html;
-    document.getElementById('search-results').style.display = 'block';
+    const resultsList = document.getElementById('results-list');
+    resultsList.innerHTML = '';
+
+    results.forEach(pilot => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'result-item';
+        resultItem.textContent = pilot.nick;
+        resultItem.onclick = () => {
+            document.getElementById('multiple-results').style.display = 'none';
+            document.getElementById('loading').style.display = 'block';
+            loadPilotCredits(pilot);
+        };
+        resultsList.appendChild(resultItem);
+    });
+
+    document.getElementById('multiple-results').style.display = 'block';
 }
 
 // Add function to handle pilot selection

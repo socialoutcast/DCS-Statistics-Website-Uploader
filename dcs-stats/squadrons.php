@@ -430,6 +430,19 @@ if (!isFeatureEnabled('squadrons_enabled')):
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        .squadron-placeholder {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px dashed rgba(76, 175, 80, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            font-size: 24px;
+            color: rgba(76, 175, 80, 0.5);
+        }
+
     }
 </style>
 
@@ -637,7 +650,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     const row = document.createElement('tr');
                     row.innerHTML = `
-                        <td><img src="${escapeHtml(sq.image_url || '')}" alt="${escapeHtml(sq.name || '')}" style="width: 80px;"></td>
+                        <td>
+                            ${sq.image_url ?
+                                `<img src="${escapeHtml(sq.image_url)}" alt="${escapeHtml(sq.name || '')}" style="width: 80px;">` :
+                                `<div class="squadron-placeholder">⚡</div>`
+                            }
+                        </td>
                         <td>${escapeHtml(sq.name || '')}</td>
                         <td>${escapeHtml(sq.description || '')}</td>
                     `;
@@ -649,7 +667,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         card.className = 'mobile-card squadron-card';
                         card.innerHTML = `
                             <div class="squadron-card-header">
-                                <img src="${escapeHtml(sq.image_url || '')}" alt="${escapeHtml(sq.name || '')}" class="squadron-card-logo">
+                                ${sq.image_url ?
+                                    `<img src="${escapeHtml(sq.image_url)}" alt="${escapeHtml(sq.name || '')}" class="squadron-card-logo">` :
+                                    `<div class="squadron-placeholder squadron-card-logo">⚡</div>`
+                                }
                                 <div class="squadron-card-info">
                                     <div class="squadron-card-name">${escapeHtml(sq.name || '')}</div>
                                     <div class="squadron-card-description">${escapeHtml(sq.description || '')}</div>
@@ -669,21 +690,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 squadrons.forEach((sq, index) => {
                 const groupId = "group-" + index;
                 const lowerName = sq.name.toLowerCase();
-                const matchFound = lowerName.includes(filter) || sq.members.some(m => m.name.toLowerCase().includes(filter));
+                const matchFound = lowerName.includes(filter) || sq.members.some(m => m.nick.toLowerCase().includes(filter));
                 if (!matchFound) return;
 
                 const headerRow = document.createElement('tr');
                 headerRow.classList.add('toggle-header');
                 headerRow.style.cursor = "pointer";
                 headerRow.innerHTML = `
-                    <td><img src="${escapeHtml(sq.image_url || '')}" alt="${escapeHtml(sq.name || '')}" style="width: 60px;"></td>
+                    <td>
+                        ${sq.image_url ?
+                            `<img src="${escapeHtml(sq.image_url)}" alt="${escapeHtml(sq.name || '')}" style="width: 60px;">` :
+                            `<div class="squadron-placeholder" style="width: 60px; height: 60px;">⚡</div>`
+                        }
+                    </td>
                     <td>${escapeHtml(sq.name || '')} (${sq.member_count || 0} members)</td>
                     <td><em>Click to show/hide members</em></td>
                 `;
                 membersBody.appendChild(headerRow);
 
                 sq.members.forEach(member => {
-                    if (!member.name.toLowerCase().includes(filter) && !lowerName.includes(filter)) return;
+                    if (!member.nick.toLowerCase().includes(filter) && !lowerName.includes(filter)) return;
 
                     const row = document.createElement('tr');
                     row.classList.add(groupId);
@@ -693,8 +719,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         <td></td>
                         <td></td>
                         <td class="member-name" data-pilot="${escapeHtml(member.name || '')}">
-                            <a href="pilot_statistics.php?search=${encodeURIComponent(member.name || '')}" style="color: inherit; text-decoration: none;">
-                                ${escapeHtml(member.name || '')} <small>(Last seen: ${new Date(member.date).toLocaleDateString()})</small>
+                            <a href="pilot_statistics.php?search=${encodeURIComponent(member.nick || '')}" style="color: inherit; text-decoration: none;">
+                                ${escapeHtml(member.nick || '')} <small>(Last seen: ${new Date(member.date).toLocaleDateString()})</small>
                             </a>
                         </td>
                     `;
@@ -711,7 +737,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     row.addEventListener('click', function(e) {
                         // Don't navigate if clicking on the header row
                         if (!e.target.closest('.toggle-header')) {
-                            window.location.href = `pilot_statistics.php?search=${encodeURIComponent(member.name || '')}`;
+                            window.location.href = `pilot_statistics.php?search=${encodeURIComponent(member.nick || '')}`;
                         }
                     });
                     
@@ -742,8 +768,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         </div>
                         <div class="squadron-members-list" id="members-${groupId}" style="display: none;">
                             ${sq.members.map(member => `
-                                <div class="member-item" onclick="window.location.href='pilot_statistics.php?search=${encodeURIComponent(member.name || '')}'">
-                                    <div class="member-name">${escapeHtml(member.name || '')}</div>
+                                <div class="member-item" onclick="window.location.href='pilot_statistics.php?search=${encodeURIComponent(member.nick || '')}'">
+                                    <div class="member-name">${escapeHtml(member.nick || '')}</div>
                                     <div class="member-date">Last seen: ${new Date(member.date).toLocaleDateString()}</div>
                                 </div>
                             `).join('')}
@@ -759,35 +785,43 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Clear mobile cards for leaderboard
                 if (leaderboardCards) leaderboardCards.innerHTML = '';
                 squadrons
-                .filter(sq => sq.name.toLowerCase().includes(filter))
-                .sort((a, b) => b.totalCredits - a.totalCredits)
-                .forEach((squadron, index) => {
-                    const medal = medals[index] || '';
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td><img src="${escapeHtml(squadron.image_url || '')}" alt="${escapeHtml(squadron.name || '')}" style="width: 60px;"></td>
-                        <td>${medal} ${escapeHtml(squadron.name || '')}</td>
-                        <td>${escapeHtml(String(squadron.totalCredits || 0))}</td>
-                    `;
-                    leaderboardBody.appendChild(row);
-                    
-                    // Create mobile card for leaderboard
-                    if (leaderboardCards) {
-                        const card = document.createElement('div');
-                        card.className = 'mobile-card leaderboard-card';
-                        card.innerHTML = `
-                            <div class="leaderboard-card-rank">${medal || `#${index + 1}`}</div>
-                            <div class="leaderboard-card-content">
-                                <img src="${escapeHtml(squadron.image_url || '')}" alt="${escapeHtml(squadron.name || '')}" class="squadron-card-logo">
-                                <div class="leaderboard-card-info">
-                                    <div class="squadron-card-name">${escapeHtml(squadron.name || '')}</div>
-                                    <div class="squadron-credits">${escapeHtml(String(squadron.totalCredits || 0))} credits</div>
-                                </div>
-                            </div>
+                    .filter(sq => sq.name.toLowerCase().includes(filter))
+                    .sort((a, b) => b.totalCredits - a.totalCredits)
+                    .forEach((squadron, index) => {
+                        const medal = medals[index] || '';
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>
+                                ${squadron.image_url ?
+                                    `<img src="${escapeHtml(squadron.image_url)}" alt="${escapeHtml(squadron.name || '')}" style="width: 60px;">` :
+                                    `<div class="squadron-placeholder" style="width: 60px; height: 60px;">⚡</div>`
+                                }
+                            </td>
+                            <td>${medal} ${escapeHtml(squadron.name || '')}</td>
+                            <td>${escapeHtml(String(squadron.totalCredits || 0))}</td>
                         `;
-                        leaderboardCards.appendChild(card);
-                    }
-                });
+                        leaderboardBody.appendChild(row);
+
+                        // Mobile card handling
+                        if (leaderboardCards) {
+                            const card = document.createElement('div');
+                            card.className = 'mobile-card leaderboard-card';
+                            card.innerHTML = `
+                                <div class="leaderboard-card-rank">${medal || `#${index + 1}`}</div>
+                                <div class="leaderboard-card-content">
+                                    ${squadron.image_url ?
+                                        `<img src="${escapeHtml(squadron.image_url)}" alt="${escapeHtml(squadron.name || '')}" class="squadron-card-logo">` :
+                                        `<div class="squadron-placeholder squadron-card-logo">⚡</div>`
+                                    }
+                                    <div class="leaderboard-card-info">
+                                        <div class="squadron-card-name">${escapeHtml(squadron.name || '')}</div>
+                                        <div class="squadron-credits">${escapeHtml(String(squadron.totalCredits || 0))} credits</div>
+                                    </div>
+                                </div>
+                            `;
+                            leaderboardCards.appendChild(card);
+                        }
+                    });
             }
         }
 

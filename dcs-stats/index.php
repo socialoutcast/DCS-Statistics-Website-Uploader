@@ -45,7 +45,7 @@ if (!$isConfigured):
 <?php else: ?>
 <main>
     <div class="dashboard-header">
-        <h1>DCS Server Statistics Dashboard</h1>
+        <h1>DCS Statistics Dashboard</h1>
         <p class="dashboard-subtitle">Real-time server performance and player metrics</p>
     </div>
     
@@ -59,27 +59,27 @@ if (!$isConfigured):
             </div>
         </div>
         
-        <div class="stat-card" id="totalKillsCard">
-            <div class="stat-icon">🎯</div>
+        <div class="stat-card" id="totalPlaytimeCard">
+            <div class="stat-icon">✈️</div>
             <div class="stat-content">
-                <h3>Server Kills</h3>
-                <p class="stat-number" id="totalKills">-</p>
+                <h3>Total Playtime</h3>
+                <p class="stat-number" id="totalPlaytime">-</p>
             </div>
         </div>
         
-        <div class="stat-card" id="totalDeathsCard">
-            <div class="stat-icon">💥</div>
+        <div class="stat-card" id="avgPlaytimeCard">
+            <div class="stat-icon">🕐</div>
             <div class="stat-content">
-                <h3>Server Deaths</h3>
-                <p class="stat-number" id="totalDeaths">-</p>
+                <h3>Average Playtime</h3>
+                <p class="stat-number" id="avgPlaytime">-</p>
             </div>
         </div>
         
-        <div class="stat-card" id="kdRatioCard">
+        <div class="stat-card" id="totalSortiesCard">
             <div class="stat-icon">📊</div>
             <div class="stat-content">
-                <h3>K/D Ratio</h3>
-                <p class="stat-number" id="kdRatio">-</p>
+                <h3>Total Sorties</h3>
+                <p class="stat-number" id="totalSorties">-</p>
             </div>
         </div>
     </div>
@@ -162,12 +162,13 @@ async function loadServerStats() {
         // Update stat cards with animation (if enabled)
         <?php if (isFeatureEnabled('home_server_stats')): ?>
         animateNumber('totalPlayers', data.totalPlayers);
-        animateNumber('totalKills', data.totalKills);
-        animateNumber('totalDeaths', data.totalDeaths);
+        animateNumber('totalPlaytime', data.totalPlaytime);
+        animateNumber('avgPlaytime', data.avgPlaytime);
+        animateNumber('totalSorties', data.totalSorties);
         
         // Calculate K/D ratio
         const kdRatio = data.totalDeaths > 0 ? (data.totalKills / data.totalDeaths).toFixed(2) : data.totalKills;
-        document.getElementById('kdRatio').textContent = kdRatio;
+        //document.getElementById('kdRatio').textContent = kdRatio;
         <?php endif; ?>
         
         // Create charts with empty data handling
@@ -256,7 +257,7 @@ function createTopPilotsChart(pilots) {
     topPilotsChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: pilots.map(p => p.name),
+            labels: pilots.map(p => p.nick),
             datasets: [{
                 label: 'Server Visits',
                 data: pilots.map(p => p.visits),

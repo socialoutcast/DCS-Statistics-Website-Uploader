@@ -181,54 +181,46 @@ class DCSStatsAPI {
         const detailedPlayers = await Promise.all(
             topKillsData.slice(0, 10).map(async (player, index) => {
                 try {
-                    // First get the user to find their last seen date
-                    const userData = await this.makeAPICall('/getuser', {
+
+                    // Now get their detailed stats
+                    const stats = await this.makeAPICall('/stats', {
                         method: 'POST',
-                        body: { nick: player.fullNickname }
-                    });
-                    
-                    
-                    if (userData && userData.length > 0 && userData[0].date) {
-                        // Now get their detailed stats
-                        const stats = await this.makeAPICall('/stats', {
-                            method: 'POST',
-                            body: { 
-                                nick: player.fullNickname,
-                                date: userData[0].date
-                            }
-                        });
-                        
-                        
-                        // Find most used aircraft from killsByModule
-                        let mostUsedAircraft = 'N/A';
-                        if (stats.killsByModule && stats.killsByModule.length > 0) {
-                            // Sort by kills to find most used
-                            const sorted = [...stats.killsByModule].sort((a, b) => b.kills - a.kills);
-                            mostUsedAircraft = sorted[0].module || 'N/A';
+                        data: {
+                            nick: player.nick,
+                            date: player.date
                         }
-                        
-                        return {
-                            rank: index + 1,
-                            name: player.fullNickname,
-                            kills: player.AAkills || 0,
-                            deaths: player.deaths || 0,
-                            kd_ratio: player.AAKDR || 0,
-                            sorties: stats.takeoffs || 0, // Use takeoffs as sorties
-                            takeoffs: stats.takeoffs || 0,
-                            landings: stats.landings || 0,
-                            crashes: stats.crashes || 0,
-                            ejections: stats.ejections || 0,
-                            most_used_aircraft: mostUsedAircraft
-                        };
+                    });
+
+
+                    // Find most used aircraft from killsByModule
+                    let mostUsedAircraft = 'N/A';
+                    if (stats.killsByModule && stats.killsByModule.length > 0) {
+                        // Sort by kills to find most used
+                        const sorted = [...stats.killsByModule].sort((a, b) => b.kills - a.kills);
+                        mostUsedAircraft = sorted[0].module || 'N/A';
                     }
+
+                    return {
+                        rank: index + 1,
+                        nick: player.nick,
+                        kills: player.AAkills || 0,
+                        deaths: player.deaths || 0,
+                        kd_ratio: player.AAKDR || 0,
+                        sorties: stats.takeoffs || 0, // Use takeoffs as sorties
+                        takeoffs: stats.takeoffs || 0,
+                        landings: stats.landings || 0,
+                        crashes: stats.crashes || 0,
+                        ejections: stats.ejections || 0,
+                        most_used_aircraft: mostUsedAircraft
+                    };
                 } catch (e) {
-                    console.error(`Failed to get detailed stats for ${player.fullNickname}:`, e);
+                    console.error(`Failed to get detailed stats for ${player.nick}:`, e);
                 }
                 
                 // Fallback to basic data if detailed stats fail
                 return {
                     rank: index + 1,
-                    name: player.fullNickname,
+                    name: player.nick,
                     kills: player.AAkills || 0,
                     deaths: player.deaths || 0,
                     kd_ratio: player.AAKDR || 0,
@@ -259,8 +251,7 @@ class DCSStatsAPI {
 
         // Try the enhanced /stats endpoint first
         try {
-            const stats = await this.makeAPICall('/stats', {
-                method: 'POST',
+            const stats = await this.makeAPICall('/serverstats', {
                 data: {}
             });
             
@@ -268,12 +259,14 @@ class DCSStatsAPI {
             if (stats.totalPlayers !== undefined) {
                 return {
                     totalPlayers: stats.totalPlayers || 0,
+                    totalPlaytime: stats.totalPlaytime / 3600 || 0,
+                    avgPlaytime: stats.avgPlaytime / 3600 || 0,
+                    activePlayers: stats.activePlayers || 0,
+                    totalSorties: stats.totalSorties || 0,
                     totalKills: stats.totalKills || 0,
                     totalDeaths: stats.totalDeaths || 0,
-                    top5Pilots: stats.top5Pilots || [],
-                    top3Squadrons: stats.top3Squadrons || [],
-                    source: 'api-client',
-                    generated: new Date().toISOString()
+                    totalAAKills: stats.totalKills || 0,
+                    totalAADeaths: stats.totalDeaths || 0
                 };
             }
         } catch (error) {
@@ -289,9 +282,9 @@ class DCSStatsAPI {
         // Calculate stats from API data
         const allPlayers = [...topKills, ...topKDR];
         const uniquePlayers = new Map();
-        
+
         allPlayers.forEach(player => {
-            const name = player.fullNickname || player.name;
+            const name = player.nick;
             if (!uniquePlayers.has(name)) {
                 uniquePlayers.set(name, {
                     name: name,
@@ -330,87 +323,21 @@ class DCSStatsAPI {
             throw new Error('API is not enabled');
         }
 
-        // First, try direct user lookup with the search term
-        try {
-            const directLookup = await this.makeAPICall('/getuser', {
-                method: 'POST',
-                data: { nick: searchTerm }
-            });
-            
-            if (directLookup && directLookup.length > 0) {
-                // Found exact or partial matches via getuser
-                return {
-                    count: directLookup.length,
-                    results: directLookup.map(p => ({
-                        name: p.nick || p.name,
-                        ucid: null
-                    }))
-                };
-            }
-        } catch (e) {
-            // Direct lookup failed, trying broader search
-        }
-
-        // If direct lookup fails, search through multiple endpoints
-        const searchResults = [];
-        const seenNames = new Set();
-        
-        // Try to gather players from multiple sources
-        const endpoints = [
-            { endpoint: '/topkills', nameField: 'fullNickname' },
-            { endpoint: '/topkdr', nameField: 'fullNickname' }
-        ];
-        
-        for (const { endpoint, nameField } of endpoints) {
-            try {
-                const data = await this.makeAPICall(endpoint);
-                if (Array.isArray(data)) {
-                    data.forEach(player => {
-                        const name = player[nameField] || player.name || '';
-                        const lowerName = name.toLowerCase();
-                        const lowerSearch = searchTerm.toLowerCase();
-                        
-                        // More flexible matching: includes, starts with, or fuzzy match
-                        if (!seenNames.has(lowerName) && (
-                            lowerName.includes(lowerSearch) ||
-                            lowerSearch.includes(lowerName) ||
-                            this.fuzzyMatch(lowerName, lowerSearch)
-                        )) {
-                            seenNames.add(lowerName);
-                            searchResults.push({
-                                name: name,
-                                ucid: null
-                            });
-                        }
-                    });
-                }
-            } catch (e) {
-                console.warn(`Failed to search ${endpoint}:`, e);
-            }
-        }
-
-        // Sort results by relevance (exact matches first, then partial matches)
-        const lowerSearch = searchTerm.toLowerCase();
-        searchResults.sort((a, b) => {
-            const aLower = a.name.toLowerCase();
-            const bLower = b.name.toLowerCase();
-            
-            // Exact match gets highest priority
-            if (aLower === lowerSearch) return -1;
-            if (bLower === lowerSearch) return 1;
-            
-            // Starts with gets second priority
-            if (aLower.startsWith(lowerSearch) && !bLower.startsWith(lowerSearch)) return -1;
-            if (!aLower.startsWith(lowerSearch) && bLower.startsWith(lowerSearch)) return 1;
-            
-            // Otherwise sort by name
-            return a.name.localeCompare(b.name);
+        const players = await this.makeAPICall('/getuser', {
+            method: "POST",
+            data: { nick: searchTerm }
         });
 
-        return {
-            count: searchResults.length,
-            results: searchResults
-        };
+        if (players && players.length > 0) {
+            // Found exact or partial matches via getuser
+            return {
+                count: players.length,
+                results: players.map(p => ({
+                    nick: p.nick,
+                    date: p.date
+                }))
+            };
+        }
     }
     
     // Simple fuzzy matching for common typos
@@ -440,30 +367,27 @@ class DCSStatsAPI {
         
         // Get user data first using proxy
         const users = await this.makeAPICall('/getuser', {
-            method: 'POST',
+            method: "POST",
             data: { nick: playerName }
         });
         
         
         if (users && users.length > 0) {
             const user = users[0];
-            
-            // Use the exact nick returned by getuser for stats call
-            const exactNick = user.nick || playerName;
-            
+
             // Get stats using proxy
             const stats = await this.makeAPICall('/stats', {
                 method: 'POST',
                 data: {
-                    nick: exactNick,
-                    date: user.date || new Date().toISOString()
+                    nick: user.nick,
+                    date: user.date
                 }
             });
             
             
             // Check if stats is empty object
             if (!stats || Object.keys(stats).length === 0) {
-                throw new Error(`No statistics found for player "${exactNick}". They may not have any recorded combat data.`);
+                throw new Error(`No statistics found for player "${user.nick}". They may not have any recorded combat data.`);
             }
             
             // Find most used aircraft from kills_by_module
@@ -487,7 +411,7 @@ class DCSStatsAPI {
             return {
                 source: 'api-client',
                 data: {
-                    name: exactNick,
+                    nick: user.nick,
                     kills: stats.aakills || 0,
                     deaths: stats.deaths || 0,
                     kd_ratio: stats.aakdr || 0,

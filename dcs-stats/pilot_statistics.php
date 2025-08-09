@@ -250,7 +250,7 @@ async function searchForPlayers() {
         
         if (searchData.count === 1) {
             // Single result - load directly
-            await loadPilotStats(searchData.results[0].name);
+            await loadPilotStats(searchData.results[0]);
         } else {
             // Multiple results - show selection
             showMultipleResults(searchData.results);
@@ -271,11 +271,11 @@ function showMultipleResults(results) {
     results.forEach(pilot => {
         const resultItem = document.createElement('div');
         resultItem.className = 'result-item';
-        resultItem.textContent = pilot.name;
+        resultItem.textContent = pilot.nick;
         resultItem.onclick = () => {
             document.getElementById('multiple-results').style.display = 'none';
             document.getElementById('loading').style.display = 'block';
-            loadPilotStats(pilot.name);
+            loadPilotStats(pilot);
         };
         resultsList.appendChild(resultItem);
     });
@@ -283,13 +283,13 @@ function showMultipleResults(results) {
     document.getElementById('multiple-results').style.display = 'block';
 }
 
-async function loadPilotStats(playerName) {
+async function loadPilotStats(player) {
     document.getElementById('multiple-results').style.display = 'none';
     
     try {
         
         // Get player stats using client-side API
-        const statsResult = await window.dcsAPI.getPlayerStats(playerName);
+        const statsResult = await window.dcsAPI.getPlayerStats(player.nick, player.date);
         
         if (statsResult.error) {
             document.getElementById('loading').style.display = 'none';
@@ -327,8 +327,8 @@ async function loadPilotStats(playerName) {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
-                            nick: playerName,
-                            date: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+                            nick: player.nick,
+                            date: player.date
                         })
                     });
                     
@@ -337,8 +337,8 @@ async function loadPilotStats(playerName) {
                         // The response might be a number or an object with the player's credits
                         if (typeof creditsData === 'number') {
                             credits = creditsData;
-                        } else if (creditsData && creditsData[playerName] !== undefined) {
-                            credits = creditsData[playerName];
+                        } else if (creditsData && creditsData[player.nick] !== undefined) {
+                            credits = creditsData[player.nick];
                         } else {
                             credits = 0;
                         }
@@ -353,9 +353,6 @@ async function loadPilotStats(playerName) {
         // Get squadron data - simplified approach
         let squadron = 'None';
         let squadronLogo = null;
-        
-        // Use the actual player name from stats
-        const actualPlayerName = finalStats.name || playerName;
         
         // buildUrl should already be defined from earlier in the code
         const basePath = window.DCS_CONFIG ? window.DCS_CONFIG.basePath : '';
@@ -394,7 +391,7 @@ async function loadPilotStats(playerName) {
                         if (membersData.data && Array.isArray(membersData.data)) {
                             // Log each member comparison
                             for (const member of membersData.data) {
-                                if (member.name.toLowerCase() === pilotName.toLowerCase()) {
+                                if (member.nick.toLowerCase() === pilotName.toLowerCase()) {
                                     return {
                                         name: squadron.name,
                                         logo: squadron.image_url
@@ -415,7 +412,7 @@ async function loadPilotStats(playerName) {
         }
         
         // Try to find squadron for the pilot
-        const squadronInfo = await findPilotSquadron(actualPlayerName);
+        const squadronInfo = await findPilotSquadron(player.nick);
         if (squadronInfo) {
             squadron = squadronInfo.name;
             squadronLogo = squadronInfo.logo;
@@ -432,7 +429,7 @@ async function loadPilotStats(playerName) {
         }
         
         // Update pilot name
-        updateElement('pilot-name', finalStats.name || playerName);
+        updateElement('pilot-name', player.nick);
         
         // Prepare stats object with all available data
         const displayStats = {
@@ -457,7 +454,7 @@ async function loadPilotStats(playerName) {
         if (!hasAnyStats) {
             const pilotCard = document.getElementById('pilot-card');
             pilotCard.innerHTML = `
-                <h3 id="pilot-name">${finalStats.name || playerName}</h3>
+                <h3 id="pilot-name">${player.nick}</h3>
                 <div class="no-stats-message">
                     <p>No statistics are currently enabled for display.</p>
                     <p>Contact your administrator to enable pilot statistics features.</p>

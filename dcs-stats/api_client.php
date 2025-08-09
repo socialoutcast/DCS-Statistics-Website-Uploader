@@ -15,7 +15,7 @@ class DCSServerBotAPIClient {
     protected $isDevMode;
     
     public function __construct($config = []) {
-        $this->apiBaseUrl = $config['api_base_url'] ?? 'http://localhost:8080';
+        $this->apiBaseUrl = $config['api_base_url'] ?? 'http://localhost:9876';
         $this->apiKey = $config['api_key'] ?? null;
         $this->timeout = $config['timeout'] ?? 30;
         $this->isDevMode = isDevMode();
@@ -86,17 +86,23 @@ class DCSServerBotAPIClient {
      * Returns an array of matching users
      */
     public function getUser($nickname) {
-        // API expects 'nick' not 'nickname'
-        // Returns an array of users that match this nick
-        $users = $this->makeRequest('POST', '/getuser', ['nick' => $nickname]);
-        // Return the first match if found
-        return !empty($users) && is_array($users) ? $users[0] : null;
+        if ($nickname) {
+            // API expects 'nick' not 'nickname'
+            // Returns an array of users that match this nick
+            $users = $this->makeRequest('POST', '/getuser', ['nick' => $nickname]);
+            // Return the first match if found
+            return !empty($users) && is_array($users) ? $users[0] : null;
+        }
     }
     
     /**
      * Get player statistics
      */
     public function getPlayerStats($nickname, $date = null) {
+        if (!$nickname) {
+            return null;
+        }
+
         // If no date provided, we need to get the user's last seen date first
         if (!$date) {
             try {
@@ -124,20 +130,24 @@ class DCSServerBotAPIClient {
      * Get top players by kills
      */
     public function getTopKills() {
-        return $this->makeRequest('GET', '/topkills');
+        return $this->makeRequest('POST', '/topkills');
     }
     
     /**
      * Get top players by kill/death ratio
      */
     public function getTopKDR() {
-        return $this->makeRequest('GET', '/topkdr');
+        return $this->makeRequest('POST', '/topkdr');
     }
     
     /**
      * Get missile probability of kill for a player
      */
     public function getMissilePK($nickname, $date = null) {
+        if (!$nickname) {
+            return null;
+        }
+
         // If no date provided, we need to get the user's last seen date first
         if (!$date) {
             try {

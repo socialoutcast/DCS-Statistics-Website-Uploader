@@ -37,7 +37,7 @@ try {
     
     // Get player stats from API
     // API /stats returns: deaths, aakills, aakdr, lastSessionKills, lastSessionDeaths, killsbymodule, kdrByModule
-    $apiStats = $apiClient->request('/stats', ['player' => $playerName]);
+    $apiStats = $apiClient->getPlayerStats($playerName);
     
     if ($apiStats && is_array($apiStats)) {
         // Transform API response to our format
