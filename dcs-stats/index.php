@@ -62,7 +62,7 @@ if (!$isConfigured):
         <div class="stat-card" id="totalPlaytimeCard">
             <div class="stat-icon">✈️</div>
             <div class="stat-content">
-                <h3>Total Playtime</h3>
+                <h3>Total Playtime (hrs)</h3>
                 <p class="stat-number" id="totalPlaytime">-</p>
             </div>
         </div>
@@ -70,7 +70,7 @@ if (!$isConfigured):
         <div class="stat-card" id="avgPlaytimeCard">
             <div class="stat-icon">🕐</div>
             <div class="stat-content">
-                <h3>Average Playtime</h3>
+                <h3>Average Playtime (mins)</h3>
                 <p class="stat-number" id="avgPlaytime">-</p>
             </div>
         </div>
@@ -87,7 +87,7 @@ if (!$isConfigured):
     
     <div class="charts-dashboard">
         <?php if (isFeatureEnabled('home_top_pilots')): ?>
-        <div class="chart-container" title="Shows the top 5 pilots ranked by their number of air-to-air kills">
+        <div class="chart-container" title="Shows the top 5 pilots ranked by their kills">
             <h2>Top 5 Most Active Pilots <span class="chart-info">ⓘ</span></h2>
             <canvas id="topPilotsChart"></canvas>
             <p class="no-data-message" id="topPilotsNoData" style="display: none;">No mission data available yet</p>
@@ -162,8 +162,8 @@ async function loadServerStats() {
         // Update stat cards with animation (if enabled)
         <?php if (isFeatureEnabled('home_server_stats')): ?>
         animateNumber('totalPlayers', data.totalPlayers);
-        animateNumber('totalPlaytime', data.totalPlaytime);
-        animateNumber('avgPlaytime', data.avgPlaytime);
+        animateNumber('totalPlaytime', data.totalPlaytime / 3600);
+        animateNumber('avgPlaytime', data.avgPlaytime / 60);
         animateNumber('totalSorties', data.totalSorties);
         
         // Calculate K/D ratio

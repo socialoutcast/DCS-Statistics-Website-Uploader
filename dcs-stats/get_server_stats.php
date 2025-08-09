@@ -43,16 +43,12 @@ try {
     
     if (is_array($topKills)) {
         foreach ($topKills as $pilot) {
-            $totalKills += $pilot['AAkills'] ?? 0;
-            $totalDeaths += $pilot['deaths'] ?? 0;
-            
             // Store pilot data for top 5
             $pilotStats[] = [
-                'name' => $pilot['fullNickname'] ?? 'Unknown',
-                'kills' => $pilot['AAkills'] ?? 0,
+                'name' => $pilot['nick'] ?? 'Unknown',
+                'kills' => $pilot['kills'] ?? 0,
                 'deaths' => $pilot['deaths'] ?? 0,
-                'kdr' => $pilot['AAKDR'] ?? 0,
-                'visits' => $pilot['AAkills'] ?? 0 // Using kills as a proxy for activity
+                'kdr' => $pilot['kdr'] ?? 0
             ];
         }
     }

@@ -35,7 +35,7 @@ try {
     foreach ($topPlayers as $index => $player) {
         $stats[] = [
             'rank' => $index + 1,
-            'name' => htmlspecialchars($player['fullNickname'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
+            'name' => htmlspecialchars($player['nick'] ?? 'Unknown', ENT_QUOTES, 'UTF-8'),
             'kills' => $player['AAkills'] ?? 0,
             'deaths' => $player['deaths'] ?? 0,
             'kd_ratio' => $player['AAKDR'] ?? 0,

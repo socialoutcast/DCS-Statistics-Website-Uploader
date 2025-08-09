@@ -203,9 +203,9 @@ class DCSStatsAPI {
                     return {
                         rank: index + 1,
                         nick: player.nick,
-                        kills: player.AAkills || 0,
-                        deaths: player.deaths || 0,
-                        kd_ratio: player.AAKDR || 0,
+                        kills: stats.kills || 0,
+                        deaths: stats.deaths || 0,
+                        kd_ratio: stats.AAKDR || 0,
                         sorties: stats.takeoffs || 0, // Use takeoffs as sorties
                         takeoffs: stats.takeoffs || 0,
                         landings: stats.landings || 0,
@@ -259,14 +259,14 @@ class DCSStatsAPI {
             if (stats.totalPlayers !== undefined) {
                 return {
                     totalPlayers: stats.totalPlayers || 0,
-                    totalPlaytime: stats.totalPlaytime / 3600 || 0,
-                    avgPlaytime: stats.avgPlaytime / 3600 || 0,
+                    totalPlaytime: stats.totalPlaytime || 0,
+                    avgPlaytime: stats.avgPlaytime || 0,
                     activePlayers: stats.activePlayers || 0,
                     totalSorties: stats.totalSorties || 0,
                     totalKills: stats.totalKills || 0,
                     totalDeaths: stats.totalDeaths || 0,
-                    totalAAKills: stats.totalKills || 0,
-                    totalAADeaths: stats.totalDeaths || 0
+                    totalPvPKills: stats.totalPvPKills || 0,
+                    totalPvPDeaths: stats.totalPvPDeaths || 0
                 };
             }
         } catch (error) {
@@ -288,10 +288,9 @@ class DCSStatsAPI {
             if (!uniquePlayers.has(name)) {
                 uniquePlayers.set(name, {
                     name: name,
-                    kills: player.AAkills || 0,
+                    kills: player.kills || 0,
                     deaths: player.deaths || 0,
-                    kdr: player.AAKDR || 0,
-                    visits: player.AAkills || 0
+                    kdr: player.kdr || 0
                 });
             }
         });
@@ -412,15 +411,18 @@ class DCSStatsAPI {
                 source: 'api-client',
                 data: {
                     nick: user.nick,
-                    kills: stats.aakills || 0,
+                    kills: stats.kills || 0,
                     deaths: stats.deaths || 0,
-                    kd_ratio: stats.aakdr || 0,
-                    kills_by_module: stats.killsByModule ? 
+                    kdr: stats.kdr || 0,
+                    kills_pvp: stats.kills_pvp || 0,
+                    deaths_pvp: stats.deaths_pvp || 0,
+                    kdr_pvp: stats.kdr_pvp || 0,
+                    kills_by_module: stats.killsByModule ?
                         stats.killsByModule.reduce((acc, item) => {
                             acc[item.module] = item.kills;
                             return acc;
                         }, {}) : 
-                        (stats.killsbymodule || {}),
+                        (stats.killsByModule || {}),
                     last_session_kills: stats.lastSessionKills || 0,
                     last_session_deaths: stats.lastSessionDeaths || 0,
                     takeoffs: stats.takeoffs || 0,

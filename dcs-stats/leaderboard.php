@@ -80,7 +80,7 @@ include "nav.php"; ?>
 <main class="container">
   <div class="dashboard-header">
     <h1>Leaderboard</h1>
-    <p class="dashboard-subtitle">Top 10 pilots ranked by air-to-air kills</p>
+    <p class="dashboard-subtitle">Top 10 pilots ranked by kills</p>
   </div>
   <div id="leaderboard-loading">Loading leaderboard...</div>
 
