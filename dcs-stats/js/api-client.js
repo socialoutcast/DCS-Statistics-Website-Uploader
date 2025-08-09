@@ -42,7 +42,7 @@ class DCSStatsAPI {
             const protocols = ['https', 'http'];
             for (const protocol of protocols) {
                 try {
-                    const testUrl = `${protocol}://${config.api_host}/stats`;
+                    const testUrl = `${protocol}://${config.api_host}/servers`;
                     const testResponse = await fetch(testUrl, { 
                         method: 'HEAD',
                         mode: 'cors',
@@ -249,7 +249,7 @@ class DCSStatsAPI {
             throw new Error('API is not enabled');
         }
 
-        // Try the enhanced /stats endpoint first
+        // get /serverstats data
         try {
             const stats = await this.makeAPICall('/serverstats', {
                 data: {}
