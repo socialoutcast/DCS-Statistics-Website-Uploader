@@ -33,7 +33,7 @@ if (!$isConfigured):
             </ol>
         </div>
         
-        <a href="/site-config/install.php" class="btn btn-primary" style="font-size: 1.2em; padding: 15px 40px; display: inline-block; text-decoration: none;">
+        <a href="./site-config/install.php" class="btn btn-primary" style="font-size: 1.2em; padding: 15px 40px; display: inline-block; text-decoration: none;">
             🚀 Start Setup
         </a>
         
