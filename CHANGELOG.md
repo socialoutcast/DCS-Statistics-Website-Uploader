@@ -266,7 +266,7 @@ header("Content-Security-Policy: default-src 'self';
 - **Smart Routing** - Automatically uses API when available, falls back to JSON files
 - **Player Search** - Full search functionality via `/getuser` endpoint
 - **Enhanced Leaderboards** - Support for both kills and K/D ratio sorting
-- **Weapon Statistics** - Missile effectiveness data from `/missilepk` endpoint
+- **Weapon Statistics** - Weapon effectiveness data from `/weaponpk` endpoint
 - **Configuration System** - Easy enable/disable of API features
 
 **Technical Implementation:**
@@ -294,7 +294,7 @@ header("Content-Security-Policy: default-src 'self';
 - `/topkdr` - Top 10 players by K/D ratio
 - `/getuser` - Player search by name
 - `/stats` - Detailed player statistics
-- `/missilepk` - Weapon effectiveness data
+- `/weaponpk` - Weapon effectiveness data
 
 **Limitations:**
 - Flight activity data (takeoffs, landings, flight hours) not available via API

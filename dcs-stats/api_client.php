@@ -143,7 +143,7 @@ class DCSServerBotAPIClient {
     /**
      * Get missile probability of kill for a player
      */
-    public function getMissilePK($nickname, $date = null) {
+    public function getWeaponPK($nickname, $date = null) {
         if (!$nickname) {
             return null;
         }
@@ -168,7 +168,7 @@ class DCSServerBotAPIClient {
             'nick' => $nickname,
             'date' => $date
         ];
-        return $this->makeRequest('POST', '/missilepk', $data);
+        return $this->makeRequest('POST', '/weaponpk', $data);
     }
     
     /**
@@ -308,14 +308,11 @@ class DCSServerBotAPIClient {
                     ]
                 ];
                 
-            case '/missilepk':
+            case '/weaponpk':
                 return [
-                    'nick' => $data['nick'] ?? 'TestPilot',
-                    'missiles' => [
-                        'AIM-120C' => ['shots' => rand(20, 50), 'hits' => rand(10, 25), 'pk' => rand(40, 80)],
-                        'AIM-9X' => ['shots' => rand(10, 30), 'hits' => rand(8, 25), 'pk' => rand(60, 90)],
-                        'R-77' => ['shots' => rand(15, 40), 'hits' => rand(8, 20), 'pk' => rand(35, 75)]
-                    ]
+                    'AIM-120C' => ['shots' => rand(20, 50), 'hits' => rand(10, 25), 'pk' => rand(40, 80)],
+                    'AIM-9X' => ['shots' => rand(10, 30), 'hits' => rand(8, 25), 'pk' => rand(60, 90)],
+                    'R-77' => ['shots' => rand(15, 40), 'hits' => rand(8, 20), 'pk' => rand(35, 75)]
                 ];
                 
             default:

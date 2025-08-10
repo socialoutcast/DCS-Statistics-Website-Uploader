@@ -250,69 +250,60 @@ class DCSStatsAPI {
         }
 
         // get /serverstats data
-        try {
-            const stats = await this.makeAPICall('/serverstats', {
-                data: {}
-            });
-            
-            // If stats has overall server statistics, use them
-            if (stats.totalPlayers !== undefined) {
-                return {
-                    totalPlayers: stats.totalPlayers || 0,
-                    totalPlaytime: stats.totalPlaytime || 0,
-                    avgPlaytime: stats.avgPlaytime || 0,
-                    activePlayers: stats.activePlayers || 0,
-                    totalSorties: stats.totalSorties || 0,
-                    totalKills: stats.totalKills || 0,
-                    totalDeaths: stats.totalDeaths || 0,
-                    totalPvPKills: stats.totalPvPKills || 0,
-                    totalPvPDeaths: stats.totalPvPDeaths || 0
-                };
-            }
-        } catch (error) {
-            // Enhanced stats endpoint failed
-        }
-        
-        // Use multiple API endpoints to build server stats
-        const [topKills, topKDR] = await Promise.all([
-            this.makeAPICall('/topkills').catch(() => []),
-            this.makeAPICall('/topkdr').catch(() => [])
-        ]);
-
-        // Calculate stats from API data
-        const allPlayers = [...topKills, ...topKDR];
-        const uniquePlayers = new Map();
-
-        allPlayers.forEach(player => {
-            const name = player.nick;
-            if (!uniquePlayers.has(name)) {
-                uniquePlayers.set(name, {
-                    name: name,
-                    kills: player.kills || 0,
-                    deaths: player.deaths || 0,
-                    kdr: player.kdr || 0
-                });
-            }
+        const stats = await this.makeAPICall('/serverstats', {
+            data: {}
         });
 
-        const top5Pilots = Array.from(uniquePlayers.values())
-            .sort((a, b) => b.kills - a.kills)
-            .slice(0, 5);
+        // get /topkills data
+        const topkills = await this.makeAPICall('/topkills?limit=5');
 
-        const totalKills = Array.from(uniquePlayers.values())
-            .reduce((sum, p) => sum + p.kills, 0);
-        const totalDeaths = Array.from(uniquePlayers.values())
-            .reduce((sum, p) => sum + p.deaths, 0);
+        // Get squadron list
+        const squadrons = await this.makeAPICall('/squadrons');
 
-        return {
-            totalPlayers: uniquePlayers.size,
-            totalKills: totalKills,
-            totalDeaths: totalDeaths,
-            top5Pilots: top5Pilots,
-            top3Squadrons: [],
-            source: 'api-client',
-            generated: new Date().toISOString()
-        };
+        // Fetch credits for each squadron
+        const squadronsWithCredits = await Promise.all(
+            squadrons.map(async (squadron) => {
+                try {
+                    const credits = await this.makeAPICall('/squadron_credits', {
+                        method: 'POST',
+                        data: { name: squadron.name }
+                    });
+                    return {
+                        name: squadron.name,
+                        credits: credits.credits || 0
+                    };
+                } catch (error) {
+                    return {
+                        name: squadron.name,
+                        credits: 0
+                    };
+                }
+            })
+        );
+
+        // Sort by credits and get top 3
+        const top3Squadrons = squadronsWithCredits
+            .sort((a, b) => b.credits - a.credits)
+            .slice(0, 3);
+
+
+        // If stats has overall server statistics, use them
+        if (stats.totalPlayers !== undefined) {
+            return {
+                totalPlayers: stats.totalPlayers || 0,
+                totalPlaytime: stats.totalPlaytime || 0,
+                avgPlaytime: stats.avgPlaytime || 0,
+                activePlayers: stats.activePlayers || 0,
+                totalSorties: stats.totalSorties || 0,
+                totalKills: stats.totalKills || 0,
+                totalDeaths: stats.totalDeaths || 0,
+                totalPvPKills: stats.totalPvPKills || 0,
+                totalPvPDeaths: stats.totalPvPDeaths || 0,
+                top5Pilots: topkills,
+                top3Squadrons: top3Squadrons,
+                activityLastWeek: stats.daily_players
+            };
+        }
     }
 
     async searchPlayers(searchTerm) {
@@ -397,13 +388,6 @@ class DCSStatsAPI {
                     // Sort by kills and get the module with most kills
                     const sorted = [...stats.killsByModule].sort((a, b) => b.kills - a.kills);
                     mostUsedAircraft = sorted[0].module;
-                }
-            } else if (stats.killsbymodule) {
-                // Fallback to object format if available
-                const modules = Object.entries(stats.killsbymodule);
-                if (modules.length > 0) {
-                    modules.sort((a, b) => b[1] - a[1]);
-                    mostUsedAircraft = modules[0][0];
                 }
             }
             

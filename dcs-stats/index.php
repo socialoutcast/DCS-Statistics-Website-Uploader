@@ -88,7 +88,7 @@ if (!$isConfigured):
     <div class="charts-dashboard">
         <?php if (isFeatureEnabled('home_top_pilots')): ?>
         <div class="chart-container" title="Shows the top 5 pilots ranked by their kills">
-            <h2>Top 5 Most Active Pilots <span class="chart-info">ⓘ</span></h2>
+            <h2>Top 5 Pilots <span class="chart-info">ⓘ</span></h2>
             <canvas id="topPilotsChart"></canvas>
             <p class="no-data-message" id="topPilotsNoData" style="display: none;">No mission data available yet</p>
         </div>
@@ -197,7 +197,7 @@ async function loadServerStats() {
         <?php endif; ?>
         
         <?php if (isFeatureEnabled('home_player_activity')): ?>
-        createPlayerActivityChart(data.totalPlayers || 0, data.top5Pilots || []);
+        createPlayerActivityChart(data.activityLastWeek || []);
         <?php endif; ?>
         
         // Hide loading overlay
@@ -259,8 +259,8 @@ function createTopPilotsChart(pilots) {
         data: {
             labels: pilots.map(p => p.nick),
             datasets: [{
-                label: 'Server Visits',
-                data: pilots.map(p => p.visits),
+                label: 'Kills',
+                data: pilots.map(p => p.kills),
                 backgroundColor: gradient,
                 borderColor: 'rgba(76, 175, 80, 1)',
                 borderWidth: 2,
@@ -292,7 +292,7 @@ function createTopPilotsChart(pilots) {
                     displayColors: false,
                     callbacks: {
                         label: function(context) {
-                            return `Visits: ${context.parsed.y.toLocaleString()}`;
+                            return `Kills: ${context.parsed.y.toLocaleString()}`;
                         }
                     }
                 }
@@ -336,7 +336,7 @@ function createTopPilotsChart(pilots) {
                     },
                     title: {
                         display: true,
-                        text: 'Number of Server Visits',
+                        text: 'Number of Kills',
                         color: '#4CAF50',
                         font: {
                             size: 14,
@@ -443,8 +443,8 @@ function createTopSquadronsChart(squadrons) {
         data: {
             labels: squadrons.map(s => s.name),
             datasets: [{
-                label: 'Squadron Visits',
-                data: squadrons.map(s => s.visits),
+                label: 'Squadron Credits',
+                data: squadrons.map(s => s.credits),
                 backgroundColor: gradient,
                 borderColor: 'rgba(255, 193, 7, 1)',
                 borderWidth: 2,
@@ -476,7 +476,7 @@ function createTopSquadronsChart(squadrons) {
                     displayColors: false,
                     callbacks: {
                         label: function(context) {
-                            return `Total Visits: ${context.parsed.y.toLocaleString()}`;
+                            return `Total Credits: ${context.parsed.y.toLocaleString()}`;
                         }
                     }
                 }
@@ -520,7 +520,7 @@ function createTopSquadronsChart(squadrons) {
                     },
                     title: {
                         display: true,
-                        text: 'Combined Member Visits',
+                        text: 'Squadron Credits',
                         color: '#FFD700',
                         font: {
                             size: 14,
@@ -537,29 +537,32 @@ function createTopSquadronsChart(squadrons) {
     });
 }
 
+
 // Player activity overview chart
-function createPlayerActivityChart(totalPlayers, top5Pilots) {
+function createPlayerActivityChart(daily_players) {
     const ctx = document.getElementById('playerActivityChart').getContext('2d');
-    
+
     if (playerActivityChart) {
         playerActivityChart.destroy();
     }
-    
-    const labels = ['Total Registered', 'Active Players', 'Top 5 Combined Visits'];
-    const activePlayers = top5Pilots.reduce((sum, p) => sum + (p.visits > 0 ? 1 : 0), 0);
-    const top5Visits = top5Pilots.reduce((sum, p) => sum + p.visits, 0);
-    
+
     const gradient1 = createGradient(ctx, gradientColors.primary);
-    const gradient2 = createGradient(ctx, gradientColors.warning);
-    const gradient3 = createGradient(ctx, gradientColors.secondary);
-    
+
+    // Process the dates and player counts
+    const labels = daily_players.map(entry => {
+        const date = new Date(entry.date);
+        return date.toLocaleDateString();
+    });
+
+    const data = daily_players.map(entry => entry.player_count);
+
     playerActivityChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Player Metrics',
-                data: [totalPlayers, activePlayers, top5Visits],
+                label: 'Daily Players',
+                data: data,
                 borderColor: 'rgba(76, 175, 80, 1)',
                 backgroundColor: gradient1,
                 borderWidth: 3,
@@ -593,7 +596,15 @@ function createPlayerActivityChart(totalPlayers, top5Pilots) {
                         size: 13
                     },
                     padding: 12,
-                    displayColors: false
+                    displayColors: false,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            return `Players: ${context.parsed.y}`;
+                        }
+                    }
                 }
             },
             scales: {
@@ -611,7 +622,7 @@ function createPlayerActivityChart(totalPlayers, top5Pilots) {
                     },
                     title: {
                         display: true,
-                        text: 'Player Categories',
+                        text: 'Date',
                         color: '#4CAF50',
                         font: {
                             size: 14,

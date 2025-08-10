@@ -346,7 +346,7 @@ $pageTitle = 'API Settings';
                         • /getuser - Get user statistics (POST with nick)<br>
                         • /topkills - Get top killers leaderboard (GET)<br>
                         • /topkdr - Get top K/D ratio leaderboard (GET)<br>
-                        • /missilepk - Get missile probability of kill (POST with nick and date)<br>
+                        • /weaponpk - Get weapon probability of kill (POST with nick and date)<br>
                         • /squadrons - Get all squadrons (GET)<br>
                         • /squadron_members - Get squadron members (POST with name)<br>
                         • /squadron_credits - Get squadron credits (POST with name)<br>

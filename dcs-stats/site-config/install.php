@@ -434,7 +434,7 @@ $apiConfig = [
         'stats' => '/stats',
         'topkills' => '/topkills',
         'topkdr' => '/topkdr',
-        'missilepk' => '/missilepk'
+        'weaponpk' => '/weaponpk'
     ]
 ];
 
