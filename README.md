@@ -43,7 +43,7 @@ Experience a professional-grade statistics platform featuring:
 ### 🔧 Prerequisites
 - ✅ [**DCSServerBot by Special K**](https://github.com/Special-K-s-Flightsim-Bots/DCSServerBot/releases) with REST API enabled
 - ✅ **PHP 8.3+ web server** OR **Docker**
-- ✅ **Web hosting** (shared hosting works perfectly!)
+- ✅ **Web hosting** (shared hosting works Requires Port Forwarding Not All Hosts allow)
 
 ### 🚀 Installation Options
 
