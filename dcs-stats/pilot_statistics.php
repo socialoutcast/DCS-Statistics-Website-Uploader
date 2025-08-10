@@ -334,14 +334,9 @@ async function loadPilotStats(player) {
                     
                     if (response.ok) {
                         const creditsData = await response.json();
-                        // The response might be a number or an object with the player's credits
-                        if (typeof creditsData === 'number') {
-                            credits = creditsData;
-                        } else if (creditsData && creditsData[player.nick] !== undefined) {
-                            credits = creditsData[player.nick];
-                        } else {
-                            credits = 0;
-                        }
+                        credits = creditsData.credits;
+                    } else {
+                        credits = 0
                     }
                 }
             } catch (e) {
