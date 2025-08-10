@@ -575,10 +575,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
                     if (creditsResp.ok) {
                         const creditsData = await creditsResp.json();
-                        if (creditsData.data && Array.isArray(creditsData.data)) {
+                        if (creditsData.data) {
                             // Sum up credits from all campaigns
-                            squadronInfo.totalCredits = creditsData.data.reduce((sum, c) => sum + (c.credits || 0), 0);
-                            squadronInfo.creditsByCampaign = creditsData.data;
+                            squadronInfo.totalCredits = creditsData.data.credits || 0;
                         }
                     }
                 } catch (error) {
