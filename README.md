@@ -91,6 +91,10 @@ The Docker setup automatically:
 
 **🎉 That's it!** Your dashboard now displays real-time data from DCSServerBot.
 
+#### Option 3: Xampp  (Minimal Configuration!)
+
+A Full Howto on this can be found in the wiki https://github.com/Penfold-88/DCS-Statistics-Dashboard/wiki
+
 ## 🎛️ Admin Panel Features
 
 ### 🔐 Secure Access
