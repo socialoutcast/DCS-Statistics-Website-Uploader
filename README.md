@@ -59,8 +59,8 @@ Experience a professional-grade statistics platform featuring:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Penfold-88/DCS-Statistics-Website-Uploader.git
-cd DCS-Statistics-Website-Uploader
+git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
+cd DCS-Statistics-Dashboard
 
 # Start with Docker (that's it!)
 docker compose up -d
@@ -142,8 +142,8 @@ Our Docker setup is completely automated - just run and go!
 
 ```bash
 # Clone the repository
-git clone https://github.com/Penfold-88/DCS-Statistics-Website-Uploader.git
-cd DCS-Statistics-Website-Uploader
+git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
+cd DCS-Statistics-Dashboard
 
 # Start the container (that's it!)
 docker compose up -d
@@ -271,7 +271,7 @@ Use http://172.17.0.1:8080 on Linux
 ## 📁 Project Structure
 
 ```
-DCS-Statistics-Website-Uploader/
+DCS-Statistics-Dashboard/
 ├── 📁 dcs-stats/                  # Main web application
 │   ├── 📁 site-config/            # Admin panel (NEW!)
 │   │   ├── 🔐 index.php          # Admin dashboard
