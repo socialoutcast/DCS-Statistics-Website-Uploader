@@ -162,7 +162,7 @@ async function loadServerStats() {
         // Update stat cards with animation (if enabled)
         <?php if (isFeatureEnabled('home_server_stats')): ?>
         animateNumber('totalPlayers', data.totalPlayers);
-        animateNumber('totalPlaytime', data.totalPlaytime / 3600);
+        animateNumber('totalPlaytime', data.totalPlaytime);
         animateNumber('avgPlaytime', data.avgPlaytime / 60);
         animateNumber('totalSorties', data.totalSorties);
         
