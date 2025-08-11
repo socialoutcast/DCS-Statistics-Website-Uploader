@@ -1,0 +1,33 @@
+# Admin Panel Access Control
+
+# Protect sensitive directories
+<FilesMatch "\.(json|sql|log)$">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
+
+# Protect config files
+<Files "config.php">
+    Order deny,allow
+    Deny from all
+</Files>
+
+# Protect data directory
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^data/ - [F,L]
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Disable directory listing
+Options -Indexes
+
+# Set default charset
+AddDefaultCharset UTF-8

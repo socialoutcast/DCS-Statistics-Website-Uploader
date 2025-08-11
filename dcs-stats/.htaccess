@@ -1,0 +1,34 @@
+# Security - Prevent access to sensitive files but allow API config files
+<Files ~ "\.(log|sql)$">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Allow JSON files to be read by PHP but not directly accessed
+<Files ~ "\.json$">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Exception for certain JSON files that need to be accessible
+<FilesMatch "(server_data\.json|mission_data\.json)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Prevent direct access to data directories
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(data|admin/data|admin/theme_backups)/.*$ - [F,L]
+</IfModule>
+
+# Custom error pages (optional)
+ErrorDocument 404 /404.php
+ErrorDocument 403 /403.php
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>

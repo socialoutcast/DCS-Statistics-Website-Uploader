@@ -1,13 +1,55 @@
-<?php include 'header.php'; ?>
+<?php 
+// Start session before any output
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+include 'header.php'; 
+?>
+<?php require_once __DIR__ . '/site_features.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <?php include 'nav.php'; ?>
 
+<?php
+// Check if this is a fresh install
+$isConfigured = file_exists(__DIR__ . '/api_config.json') || 
+                file_exists(__DIR__ . '/site-config/data/users.json');
+
+if (!$isConfigured):
+?>
+<main>
+    <div class="welcome-container" style="max-width: 800px; margin: 50px auto; padding: 40px; background: var(--card-bg); border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); text-align: center;">
+        <h1 style="color: var(--primary-color); margin-bottom: 20px;">🎉 Welcome to DCS Statistics Dashboard!</h1>
+        <p style="font-size: 1.2em; color: var(--text-secondary); margin-bottom: 30px;">
+            It looks like this is your first time here. Let's get you set up!
+        </p>
+        
+        <div style="background: rgba(0, 123, 255, 0.1); padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+            <h2 style="color: var(--accent-primary); margin-bottom: 15px;">Quick Setup Guide</h2>
+            <ol style="text-align: left; max-width: 500px; margin: 0 auto; line-height: 1.8;">
+                <li>Create your admin account</li>
+                <li>Configure your DCSServerBot API connection</li>
+                <li>Customize your dashboard settings</li>
+                <li>Start viewing your server statistics!</li>
+            </ol>
+        </div>
+        
+        <a href="./site-config/install.php" class="btn btn-primary" style="font-size: 1.2em; padding: 15px 40px; display: inline-block; text-decoration: none;">
+            🚀 Start Setup
+        </a>
+        
+        <p style="margin-top: 30px; font-size: 0.9em; color: var(--text-muted);">
+            Need help? Check out the <a href="https://github.com/SocialOutcast-DCS/DCS-Statistics" target="_blank">documentation</a>
+        </p>
+    </div>
+</main>
+<?php else: ?>
 <main>
     <div class="dashboard-header">
-        <h1>DCS Server Statistics Dashboard</h1>
+        <h1>DCS Statistics Dashboard</h1>
         <p class="dashboard-subtitle">Real-time server performance and player metrics</p>
     </div>
     
+    <?php if (isFeatureEnabled('home_server_stats')): ?>
     <div class="stats-cards">
         <div class="stat-card" id="totalPlayersCard">
             <div class="stat-icon">👥</div>
@@ -17,53 +59,62 @@
             </div>
         </div>
         
-        <div class="stat-card" id="totalKillsCard">
-            <div class="stat-icon">🎯</div>
+        <div class="stat-card" id="totalPlaytimeCard">
+            <div class="stat-icon">✈️</div>
             <div class="stat-content">
-                <h3>Server Kills</h3>
-                <p class="stat-number" id="totalKills">-</p>
+                <h3>Total Playtime (hrs)</h3>
+                <p class="stat-number" id="totalPlaytime">-</p>
             </div>
         </div>
         
-        <div class="stat-card" id="totalDeathsCard">
-            <div class="stat-icon">💥</div>
+        <div class="stat-card" id="avgPlaytimeCard">
+            <div class="stat-icon">🕐</div>
             <div class="stat-content">
-                <h3>Server Deaths</h3>
-                <p class="stat-number" id="totalDeaths">-</p>
+                <h3>Average Playtime (mins)</h3>
+                <p class="stat-number" id="avgPlaytime">-</p>
             </div>
         </div>
         
-        <div class="stat-card" id="kdRatioCard">
+        <div class="stat-card" id="totalSortiesCard">
             <div class="stat-icon">📊</div>
             <div class="stat-content">
-                <h3>K/D Ratio</h3>
-                <p class="stat-number" id="kdRatio">-</p>
+                <h3>Total Sorties</h3>
+                <p class="stat-number" id="totalSorties">-</p>
             </div>
         </div>
     </div>
+    <?php endif; ?>
     
     <div class="charts-dashboard">
-        <div class="chart-container">
-            <h2>Top 5 Most Active Pilots</h2>
+        <?php if (isFeatureEnabled('home_top_pilots')): ?>
+        <div class="chart-container" title="Shows the top 5 pilots ranked by their kills">
+            <h2>Top 5 Pilots <span class="chart-info">ⓘ</span></h2>
             <canvas id="topPilotsChart"></canvas>
             <p class="no-data-message" id="topPilotsNoData" style="display: none;">No mission data available yet</p>
         </div>
+        <?php endif; ?>
         
-        <div class="chart-container">
-            <h2>Server Combat Statistics</h2>
+        <?php if (isFeatureEnabled('home_mission_stats')): ?>
+        <div class="chart-container" title="Overview of total server-wide kills and deaths in combat">
+            <h2>Server Combat Statistics <span class="chart-info">ⓘ</span></h2>
             <canvas id="combatStatsChart"></canvas>
         </div>
+        <?php endif; ?>
         
-        <div class="chart-container">
-            <h2>Top 3 Most Active Squadrons</h2>
+        <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('home_top_pilots')): ?>
+        <div class="chart-container" title="Shows the top 3 squadrons based on member activity and performance">
+            <h2>Top 3 Most Active Squadrons <span class="chart-info">ⓘ</span></h2>
             <canvas id="topSquadronsChart"></canvas>
             <p class="no-data-message" id="squadronsNoData" style="display: none;">No squadron data available yet</p>
         </div>
+        <?php endif; ?>
         
-        <div class="chart-container full-width">
-            <h2>Player Activity Overview</h2>
+        <?php if (isFeatureEnabled('home_player_activity')): ?>
+        <div class="chart-container full-width" title="Displays player activity trends over time showing peak hours and player engagement">
+            <h2>Player Activity Overview <span class="chart-info">ⓘ</span></h2>
             <canvas id="playerActivityChart"></canvas>
         </div>
+        <?php endif; ?>
     </div>
     
     <div id="loading-overlay" class="loading-overlay">
@@ -100,25 +151,28 @@ const gradientColors = {
 // Load server statistics
 async function loadServerStats() {
     try {
-        const response = await fetch('get_server_stats.php');
-        const data = await response.json();
+        // Use the client-side API
+        const data = await window.dcsAPI.getServerStats();
         
         if (data.error) {
-            console.error('Error loading stats:', data.error);
             document.getElementById('loading-overlay').style.display = 'none';
             return;
         }
         
-        // Update stat cards with animation
+        // Update stat cards with animation (if enabled)
+        <?php if (isFeatureEnabled('home_server_stats')): ?>
         animateNumber('totalPlayers', data.totalPlayers);
-        animateNumber('totalKills', data.totalKills);
-        animateNumber('totalDeaths', data.totalDeaths);
+        animateNumber('totalPlaytime', data.totalPlaytime);
+        animateNumber('avgPlaytime', data.avgPlaytime / 60);
+        animateNumber('totalSorties', data.totalSorties);
         
         // Calculate K/D ratio
         const kdRatio = data.totalDeaths > 0 ? (data.totalKills / data.totalDeaths).toFixed(2) : data.totalKills;
-        document.getElementById('kdRatio').textContent = kdRatio;
+        //document.getElementById('kdRatio').textContent = kdRatio;
+        <?php endif; ?>
         
         // Create charts with empty data handling
+        <?php if (isFeatureEnabled('home_top_pilots')): ?>
         if (data.top5Pilots && data.top5Pilots.length > 0) {
             createTopPilotsChart(data.top5Pilots);
             document.getElementById('topPilotsNoData').style.display = 'none';
@@ -126,9 +180,13 @@ async function loadServerStats() {
             document.getElementById('topPilotsChart').style.display = 'none';
             document.getElementById('topPilotsNoData').style.display = 'block';
         }
+        <?php endif; ?>
         
+        <?php if (isFeatureEnabled('home_mission_stats')): ?>
         createCombatStatsChart(data.totalKills || 0, data.totalDeaths || 0);
+        <?php endif; ?>
         
+        <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('home_top_pilots')): ?>
         if (data.top3Squadrons && data.top3Squadrons.length > 0) {
             createTopSquadronsChart(data.top3Squadrons);
             document.getElementById('squadronsNoData').style.display = 'none';
@@ -136,18 +194,23 @@ async function loadServerStats() {
             document.getElementById('topSquadronsChart').style.display = 'none';
             document.getElementById('squadronsNoData').style.display = 'block';
         }
+        <?php endif; ?>
         
-        createPlayerActivityChart(data.totalPlayers || 0, data.top5Pilots || []);
+        <?php if (isFeatureEnabled('home_player_activity')): ?>
+        createPlayerActivityChart(data.activityLastWeek || []);
+        <?php endif; ?>
         
         // Hide loading overlay
         document.getElementById('loading-overlay').style.display = 'none';
         
         // Add pop animations to cards
+        <?php if (isFeatureEnabled('home_server_stats')): ?>
         document.querySelectorAll('.stat-card').forEach((card, index) => {
             setTimeout(() => {
                 card.classList.add('pop-in');
             }, index * 100);
         });
+        <?php endif; ?>
         
     } catch (error) {
         console.error('Error fetching server stats:', error);
@@ -194,10 +257,10 @@ function createTopPilotsChart(pilots) {
     topPilotsChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: pilots.map(p => p.name),
+            labels: pilots.map(p => p.nick),
             datasets: [{
-                label: 'Server Visits',
-                data: pilots.map(p => p.visits),
+                label: 'Kills',
+                data: pilots.map(p => p.kills),
                 backgroundColor: gradient,
                 borderColor: 'rgba(76, 175, 80, 1)',
                 borderWidth: 2,
@@ -229,7 +292,7 @@ function createTopPilotsChart(pilots) {
                     displayColors: false,
                     callbacks: {
                         label: function(context) {
-                            return `Visits: ${context.parsed.y.toLocaleString()}`;
+                            return `Kills: ${context.parsed.y.toLocaleString()}`;
                         }
                     }
                 }
@@ -273,7 +336,7 @@ function createTopPilotsChart(pilots) {
                     },
                     title: {
                         display: true,
-                        text: 'Number of Server Visits',
+                        text: 'Number of Kills',
                         color: '#4CAF50',
                         font: {
                             size: 14,
@@ -380,8 +443,8 @@ function createTopSquadronsChart(squadrons) {
         data: {
             labels: squadrons.map(s => s.name),
             datasets: [{
-                label: 'Squadron Visits',
-                data: squadrons.map(s => s.visits),
+                label: 'Squadron Credits',
+                data: squadrons.map(s => s.credits),
                 backgroundColor: gradient,
                 borderColor: 'rgba(255, 193, 7, 1)',
                 borderWidth: 2,
@@ -413,7 +476,7 @@ function createTopSquadronsChart(squadrons) {
                     displayColors: false,
                     callbacks: {
                         label: function(context) {
-                            return `Total Visits: ${context.parsed.y.toLocaleString()}`;
+                            return `Total Credits: ${context.parsed.y.toLocaleString()}`;
                         }
                     }
                 }
@@ -457,7 +520,7 @@ function createTopSquadronsChart(squadrons) {
                     },
                     title: {
                         display: true,
-                        text: 'Combined Member Visits',
+                        text: 'Squadron Credits',
                         color: '#FFD700',
                         font: {
                             size: 14,
@@ -474,29 +537,32 @@ function createTopSquadronsChart(squadrons) {
     });
 }
 
+
 // Player activity overview chart
-function createPlayerActivityChart(totalPlayers, top5Pilots) {
+function createPlayerActivityChart(daily_players) {
     const ctx = document.getElementById('playerActivityChart').getContext('2d');
-    
+
     if (playerActivityChart) {
         playerActivityChart.destroy();
     }
-    
-    const labels = ['Total Registered', 'Active Players', 'Top 5 Combined Visits'];
-    const activePlayers = top5Pilots.reduce((sum, p) => sum + (p.visits > 0 ? 1 : 0), 0);
-    const top5Visits = top5Pilots.reduce((sum, p) => sum + p.visits, 0);
-    
+
     const gradient1 = createGradient(ctx, gradientColors.primary);
-    const gradient2 = createGradient(ctx, gradientColors.warning);
-    const gradient3 = createGradient(ctx, gradientColors.secondary);
-    
+
+    // Process the dates and player counts
+    const labels = daily_players.map(entry => {
+        const date = new Date(entry.date);
+        return date.toLocaleDateString();
+    });
+
+    const data = daily_players.map(entry => entry.player_count);
+
     playerActivityChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Player Metrics',
-                data: [totalPlayers, activePlayers, top5Visits],
+                label: 'Daily Players',
+                data: data,
                 borderColor: 'rgba(76, 175, 80, 1)',
                 backgroundColor: gradient1,
                 borderWidth: 3,
@@ -530,7 +596,15 @@ function createPlayerActivityChart(totalPlayers, top5Pilots) {
                         size: 13
                     },
                     padding: 12,
-                    displayColors: false
+                    displayColors: false,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            return `Players: ${context.parsed.y}`;
+                        }
+                    }
                 }
             },
             scales: {
@@ -548,7 +622,7 @@ function createPlayerActivityChart(totalPlayers, top5Pilots) {
                     },
                     title: {
                         display: true,
-                        text: 'Player Categories',
+                        text: 'Date',
                         color: '#4CAF50',
                         font: {
                             size: 14,
@@ -680,7 +754,8 @@ main {
     grid-template-columns: repeat(2, 1fr);
     gap: 30px;
     margin: 40px auto;
-    max-width: 1200px;
+    width: 100%;
+    max-width: 100%;
     padding: 0 20px;
 }
 
@@ -787,6 +862,83 @@ main {
     font-size: 0.9rem;
 }
 
+/* Chart info icon and tooltip styles */
+.chart-info {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    background-color: #444;
+    color: #ccc;
+    border-radius: 50%;
+    font-size: 12px;
+    margin-left: 5px;
+    cursor: help;
+    transition: all 0.3s ease;
+}
+
+.chart-info:hover {
+    background-color: #4CAF50;
+    color: white;
+    transform: scale(1.1);
+}
+
+.chart-container {
+    position: relative;
+}
+
+.chart-container:hover {
+    box-shadow: 0 12px 40px rgba(76, 175, 80, 0.3);
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+.chart-container[title] {
+    cursor: help;
+}
+
+/* Enhanced tooltip styling */
+.chart-container:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    white-space: normal;
+    max-width: 300px;
+    text-align: center;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.chart-container:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-top-color: #333;
+    margin-bottom: 2px;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
 @media (max-width: 768px) {
     .stats-cards {
         grid-template-columns: 1fr;
@@ -802,4 +954,5 @@ main {
 }
 </style>
 
+<?php endif; ?>
 <?php include 'footer.php'; ?>
