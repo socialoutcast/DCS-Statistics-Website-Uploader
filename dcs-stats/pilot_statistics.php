@@ -170,7 +170,7 @@ function populateStatsGrid(stats) {
     
     // Credits if enabled
     if (siteFeatures.credits && stats.credits !== undefined) {
-        secondaryGrid.innerHTML += createStatItem('Credits', stats.credits || 0, 'pilot-credits');
+        secondaryGrid.innerHTML += createStatItem('Credits', stats.credits.credits || 0, 'pilot-credits');
         hasSecondaryStats = true;
     }
     
@@ -307,112 +307,18 @@ async function loadPilotStats(player) {
         
         // Extract actual stats data from the response
         const statsData = statsResult.data || statsResult;
-        
+
         // If statsData doesn't have the expected structure, use the raw result
         const finalStats = statsData.data || statsData;
-        
-        // Get credits data for this specific player if credits are enabled
-        let credits = undefined;
-        if (siteFeatures.credits) {
-            try {
-                // Get API config
-                const config = await window.dcsAPI.loadConfig();
-                if (config.use_api && config.api_base_url) {
-                    // Call credits endpoint with player name and current date
-                    const basePath = window.DCS_CONFIG ? window.DCS_CONFIG.basePath : '';
-                    const buildUrl = (path) => basePath ? `${basePath}/${path}` : path;
-                    const response = await fetch(buildUrl('api_proxy.php?endpoint=' + encodeURIComponent('/credits') + '&method=POST'), {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            nick: player.nick,
-                            date: player.date
-                        })
-                    });
-                    
-                    if (response.ok) {
-                        const creditsData = await response.json();
-                        credits = creditsData.credits;
-                    } else {
-                        credits = 0
-                    }
-                }
-            } catch (e) {
-                console.warn('Could not load credits data:', e);
-                credits = 0;
-            }
-        }
-        
-        // Get squadron data - simplified approach
-        let squadron = 'None';
-        let squadronLogo = null;
-        
-        // buildUrl should already be defined from earlier in the code
-        const basePath = window.DCS_CONFIG ? window.DCS_CONFIG.basePath : '';
-        const buildUrl = (path) => basePath ? `${basePath}/${path}` : path;
-        
-        // Create a helper function to find the pilot's squadron
-        async function findPilotSquadron(pilotName) {
-            try {
-                // Get all squadrons
-                const squadronsResp = await fetch(buildUrl('get_squadrons.php'));
-                if (!squadronsResp.ok) {
-                    console.error('Failed to fetch squadrons');
-                    return null;
-                }
-                
-                const squadronsData = await squadronsResp.json();
-                
-                if (!squadronsData.data || !Array.isArray(squadronsData.data)) {
-                    console.error('Invalid squadrons data format');
-                    return null;
-                }
-                
-                
-                // Check each squadron's members
-                for (const squadron of squadronsData.data) {
-                    
-                    const membersResp = await fetch(buildUrl('get_squadron_members.php'), {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ name: squadron.name })
-                    });
-                    
-                    if (membersResp.ok) {
-                        const membersData = await membersResp.json();
-                        
-                        if (membersData.data && Array.isArray(membersData.data)) {
-                            // Log each member comparison
-                            for (const member of membersData.data) {
-                                if (member.nick.toLowerCase() === pilotName.toLowerCase()) {
-                                    return {
-                                        name: squadron.name,
-                                        logo: squadron.image_url
-                                    };
-                                }
-                            }
-                        }
-                    } else {
-                        console.error(`Failed to fetch members for ${squadron.name}`);
-                    }
-                }
-                
-                return null;
-            } catch (e) {
-                console.error('Squadron lookup error:', e);
-                return null;
-            }
-        }
-        
+
         // Try to find squadron for the pilot
-        const squadronInfo = await findPilotSquadron(player.nick);
-        if (squadronInfo) {
-            squadron = squadronInfo.name;
-            squadronLogo = squadronInfo.logo;
+        squadron = 'None';
+        squadronLogo = null;
+        if (statsData?.squadrons?.[0]) {
+            squadron = statsData.squadrons[0].name;
+            squadronLogo = statsData.squadrons[0].image_url;
         }
-        
+
         // Helper function to safely update element text
         function updateElement(id, value) {
             const element = document.getElementById(id);
@@ -425,11 +331,10 @@ async function loadPilotStats(player) {
         
         // Update pilot name
         updateElement('pilot-name', player.nick);
-        
+
         // Prepare stats object with all available data
         const displayStats = {
             ...finalStats,
-            credits: credits,
             squadron: squadron
         };
         

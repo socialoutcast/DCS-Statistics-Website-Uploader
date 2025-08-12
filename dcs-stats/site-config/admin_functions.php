@@ -122,7 +122,7 @@ function getPlayerStats($ucid) {
         $client = createEnhancedAPIClient();
         
         // Get player stats from API
-        $playerData = $client->request('/stats', ['ucid' => $ucid]);
+        $playerData = $client->request('/player_info', ['ucid' => $ucid]);
         
         if ($playerData && is_array($playerData) && !empty($playerData)) {
             $player = is_array($playerData[0]) ? $playerData[0] : $playerData;

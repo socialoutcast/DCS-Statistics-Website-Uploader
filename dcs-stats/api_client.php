@@ -123,7 +123,7 @@ class DCSServerBotAPIClient {
             'nick' => $nickname,
             'date' => $date
         ];
-        return $this->makeRequest('POST', '/stats', $data);
+        return $this->makeRequest('POST', '/player_info', $data);
     }
     
     /**
@@ -226,7 +226,7 @@ class DCSServerBotAPIClient {
                     'ipaddr' => '192.168.1.100'
                 ]];
                 
-            case '/stats':
+            case '/player_info':
                 return [
                     'nick' => $data['nick'] ?? 'TestPilot',
                     'kills' => rand(10, 100),

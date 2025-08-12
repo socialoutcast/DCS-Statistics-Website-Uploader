@@ -342,7 +342,7 @@ $pageTitle = 'API Settings';
                         <strong>DCSServerBot REST API endpoints:</strong><br>
                         • /servers - Get server status (GET)<br>
                         • /credits - Get player credits (POST with nick and date)<br>
-                        • /stats - Get enhanced statistics (POST with nick and date)<br>
+                        • /player_info - Get enhanced statistics (POST with nick and date)<br>
                         • /getuser - Get user statistics (POST with nick)<br>
                         • /topkills - Get top killers leaderboard (GET)<br>
                         • /topkdr - Get top K/D ratio leaderboard (GET)<br>

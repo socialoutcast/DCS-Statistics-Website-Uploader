@@ -36,7 +36,7 @@ try {
     $apiClient = createEnhancedAPIClient();
     
     // Get player stats from API
-    // API /stats returns: deaths, aakills, aakdr, lastSessionKills, lastSessionDeaths, killsbymodule, kdrByModule
+    // API /player_info returns: deaths, aakills, aakdr, lastSessionKills, lastSessionDeaths, killsbymodule, kdrByModule
     $apiStats = $apiClient->getPlayerStats($playerName);
     
     if ($apiStats && is_array($apiStats)) {
@@ -59,7 +59,9 @@ try {
             'lastSessionKills' => $apiStats['lastSessionKills'] ?? 0,
             'lastSessionDeaths' => $apiStats['lastSessionDeaths'] ?? 0,
             'killsByModule' => $apiStats['killsByModule'] ?? [],
-            'kdrByModule' => $apiStats['kdrByModule'] ?? []
+            'kdrByModule' => $apiStats['kdrByModule'] ?? [],
+            'credits' => $apiStats['credits'] ?? 0,
+            'squadrons' => $apiStats['squadrons'] ?? []
         ];
         
         // Find most used aircraft from killsbymodule

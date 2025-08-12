@@ -68,7 +68,7 @@ All notable changes to the DCS Statistics Website Uploader project.
 **Why:** Search would find users but stats lookup would fail due to nickname mismatches.
 
 **Technical Solution:**
-- Use exact `nick` field from `/getuser` API response for `/stats` calls
+- Use exact `nick` field from `/getuser` API response for `/player_info` calls
 - Preserve original search input while using API-provided exact names
 - Added comprehensive debug logging to trace API call flow
 - Eliminated null element errors with safe DOM updates
@@ -293,7 +293,7 @@ header("Content-Security-Policy: default-src 'self';
 - `/topkills` - Top 10 players by kills
 - `/topkdr` - Top 10 players by K/D ratio
 - `/getuser` - Player search by name
-- `/stats` - Detailed player statistics
+- `/player_info` - Detailed player information and statistics
 - `/weaponpk` - Weapon effectiveness data
 
 **Limitations:**

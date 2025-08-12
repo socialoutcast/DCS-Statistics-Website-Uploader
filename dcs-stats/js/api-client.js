@@ -183,7 +183,7 @@ class DCSStatsAPI {
                 try {
 
                     // Now get their detailed stats
-                    const stats = await this.makeAPICall('/stats', {
+                    const stats = await this.makeAPICall('/player_info', {
                         method: 'POST',
                         data: {
                             nick: player.nick,
@@ -366,7 +366,7 @@ class DCSStatsAPI {
             const user = users[0];
 
             // Get stats using proxy
-            const stats = await this.makeAPICall('/stats', {
+            const stats = await this.makeAPICall('/player_info', {
                 method: 'POST',
                 data: {
                     nick: user.nick,
@@ -407,6 +407,12 @@ class DCSStatsAPI {
                             return acc;
                         }, {}) : 
                         (stats.killsByModule || {}),
+                    kdr_by_module: stats.kdrByModule ?
+                        stats.kdrByModule.reduce((acc, item) => {
+                            acc[item.module] = item.kdr;
+                            return acc;
+                        }, {}) :
+                        (stats.kdrByModule || {}),
                     last_session_kills: stats.lastSessionKills || 0,
                     last_session_deaths: stats.lastSessionDeaths || 0,
                     takeoffs: stats.takeoffs || 0,
@@ -414,11 +420,10 @@ class DCSStatsAPI {
                     crashes: stats.crashes || 0,
                     ejections: stats.ejections || 0,
                     sorties: stats.sorties || 0,
-                    carrier_traps: stats.carrier_traps || stats.carrierTraps || 0,
-                    avgTrapScore: stats.avgTrapScore || stats.avg_trap_score || 0,
-                    trapScores: stats.trapScores || [],
                     most_used_aircraft: mostUsedAircraft,
-                    aircraftUsage: stats.aircraftUsage || []
+                    aircraftUsage: stats.aircraftUsage || [],
+                    credits: stats.credits || 0,
+                    squadrons: stats.squadrons || [],
                 }
             };
         }

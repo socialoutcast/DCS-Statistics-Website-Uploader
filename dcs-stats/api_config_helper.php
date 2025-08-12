@@ -41,7 +41,7 @@ function getDefaultApiConfig($apiHost = '') {
         // DCSServerBot API endpoint mappings
         'endpoints' => [
             'getuser' => '/getuser',
-            'stats' => '/stats',
+            'player_info' => '/player_info',
             'topkills' => '/topkills',
             'topkdr' => '/topkdr',
             'weaponpk' => '/weaponpk',
