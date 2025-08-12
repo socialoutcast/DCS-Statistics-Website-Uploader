@@ -101,7 +101,7 @@ if (!$isConfigured):
         </div>
         <?php endif; ?>
         
-        <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('home_top_pilots')): ?>
+        <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('home_top_squadrons')): ?>
         <div class="chart-container" title="Shows the top 3 squadrons based on member activity and performance">
             <h2>Top 3 Most Active Squadrons <span class="chart-info">ⓘ</span></h2>
             <canvas id="topSquadronsChart"></canvas>
@@ -186,7 +186,7 @@ async function loadServerStats() {
         createCombatStatsChart(data.totalKills || 0, data.totalDeaths || 0);
         <?php endif; ?>
         
-        <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('home_top_pilots')): ?>
+        <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('home_top_squadrons')): ?>
         if (data.top3Squadrons && data.top3Squadrons.length > 0) {
             createTopSquadronsChart(data.top3Squadrons);
             document.getElementById('squadronsNoData').style.display = 'none';

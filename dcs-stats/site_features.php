@@ -68,6 +68,7 @@ function loadSiteFeatures() {
         'home_player_activity' => true,
         'home_mission_stats' => true,
         'home_top_pilots' => true,
+        'home_top_squadrons' => true,
         'home_recent_activity' => true,
         
         // Leaderboard Features
@@ -186,6 +187,7 @@ function getFeatureGroups() {
             'home_player_activity' => 'Player Activity Graph',
             'home_mission_stats' => 'Mission Statistics Graph',
             'home_top_pilots' => 'Top Pilots Table',
+            'home_top_squadrons' => 'Top Squadrons Table',
             'home_recent_activity' => 'Recent Activity Feed'
         ],
         'Leaderboard Columns' => [

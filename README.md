@@ -215,6 +215,7 @@ Control exactly what your community sees:
 // Homepage Features
 'home_server_stats' => true,      // Server statistics cards
 'home_top_pilots' => true,        // Top 5 pilots chart
+'home_top_squadrons' => true,     // Top 3 squadrons chart
 'home_mission_stats' => true,     // Combat statistics
 'home_player_activity' => true,   // Activity overview
 
