@@ -251,7 +251,7 @@ if (isset($_GET['logout']) && $_GET['logout'] === 'success') {
         </form>
         
         <div class="footer-links">
-            <a href="<?php echo dirname(dirname($_SERVER['SCRIPT_NAME'])) . '/index.php'; ?>">← Back to Statistics</a>
+            <a href="<?php echo dirname(dirname($_SERVER['SCRIPT_NAME'])) . '../index.php'; ?>">← Back to Statistics</a>
         </div>
         
         <div class="security-notice">

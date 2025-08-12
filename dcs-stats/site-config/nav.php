@@ -24,7 +24,7 @@ if (!isset($currentAdmin)) {
     <nav class="admin-nav">
         <ul>
             <li>
-                <a href="index.php" <?= basename($_SERVER['PHP_SELF']) === 'index.php' ? 'class="active"' : '' ?>>
+                <a href="../index.php" <?= basename($_SERVER['PHP_SELF']) === 'index.php' ? 'class="active"' : '' ?>>
                     <span class="nav-icon">📊</span>
                     Dashboard
                 </a>
