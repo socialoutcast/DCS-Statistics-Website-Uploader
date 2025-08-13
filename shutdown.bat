@@ -1,15 +1,15 @@
 @echo off
 :: ============================================
-:: STOP DCS STATISTICS DASHBOARD
-:: Double-click to stop the application
+:: DCS Statistics Dashboard - Shutdown Script
+:: Professional service termination for Windows
 :: ============================================
 
-title Stopping DCS Statistics Dashboard
+title DCS Statistics Dashboard - Shutdown
 color 0E
 
 echo.
 echo ============================================
-echo    STOPPING DCS STATISTICS DASHBOARD
+echo    DCS Statistics Dashboard - Shutdown
 echo ============================================
 echo.
 
@@ -27,7 +27,7 @@ if %errorlevel% equ 0 (
     echo ============================================
     echo.
     echo The DCS Statistics Dashboard has been stopped.
-    echo You can start it again by running START-HERE.bat
+    echo You can start it again by running launch.bat
     echo.
 ) else (
     color 0C

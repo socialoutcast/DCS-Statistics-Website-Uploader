@@ -1,16 +1,16 @@
 @echo off
 :: ============================================
-:: DCS STATISTICS - ONE CLICK STARTUP
-:: Just double-click this file to run everything!
+:: DCS Statistics Dashboard - Launch Script
+:: Professional deployment automation for Windows
 :: ============================================
 
-title DCS Statistics Dashboard - Starting...
+title DCS Statistics Dashboard - Launch
 color 0A
 
 echo.
 echo ============================================
-echo    DCS STATISTICS DASHBOARD LAUNCHER
-echo          Simple One-Click Setup
+echo    DCS Statistics Dashboard v1.0.0
+echo       Professional Deployment System
 echo ============================================
 echo.
 
@@ -141,7 +141,7 @@ if %errorlevel% equ 0 (
     echo.
     echo Dashboard URL: http://localhost:%PORT%
     echo.
-    echo To stop: Close this window or press Ctrl+C
+    echo To stop the application: Run shutdown.bat
     echo.
     echo ============================================
     echo.

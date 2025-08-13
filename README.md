@@ -49,19 +49,19 @@ Experience a professional-grade statistics platform featuring:
 
 #### Option 1: Docker (Easiest - One Click!)
 
-**🎯 For Windows Users - SUPER SIMPLE:**
+**🎯 For Windows Users:**
 1. **Install Docker Desktop** from [docker.com](https://www.docker.com/products/docker-desktop/) (if not installed)
 2. **Extract the downloaded folder**
-3. **Double-click `START-HERE.bat`**
+3. **Double-click `launch.bat`**
 4. **That's it!** Your browser will open automatically
 
-The `START-HERE.bat` file handles EVERYTHING:
+The `launch.bat` file handles everything automatically:
 - ✅ Checks if Docker is installed
 - ✅ Starts Docker Desktop if needed
 - ✅ Fixes any Windows issues automatically
 - ✅ Configures everything for you
 - ✅ Opens your browser when ready
-- ✅ No technical knowledge required!
+- ✅ Professional deployment process
 
 **For Linux/Mac Users:**
 ```bash
