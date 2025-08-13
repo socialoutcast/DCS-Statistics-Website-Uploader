@@ -1,11 +1,18 @@
 @echo off
-:: DCS Statistics Docker Startup - Windows Batch Wrapper
+:: Windows Docker Issues Fix - Batch Wrapper
 :: This file automatically handles PowerShell execution policy
 :: Users can double-click this file or run it from command prompt
 
 echo ========================================
-echo DCS Statistics Docker Startup
+echo Windows Docker Issues Fix Script
 echo ========================================
+echo.
+echo This script will:
+echo - Fix line endings for Docker files
+echo - Check Docker Desktop status
+echo - Create required directories
+echo - Set up .env file if missing
+echo - Clean up Docker networks
 echo.
 
 :: Check if PowerShell is available
@@ -18,24 +25,20 @@ if %errorlevel% neq 0 (
 )
 
 :: Run the PowerShell script with bypassed execution policy
-:: Pass all command line arguments to the PowerShell script
-echo Starting Docker containers...
+echo Running diagnostics and fixes...
 echo.
 
-powershell.exe -ExecutionPolicy Bypass -NoProfile -File "%~dp0docker-start.ps1" %*
+powershell.exe -ExecutionPolicy Bypass -NoProfile -File "%~dp0fix-windows-issues.ps1" %*
 
 :: Check if the script ran successfully
 if %errorlevel% neq 0 (
     echo.
-    echo ERROR: Docker startup failed. See error messages above.
-    echo.
-    echo Common solutions:
-    echo - Make sure Docker Desktop is running
-    echo - Run fix-windows-issues.bat first
-    echo - Check if port 8080 is available
+    echo ERROR: Fix script encountered an error. See messages above.
     pause
     exit /b %errorlevel%
 )
 
-:: Success message is handled by the PowerShell script
+echo.
+echo Ready to start Docker? Run docker-start.bat
+echo.
 pause

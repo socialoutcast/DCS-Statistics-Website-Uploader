@@ -58,26 +58,25 @@ Experience a professional-grade statistics platform featuring:
 #### Option 2: Docker Deployment (Zero Configuration!)
 
 **For Windows Users:**
-```powershell
-# Navigate to the extracted folder
-cd DCS-Statistics-Dashboard
 
-# Fix any Windows-specific issues first (recommended)
-# If you get "running scripts is disabled" error, run this instead:
-powershell -ExecutionPolicy Bypass -File .\fix-windows-issues.ps1
-
-# Start with Docker
-# If you get execution policy error here too:
-powershell -ExecutionPolicy Bypass -File .\docker-start.ps1
+**Easy Method (No PowerShell issues!):**
+```batch
+# Just double-click or run these batch files:
+fix-windows-issues.bat    # Fixes Docker issues (run first)
+docker-start.bat          # Starts the application
 
 # Access at http://localhost:8080
 ```
 
-**PowerShell Execution Policy Note:**
-If you encounter "running scripts is disabled on this system" error, you have these options:
-1. **Quick Fix (Recommended):** Use the bypass commands shown above
-2. **Permanent Fix:** Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-3. **Alternative:** Right-click the .ps1 files > Properties > Check "Unblock" > Apply
+**Alternative PowerShell Method:**
+```powershell
+# Navigate to the extracted folder
+cd DCS-Statistics-Dashboard
+
+# If you prefer PowerShell directly:
+powershell -ExecutionPolicy Bypass -File .\fix-windows-issues.ps1
+powershell -ExecutionPolicy Bypass -File .\docker-start.ps1
+```
 
 **For Linux/Mac Users:**
 ```bash
