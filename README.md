@@ -58,8 +58,9 @@ Experience a professional-grade statistics platform featuring:
 #### Option 2: Docker Deployment (Zero Configuration!)
 
 ```bash
-# Clone the repository
-git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
+# Download and extract latest release
+curl -L -o DCS-Statistics-Dashboard.zip https://github.com/Penfold-88/DCS-Statistics-Website-Uploader/releases/latest/download/DCS-Statistics-Dashboard.zip
+unzip DCS-Statistics-Dashboard.zip
 cd DCS-Statistics-Dashboard
 
 # Start with Docker (that's it!)
@@ -172,8 +173,9 @@ Our Docker deployment includes intelligent launcher scripts that handle everythi
 
 **Windows PowerShell:**
 ```powershell
-# Clone and navigate to repository
-git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
+# Download and extract latest release
+Invoke-WebRequest -Uri "https://github.com/Penfold-88/DCS-Statistics-Website-Uploader/releases/latest/download/DCS-Statistics-Dashboard.zip" -OutFile "DCS-Statistics-Dashboard.zip"
+Expand-Archive -Path "DCS-Statistics-Dashboard.zip" -DestinationPath "."
 cd DCS-Statistics-Dashboard
 
 # Run the launcher
@@ -188,18 +190,20 @@ cd DCS-Statistics-Dashboard
 
 **Windows Command Prompt (Batch):**
 ```batch
-# Clone and navigate to repository
-git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
+REM Download latest release using PowerShell from CMD
+powershell -Command "Invoke-WebRequest -Uri 'https://github.com/Penfold-88/DCS-Statistics-Website-Uploader/releases/latest/download/DCS-Statistics-Dashboard.zip' -OutFile 'DCS-Statistics-Dashboard.zip'"
+powershell -Command "Expand-Archive -Path 'DCS-Statistics-Dashboard.zip' -DestinationPath '.'"
 cd DCS-Statistics-Dashboard
 
-# Run the launcher (double-click or run in cmd)
+REM Run the launcher (double-click or run in cmd)
 docker-start.bat
 ```
 
 **Linux/macOS (Bash):**
 ```bash
-# Clone and navigate to repository
-git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
+# Download and extract latest release
+curl -L -o DCS-Statistics-Dashboard.zip https://github.com/Penfold-88/DCS-Statistics-Website-Uploader/releases/latest/download/DCS-Statistics-Dashboard.zip
+unzip DCS-Statistics-Dashboard.zip
 cd DCS-Statistics-Dashboard
 
 # Make script executable (first time only)
@@ -218,8 +222,15 @@ chmod +x docker-start.sh
 #### Option 2: Manual Docker Commands
 
 ```bash
-# Clone the repository
-git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
+# Download and extract latest release
+# Linux/macOS:
+curl -L -o DCS-Statistics-Dashboard.zip https://github.com/Penfold-88/DCS-Statistics-Website-Uploader/releases/latest/download/DCS-Statistics-Dashboard.zip
+unzip DCS-Statistics-Dashboard.zip
+
+# Windows PowerShell:
+# Invoke-WebRequest -Uri "https://github.com/Penfold-88/DCS-Statistics-Website-Uploader/releases/latest/download/DCS-Statistics-Dashboard.zip" -OutFile "DCS-Statistics-Dashboard.zip"
+# Expand-Archive -Path "DCS-Statistics-Dashboard.zip" -DestinationPath "."
+
 cd DCS-Statistics-Dashboard
 
 # Build and start (always use no-cache for consistent builds)
