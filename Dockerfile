@@ -141,9 +141,20 @@ COPY --chown=root:root <<'EOF' /usr/local/bin/start.sh
 #!/bin/sh
 set -e
 
+# Detect if running on Windows (Docker Desktop)
+IS_WINDOWS_HOST=false
+if [ -f /proc/version ] && grep -qi microsoft /proc/version; then
+    IS_WINDOWS_HOST=true
+    echo "Detected Windows host (WSL2 backend)"
+fi
+
 # Determine which user to run as
-if [ "$RUN_AS_ROOT" = "true" ]; then
-    echo "WARNING: Running as root user (not recommended for production)"
+if [ "$RUN_AS_ROOT" = "true" ] || [ "$IS_WINDOWS_HOST" = "true" ]; then
+    if [ "$IS_WINDOWS_HOST" = "true" ]; then
+        echo "Windows host detected - running as root for volume compatibility"
+    else
+        echo "WARNING: Running as root user (not recommended for production)"
+    fi
     RUNTIME_USER="root"
     # Update nginx to run as root (remove existing user directive first)
     sed -i '/^user /d' /etc/nginx/nginx.conf

@@ -57,21 +57,37 @@ Experience a professional-grade statistics platform featuring:
 
 #### Option 2: Docker Deployment (Zero Configuration!)
 
+**For Windows Users:**
+```powershell
+# Navigate to the extracted folder
+cd DCS-Statistics-Dashboard
+
+# Fix any Windows-specific issues first (recommended)
+.\fix-windows-issues.ps1
+
+# Start with Docker
+.\docker-start.ps1
+
+# Access at http://localhost:8080
+```
+
+**For Linux/Mac Users:**
 ```bash
 # Navigate to the extracted folder
 cd DCS-Statistics-Dashboard
 
-# Start with Docker (that's it!)
-docker compose up -d
+# Start with Docker
+./docker-start.sh
 
 # Access at http://localhost:8080
 ```
 
 The Docker setup automatically:
 - ✅ Creates all required directories
-- ✅ Sets proper permissions
+- ✅ Sets proper permissions (handled automatically on Windows)
 - ✅ Initializes the database
 - ✅ Configures the web server
+- ✅ Finds available ports if defaults are in use
 - ✅ No manual configuration needed!
 
 ### ⚙️ First-Time Setup
@@ -153,7 +169,9 @@ Our Docker deployment includes intelligent launcher scripts that handle everythi
 #### Windows Requirements
 - **Docker Desktop for Windows** (includes Docker Compose)
 - **PowerShell** (pre-installed) or **Command Prompt**
+- **WSL2 backend** enabled in Docker Desktop (recommended for performance)
 - No administrator privileges required
+- Run `.\fix-windows-issues.ps1` first to auto-fix common Windows issues
 
 #### Linux Requirements  
 - **Docker Engine** and **Docker Compose**
@@ -173,6 +191,9 @@ Our Docker deployment includes intelligent launcher scripts that handle everythi
 ```powershell
 # Navigate to the extracted folder
 cd DCS-Statistics-Dashboard
+
+# Fix Windows-specific issues first (recommended)
+.\fix-windows-issues.ps1
 
 # Run the launcher
 .\docker-start.ps1
@@ -292,21 +313,43 @@ docker compose up -d
 
 ### 🔍 Troubleshooting Docker Deployment
 
+#### Windows-Specific Issues
+
+**"Invalid pool request" Error:**
+- Fixed in this version - network configuration simplified
+- Run `.\fix-windows-issues.ps1` to ensure proper setup
+
+**Line Ending Issues (CRLF vs LF):**
+```powershell
+# Auto-fix all line endings
+.\fix-windows-issues.ps1
+```
+
+**Permission/Volume Issues:**
+- Container automatically detects Windows and adjusts permissions
+- No manual intervention needed
+
+**Docker Desktop Not Running:**
+```powershell
+# The fix script will detect and prompt to start Docker Desktop
+.\fix-windows-issues.ps1
+```
+
 #### Port Already in Use
 The launcher scripts automatically find an available port. If running manually:
 ```bash
 # Check what's using port 8080
 # Linux/Mac
 lsof -i :8080
-# Windows
-netstat -ano | findstr :8080
+# Windows PowerShell
+Get-NetTCPConnection -LocalPort 8080
 
 # Use a different port
 WEB_PORT=8090 docker compose up -d
 ```
 
 #### Docker Not Found
-- **Windows**: Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+- **Windows**: Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) and enable WSL2 backend
 - **Linux**: Install Docker Engine and Docker Compose
 - **macOS**: Install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
 
@@ -322,6 +365,9 @@ newgrp docker
 ```bash
 # Check logs for errors
 docker compose logs
+
+# Windows: Fix common issues first
+.\fix-windows-issues.ps1
 
 # Rebuild from scratch
 docker compose down
