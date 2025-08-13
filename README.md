@@ -140,32 +140,121 @@ Pre-built professional themes included:
 
 ## 🐳 Docker Deployment
 
-### Zero-Configuration Setup
+### 🚀 Zero-Configuration Setup with Smart Launchers
 
-Our Docker setup is completely automated - just run and go!
+Our Docker deployment includes intelligent launcher scripts that handle everything automatically:
+- ✅ **Automatic Port Management** - Finds available ports if 8080 is in use
+- ✅ **Docker Installation Check** - Verifies Docker and Docker Compose are installed
+- ✅ **Container Management** - Handles existing containers gracefully
+- ✅ **Network Discovery** - Shows local, network, and external access URLs
+- ✅ **No-Cache Builds** - Always uses the latest configuration
+
+### 📋 Prerequisites by Operating System
+
+#### Windows Requirements
+- **Docker Desktop for Windows** (includes Docker Compose)
+- **PowerShell** (pre-installed) or **Command Prompt**
+- No administrator privileges required
+
+#### Linux Requirements  
+- **Docker Engine** and **Docker Compose**
+- **bash** shell (pre-installed on most distributions)
+- Port checking tools: `lsof`, `ss`, or `netstat` (usually pre-installed)
+
+#### macOS Requirements
+- **Docker Desktop for Mac** (includes Docker Compose)
+- **Terminal** application (pre-installed)
+- No additional tools required
+
+### 🎯 Quick Start - Choose Your Method
+
+#### Option 1: Use Smart Launcher Scripts (Recommended)
+
+**Windows PowerShell:**
+```powershell
+# Clone and navigate to repository
+git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
+cd DCS-Statistics-Dashboard
+
+# Run the launcher
+.\docker-start.ps1
+
+# Other commands
+.\docker-start.ps1 stop      # Stop the container
+.\docker-start.ps1 restart   # Restart the container
+.\docker-start.ps1 status    # Check if running
+.\docker-start.ps1 logs      # View live logs
+```
+
+**Windows Command Prompt (Batch):**
+```batch
+# Clone and navigate to repository
+git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
+cd DCS-Statistics-Dashboard
+
+# Run the launcher (double-click or run in cmd)
+docker-start.bat
+```
+
+**Linux/macOS (Bash):**
+```bash
+# Clone and navigate to repository
+git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
+cd DCS-Statistics-Dashboard
+
+# Make script executable (first time only)
+chmod +x docker-start.sh
+
+# Run the launcher
+./docker-start.sh
+
+# Other commands
+./docker-start.sh stop      # Stop the container
+./docker-start.sh restart   # Restart the container  
+./docker-start.sh status    # Check if running
+./docker-start.sh logs      # View live logs
+```
+
+#### Option 2: Manual Docker Commands
 
 ```bash
 # Clone the repository
 git clone https://github.com/Penfold-88/DCS-Statistics-Dashboard.git
 cd DCS-Statistics-Dashboard
 
-# Start the container (that's it!)
+# Build and start (always use no-cache for consistent builds)
+docker compose build --no-cache
 docker compose up -d
 
 # Access at http://localhost:8080
 ```
 
-### What Docker Does Automatically
+### 🎨 What the Launcher Scripts Do
 
-✅ **Directory Creation** - All folders created with correct permissions  
-✅ **File Permissions** - Automatically set for web server access  
-✅ **Database Init** - User database created if not exists  
-✅ **Config Templates** - Default configs generated  
-✅ **Health Checks** - Monitors container status  
-✅ **Auto-Restart** - Recovers from crashes  
-✅ **Volume Persistence** - Data survives container updates  
+1. **Check Docker Installation** - Verify Docker and Docker Compose are available
+2. **Port Availability** - Check if port 8080 is free, find alternative if not
+3. **Container Management** - Stop any existing containers before starting
+4. **Build Fresh** - Always build with `--no-cache` for consistency
+5. **Network Discovery** - Display all available access URLs:
+   - Local: `http://localhost:PORT`
+   - Network: `http://YOUR_NETWORK_IP:PORT`
+   - External: `http://YOUR_PUBLIC_IP:PORT` (requires port forwarding)
+6. **Port Forwarding Guide** - Show router configuration instructions if needed
 
-### Docker Commands
+### 📊 Launcher Features Comparison
+
+| Feature | PowerShell (.ps1) | Batch (.bat) | Bash (.sh) |
+|---------|------------------|--------------|------------|
+| Port Auto-Selection | ✅ | ✅ | ✅ |
+| Network IP Discovery | ✅ | ✅ | ✅ |
+| External IP Lookup | ✅ | ✅ | ✅ |
+| Colored Output | ✅ | ✅* | ✅ |
+| Command Arguments | ✅ | ❌ | ✅ |
+| Health Check | ✅ | ✅ | ✅ |
+
+*Windows 10+ with ANSI support
+
+### 🛠️ Manual Docker Commands
 
 ```bash
 # View logs
@@ -175,19 +264,74 @@ docker compose logs -f
 docker compose down
 
 # Update to latest version
-docker compose pull
+git pull
+docker compose build --no-cache
 docker compose up -d
 
 # Access container shell
 docker compose exec dcs-stats-web bash
+
+# Check container status
+docker ps -a | grep dcs-statistics
 ```
 
-### Custom Ports
+### 🔧 Custom Port Configuration
 
-Edit `.env` file:
+The launcher scripts automatically handle port selection, but you can set a preferred port:
+
+**Method 1: Edit `.env` file**
 ```bash
-# Change from default 8080
-WEB_PORT=8090
+# Create or edit .env file
+echo "WEB_PORT=8090" > .env
+
+# Run launcher - it will use 8090 or find next available
+./docker-start.sh  # or .\docker-start.ps1 on Windows
+```
+
+**Method 2: Manual Docker Compose**
+```bash
+# Set port and start
+export WEB_PORT=8090
+docker compose up -d
+```
+
+### 🔍 Troubleshooting Docker Deployment
+
+#### Port Already in Use
+The launcher scripts automatically find an available port. If running manually:
+```bash
+# Check what's using port 8080
+# Linux/Mac
+lsof -i :8080
+# Windows
+netstat -ano | findstr :8080
+
+# Use a different port
+WEB_PORT=8090 docker compose up -d
+```
+
+#### Docker Not Found
+- **Windows**: Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/)
+- **Linux**: Install Docker Engine and Docker Compose
+- **macOS**: Install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
+
+#### Permission Denied (Linux)
+```bash
+# Add user to docker group
+sudo usermod -aG docker $USER
+# Log out and back in, or run
+newgrp docker
+```
+
+#### Container Won't Start
+```bash
+# Check logs for errors
+docker compose logs
+
+# Rebuild from scratch
+docker compose down
+docker compose build --no-cache
+docker compose up -d
 ```
 
 ## 🔒 Security Features
