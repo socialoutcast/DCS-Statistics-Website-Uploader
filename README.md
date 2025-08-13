@@ -63,13 +63,21 @@ Experience a professional-grade statistics platform featuring:
 cd DCS-Statistics-Dashboard
 
 # Fix any Windows-specific issues first (recommended)
-.\fix-windows-issues.ps1
+# If you get "running scripts is disabled" error, run this instead:
+powershell -ExecutionPolicy Bypass -File .\fix-windows-issues.ps1
 
 # Start with Docker
-.\docker-start.ps1
+# If you get execution policy error here too:
+powershell -ExecutionPolicy Bypass -File .\docker-start.ps1
 
 # Access at http://localhost:8080
 ```
+
+**PowerShell Execution Policy Note:**
+If you encounter "running scripts is disabled on this system" error, you have these options:
+1. **Quick Fix (Recommended):** Use the bypass commands shown above
+2. **Permanent Fix:** Run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+3. **Alternative:** Right-click the .ps1 files > Properties > Check "Unblock" > Apply
 
 **For Linux/Mac Users:**
 ```bash

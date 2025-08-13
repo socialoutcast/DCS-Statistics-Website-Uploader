@@ -1,5 +1,12 @@
 # DCS Statistics Docker Startup Script for Windows PowerShell
 # This script handles port availability checking and automatic port selection
+#
+# EXECUTION POLICY ERROR FIX:
+# If you get "running scripts is disabled on this system" error, run:
+#   powershell -ExecutionPolicy Bypass -File .\docker-start.ps1
+#
+# Or permanently allow scripts for current user:
+#   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 param(
     [Parameter(Position=0)]
