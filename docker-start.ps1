@@ -61,6 +61,16 @@ function Get-CurrentPort {
         if ($content) {
             return [int]($content -replace "WEB_PORT=", "")
         }
+    } else {
+        # .env file doesn't exist
+        if (Test-Path ".env.example") {
+            Write-Warning "No .env file? Bold choice..."
+            Write-Host "🤓 BTW, " -NoNewline
+            Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host " creates one for you"
+            Write-Host "   (Just a thought, no pressure...)"
+            Write-Host ""
+        }
     }
     return $DefaultPort
 }
@@ -98,9 +108,15 @@ function Test-DockerInstalled {
             throw "Docker not found"
         }
         
-        $null = docker info 2>&1
+        # Check if Docker daemon is running
+        $dockerInfo = docker info 2>&1
         if ($LASTEXITCODE -ne 0) {
-            throw "Docker daemon not running"
+            # Check if it's a permission issue on Windows
+            if ($dockerInfo -match "permission denied" -or $dockerInfo -match "Access is denied") {
+                throw "Docker daemon is playing hard to get. Is Docker Desktop actually running? 🤔"
+            } else {
+                throw "Docker daemon is having a nap. Wake up Docker Desktop first! ☕"
+            }
         }
         
         # Check for docker-compose or docker compose
@@ -120,6 +136,10 @@ function Test-DockerInstalled {
     }
     catch {
         Write-Error $_.Exception.Message
+        if ($_.Exception.Message -match "Docker Desktop") {
+            Write-Host ""
+            Write-Host "Please install Docker Desktop from: https://www.docker.com/products/docker-desktop/" -ForegroundColor Yellow
+        }
         return $false
     }
 }
@@ -215,6 +235,24 @@ function Start-DCSStatistics {
     Write-Host "========================================"
     Write-Host ""
     
+    # Quick check for common issues
+    $needsFix = $false
+    if (-not (Test-Path $EnvFile) -and (Test-Path ".env.example")) {
+        $needsFix = $true
+    }
+    if (-not (Test-Path ".\dcs-stats\data")) {
+        $needsFix = $true
+    }
+    
+    if ($needsFix) {
+        Write-Warning "Hold up! Looks like this is your first rodeo..."
+        Write-Host "💅 Just FYI: " -NoNewline
+        Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+        Write-Host " exists for a reason"
+        Write-Host "   (It's like a pre-flight check, but cooler)"
+        Write-Host ""
+    }
+    
     # Check if running as administrator (informational only)
     $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
     if ($isAdmin) {
@@ -224,7 +262,10 @@ function Start-DCSStatistics {
     # Check Docker installation
     Write-Info "Checking Docker installation..."
     if (-not (Test-DockerInstalled)) {
-        Write-Error "Please install Docker Desktop for Windows"
+        Write-Error "Docker's not home right now..."
+        Write-Host "🫠 Once you get Docker Desktop installed, there's " -NoNewline
+        Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan
+        Write-Host "   (It'll make sure everything's perfect for Windows)"
         return
     }
     Write-Success "Docker is installed and running"
@@ -252,6 +293,10 @@ function Start-DCSStatistics {
         $selectedPort = Find-AvailablePort -StartPort $desiredPort
         if (-not $selectedPort) {
             Write-Error "No available ports found in range $desiredPort-$($desiredPort + 100)"
+            Write-Host "😤 Wow, ALL those ports are taken? That's... impressive"
+            Write-Host "   Maybe " -NoNewline
+            Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host " can help clear things up?"
             return
         }
         
@@ -264,20 +309,77 @@ function Start-DCSStatistics {
     # Build and start container
     Write-Info "Building Docker image (this may take a few minutes on first run)..."
     
-    & $ComposeCmd build --no-cache 2>&1 | Out-Null
+    $buildOutput = & $ComposeCmd build --no-cache 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to build Docker image"
-        Write-Host "Run '$ComposeCmd build --no-cache' to see detailed error"
+        
+        # Check for common issues that fix script would solve
+        $buildError = $buildOutput -join " "
+        if ($buildError -match "invalid pool" -or $buildError -match "pool request") {
+            Write-Warning "Oh snap! Network configuration went sideways!"
+            Write-Host "🙄 There's a script for that: " -NoNewline
+            Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host ""
+            Write-Host "   (It literally fixes this in 2 seconds, just saying...)"
+        }
+        elseif ($buildError -match "no such file" -or $buildError -match "not found") {
+            Write-Warning "Uh-oh! Missing some directories here!"
+            Write-Host "🤔 Fun fact: " -NoNewline
+            Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host " creates these for you"
+            Write-Host "   (But hey, who reads documentation, right?)"
+        }
+        elseif ($buildError -match "/bin/sh" -or $buildError -match "exec format") {
+            Write-Warning "Classic Windows vs Linux line endings drama!"
+            Write-Host "😏 Psst... " -NoNewline
+            Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host " sorts this out automatically"
+            Write-Host "   (Windows being Windows, as usual...)"
+        }
+        else {
+            Write-Host "🤯 Well, that's a new one! Haven't seen this error before..."
+            Write-Host "   Maybe try " -NoNewline
+            Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host " first? It fixes most things"
+            Write-Host "   (Or run '$ComposeCmd build --no-cache' for the gory details)"
+        }
         return
     }
     Write-Success "Docker image built successfully"
     
     Write-Info "Starting container..."
     
-    & $ComposeCmd up -d 2>&1 | Out-Null
+    $startOutput = & $ComposeCmd up -d 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to start container"
-        Write-Host "Run '$ComposeCmd up' to see detailed error"
+        
+        # Check for common issues
+        $startError = $startOutput -join " "
+        if ($startError -match "permission denied" -or $startError -match "access denied") {
+            Write-Warning "Permission denied! The Docker gods are angry!"
+            Write-Host "🎭 Plot twist: " -NoNewline
+            Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host " handles permissions"
+            Write-Host "   (I know, I know... should've mentioned it earlier)"
+        }
+        elseif ($startError -match "network .* not found") {
+            Write-Warning "Docker networks playing hide and seek again!"
+            Write-Host "🎯 Pro tip: " -NoNewline
+            Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host " cleans these up"
+            Write-Host "   (It's like a spa day for your Docker networks)"
+        }
+        elseif ($startError -match "port is already allocated" -or $startError -match "bind: address already in use") {
+            Write-Warning "Port $selectedPort is being a diva - says it's already taken!"
+            Write-Host "🤷 That's awkward... I usually catch this. Try running again?"
+            Write-Host "   (Sometimes ports are just moody like that)"
+        }
+        else {
+            Write-Host "🫨 Something weird happened... and not the good kind of weird"
+            Write-Host "   First aid kit: " -NoNewline
+            Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan
+            Write-Host "   (If that doesn't help, run '$ComposeCmd up' for the full drama)"
+        }
         return
     }
     Write-Success "Container started successfully"
@@ -294,8 +396,10 @@ function Start-DCSStatistics {
         }
     }
     catch {
-        Write-Warning "Service may still be starting up..."
-        Write-Host "Check the logs with: .\docker-start.ps1 logs"
+        Write-Warning "Service is being shy... might still be waking up"
+        Write-Host "🔍 Check the logs with: " -NoNewline
+        Write-Host ".\docker-start.ps1 logs" -ForegroundColor Cyan
+        Write-Host "   (Or just wait a sec and refresh the browser)"
     }
     
     Show-AccessInfo -Port $selectedPort
