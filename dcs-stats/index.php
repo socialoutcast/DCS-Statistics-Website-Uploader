@@ -101,7 +101,7 @@ if (!$isConfigured):
         </div>
         <?php endif; ?>
         
-        <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('home_top_squadrons')): ?>
+        <?php if (isFeatureEnabled('squadrons_enabled') && isFeatureEnabled('credits_enabled') && isFeatureEnabled('home_top_squadrons')): ?>
         <div class="chart-container" title="Shows the top 3 squadrons based on member activity and performance">
             <h2>Top 3 Most Active Squadrons <span class="chart-info">ⓘ</span></h2>
             <canvas id="topSquadronsChart"></canvas>
