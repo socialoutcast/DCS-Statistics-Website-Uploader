@@ -108,7 +108,7 @@ function loadSiteFeatures() {
         
         // Custom Links
         'show_squadron_homepage' => false,
-        'discord_link_url' => $siteConfig['discord_invite_url'] ?? 'https://discord.gg/DNENf6pUNX',
+        'discord_link_url' => $siteConfig['discord_invite_url'] ?? '',
         'squadron_homepage_url' => '',
         'squadron_homepage_text' => 'Squadron'
     ];

@@ -176,10 +176,9 @@ class DCSServerBotAPIClient {
      * This will need to be adjusted based on available API endpoints
      */
     public function searchPlayers($query) {
-        // For now, we'll need to implement this differently
-        // Perhaps by getting all players and filtering client-side
-        // or requesting this feature in the API
-        throw new Exception('Player search not yet implemented in API');
+        // This method is deprecated - use makeRequest directly
+        // See search_players_api.php for the actual implementation
+        return $this->makeRequest('POST', '/getuser', ['nick' => $query]);
     }
     
     /**
@@ -187,8 +186,9 @@ class DCSServerBotAPIClient {
      * This endpoint doesn't exist in the current API
      */
     public function getCredits() {
-        // This will need a custom endpoint or different approach
-        throw new Exception('Credits endpoint not yet available in API');
+        // This method is deprecated - use makeRequest directly
+        // See get_credits_api.php for the actual implementation
+        return $this->makeRequest('POST', '/credits', []);
     }
     
     /**
@@ -196,8 +196,9 @@ class DCSServerBotAPIClient {
      * This endpoint doesn't exist in the current API
      */
     public function getSquadrons() {
-        // This will need a custom endpoint or different approach
-        throw new Exception('Squadron endpoint not yet available in API');
+        // This method is deprecated - use makeRequest directly
+        // See get_squadrons_api.php for the actual implementation
+        return $this->makeRequest('GET', '/squadrons');
     }
     
     /**
@@ -205,8 +206,9 @@ class DCSServerBotAPIClient {
      * This endpoint doesn't exist in the current API
      */
     public function getServers() {
-        // This will need a custom endpoint or different approach
-        throw new Exception('Server info endpoint not yet available in API');
+        // This method is deprecated - use makeRequest directly
+        // See get_servers_api.php for the actual implementation
+        return $this->makeRequest('GET', '/servers');
     }
     
     /**
