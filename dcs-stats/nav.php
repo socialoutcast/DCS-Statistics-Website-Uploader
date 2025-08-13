@@ -7,7 +7,8 @@ if (!defined('BASE_PATH')) {
 }
 
 // Get writable path for menu configuration (same logic as in themes.php)
-function getMenuConfigPath() {
+if (!function_exists('getMenuConfigPath')) {
+    function getMenuConfigPath() {
     // Try primary location with data directory
     $primaryPath = __DIR__ . '/site-config/data/menu_config.json';
     $primaryDir = dirname($primaryPath);
@@ -38,6 +39,7 @@ function getMenuConfigPath() {
     }
     
     return $tempDir . '/menu_config.json';
+    }
 }
 
 // Load menu configuration
@@ -66,14 +68,18 @@ foreach ($menuItems as $item) {
     if (($item['type'] ?? '') === 'squadron_homepage') $hasSquadronInMenu = true;
 }
 
-// Add Discord if enabled but not in menu
+// Add Discord if enabled but not in menu AND has a valid URL configured
 if (!$hasDiscordInMenu && isFeatureEnabled('show_discord_link')) {
-    $menuItems[] = [
-        'name' => 'Discord',
-        'url' => getFeatureValue('discord_link_url', 'https://discord.gg/DNENf6pUNX'),
-        'enabled' => true,
-        'type' => 'discord'
-    ];
+    $discordUrl = getFeatureValue('discord_link_url', '');
+    // Only add Discord menu item if URL is not empty
+    if (!empty($discordUrl)) {
+        $menuItems[] = [
+            'name' => 'Discord',
+            'url' => $discordUrl,
+            'enabled' => true,
+            'type' => 'discord'
+        ];
+    }
 }
 
 // Add Squadron Homepage if enabled but not in menu
@@ -105,8 +111,12 @@ if (!$hasSquadronInMenu && isFeatureEnabled('show_squadron_homepage') && !empty(
             $showItem = false;
         } elseif ($item['url'] === 'squadrons.php' && !isFeatureEnabled('squadrons_enabled')) {
             $showItem = false;
-        } elseif ($itemType === 'discord' && !isFeatureEnabled('show_discord_link')) {
-            $showItem = false;
+        } elseif ($itemType === 'discord') {
+            // Check if Discord is enabled AND has a valid URL
+            $discordUrl = getFeatureValue('discord_link_url', '');
+            if (!isFeatureEnabled('show_discord_link') || empty($discordUrl)) {
+                $showItem = false;
+            }
         } elseif ($itemType === 'squadron_homepage' && (!isFeatureEnabled('show_squadron_homepage') || empty(getFeatureValue('squadron_homepage_url')))) {
             $showItem = false;
         }

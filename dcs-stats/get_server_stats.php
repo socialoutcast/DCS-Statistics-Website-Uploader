@@ -53,9 +53,9 @@ try {
         }
     }
     
-    // Sort by kills (visits) and get top 5
+    // Sort by kills and get top 5
     usort($pilotStats, function($a, $b) {
-        return $b['visits'] - $a['visits'];
+        return $b['kills'] - $a['kills'];
     });
     $top5Pilots = array_slice($pilotStats, 0, 5);
     

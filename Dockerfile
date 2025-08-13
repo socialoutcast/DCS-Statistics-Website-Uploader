@@ -24,9 +24,9 @@ RUN apk add --no-cache \
 RUN addgroup -g 1000 -S www && \
     adduser -u 1000 -S www -G www && \
     mkdir -p /var/www/html /run/nginx /var/log/supervisor /etc/supervisor/conf.d && \
-    mkdir -p /var/lib/nginx/tmp /var/lib/nginx/logs && \
-    touch /var/log/php-fpm.log && \
-    chown -R www:www /var/www /run/nginx /var/log/supervisor /var/lib/nginx /var/log/php-fpm.log
+    mkdir -p /var/lib/nginx/tmp /var/lib/nginx/logs /var/log/nginx && \
+    touch /var/log/php-fpm.log /var/log/nginx/error.log /var/log/nginx/access.log && \
+    chown -R www:www /var/www /run/nginx /var/log/supervisor /var/lib/nginx /var/log/php-fpm.log /var/log/nginx
 
 # Set the working directory
 WORKDIR /var/www/html
@@ -114,19 +114,27 @@ EOF
 
 # PHP-FPM configuration
 RUN { \
+        echo '[global]'; \
+        echo 'error_log = /var/log/php-fpm.log'; \
+        echo 'daemonize = no'; \
         echo '[www]'; \
         echo 'user = www'; \
         echo 'group = www'; \
         echo 'listen = 127.0.0.1:9000'; \
+        echo 'listen.owner = www'; \
+        echo 'listen.group = www'; \
         echo 'pm = dynamic'; \
         echo 'pm.max_children = 50'; \
         echo 'pm.start_servers = 5'; \
         echo 'pm.min_spare_servers = 5'; \
         echo 'pm.max_spare_servers = 35'; \
         echo 'catch_workers_output = yes'; \
+        echo 'access.log = /var/log/php-fpm-access.log'; \
         echo 'php_admin_value[error_log] = /var/log/php-fpm.log'; \
         echo 'php_admin_flag[log_errors] = on'; \
-    } > /usr/local/etc/php-fpm.d/www.conf
+    } > /usr/local/etc/php-fpm.d/www.conf && \
+    touch /var/log/php-fpm-access.log && \
+    chown www:www /var/log/php-fpm-access.log
 
 # Create startup script that handles user switching
 COPY --chown=root:root <<'EOF' /usr/local/bin/start.sh

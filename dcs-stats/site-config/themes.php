@@ -20,7 +20,8 @@ $message = '';
 $error = '';
 
 // Get writable path for menu configuration
-function getMenuConfigPath() {
+if (!function_exists('getMenuConfigPath')) {
+    function getMenuConfigPath() {
     // Try primary location with data directory
     $primaryPath = __DIR__ . '/data/menu_config.json';
     $primaryDir = dirname($primaryPath);
@@ -53,6 +54,7 @@ function getMenuConfigPath() {
     }
     
     return $tempDir . '/menu_config.json';
+    }
 }
 
 // Load site features to check if Discord/Squadron links are enabled
