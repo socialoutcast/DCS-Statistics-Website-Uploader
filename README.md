@@ -45,36 +45,51 @@ Experience a professional-grade statistics platform featuring:
 - ✅ **PHP 8.3+ web server** OR **Docker**
 - ✅ **Web hosting** (shared hosting works Requires Port Forwarding Not All Hosts allow)
 
-### 🚀 Installation Options
+### 🚀 Installation Methods
 
-#### Option 1: Docker (Easiest - One Click!)
+#### Method 1: Docker (Recommended - Fully Automated)
 
-**🎯 For Windows Users:**
-1. **Install Docker Desktop** from [docker.com](https://www.docker.com/products/docker-desktop/) (if not installed)
-2. **Extract the downloaded folder**
-3. **Double-click `launch.bat`**
-4. **That's it!** Your browser will open automatically
+##### **Windows Users - Professional Deployment**
 
-The `launch.bat` file handles everything automatically:
-- ✅ Checks if Docker is installed
-- ✅ Starts Docker Desktop if needed
-- ✅ Fixes any Windows issues automatically
-- ✅ Configures everything for you
-- ✅ Opens your browser when ready
-- ✅ Professional deployment process
+**Quick Start:**
+1. **Install Docker Desktop** from [docker.com](https://www.docker.com/products/docker-desktop/)
+2. **Extract the downloaded folder** to your preferred location
+3. **Run `launch.bat`** - Double-click or run from command prompt
+4. **Browser opens automatically** when ready
 
-**For Linux/Mac Users:**
+**What happens automatically:**
+- ✅ Docker Desktop detection and startup
+- ✅ Windows-specific issue resolution
+- ✅ Environment configuration
+- ✅ Port availability checking (auto-selects if 8080 is busy)
+- ✅ Container initialization
+- ✅ Database setup
+- ✅ Web server configuration
+
+**Managing the Application:**
+- **Start:** Run `launch.bat`
+- **Stop:** Run `shutdown.bat`
+- **Fix Issues:** Run `fix-windows-issues.bat` (if needed)
+
+##### **Linux/Mac Users**
+
 ```bash
 # Navigate to the extracted folder
 cd DCS-Statistics-Dashboard
 
-# Start with Docker
+# Make scripts executable (first time only)
+chmod +x docker-start.sh
+
+# Start the application
 ./docker-start.sh
 
 # Access at http://localhost:8080
+
+# To stop:
+./docker-start.sh stop
 ```
 
-#### Option 2: Traditional Web Hosting
+#### Method 2: Traditional Web Hosting
 
 1. **Download** the latest release and extract
 2. **Upload** the `dcs-stats/` folder to your web server
@@ -82,13 +97,6 @@ cd DCS-Statistics-Dashboard
 4. **Follow the setup wizard** to create your admin account
 5. **Configure** your DCSServerBot API endpoint
 
-The Docker setup automatically:
-- ✅ Creates all required directories
-- ✅ Sets proper permissions (handled automatically on Windows)
-- ✅ Initializes the database
-- ✅ Configures the web server
-- ✅ Finds available ports if defaults are in use
-- ✅ No manual configuration needed!
 
 ### ⚙️ First-Time Setup
 
@@ -106,7 +114,7 @@ The Docker setup automatically:
 
 **🎉 That's it!** Your dashboard now displays real-time data from DCSServerBot.
 
-#### Option 3: Xampp  (Minimal Configuration!)
+#### Method 3: XAMPP (Local Development)
 
 A Full Howto on this can be found in the wiki https://github.com/Penfold-88/DCS-Statistics-Dashboard/wiki
 
@@ -153,39 +161,113 @@ Pre-built professional themes included:
 - 🌙 **Night Ops** - Ultra-dark stealth mode
 - ❄️ **Arctic** - Cool blue winter theme
 
-## 🐳 Docker Deployment
+## 🐳 Docker Deployment Details
 
-### 🚀 Zero-Configuration Setup with Smart Launchers
+### Professional Docker Architecture
 
-Our Docker deployment includes intelligent launcher scripts that handle everything automatically:
-- ✅ **Automatic Port Management** - Finds available ports if 8080 is in use
-- ✅ **Docker Installation Check** - Verifies Docker and Docker Compose are installed
-- ✅ **Container Management** - Handles existing containers gracefully
-- ✅ **Network Discovery** - Shows local, network, and external access URLs
-- ✅ **No-Cache Builds** - Always uses the latest configuration
+Our Docker deployment provides enterprise-grade containerization with intelligent automation:
 
-### 📋 Prerequisites by Operating System
+**Key Features:**
+- 🔧 **Zero-Configuration Deployment** - Works out of the box
+- 🔄 **Automatic Port Management** - Intelligently selects available ports
+- 🛡️ **Container Isolation** - Secure, isolated environment
+- 📊 **Resource Optimization** - Minimal resource usage
+- 🔐 **Security Best Practices** - Non-root containers, network isolation
 
-#### Windows Requirements
-- **Docker Desktop for Windows** (includes Docker Compose)
-- **PowerShell** (pre-installed) or **Command Prompt**
-- **WSL2 backend** enabled in Docker Desktop (recommended for performance)
-- No administrator privileges required
-- Run `.\fix-windows-issues.ps1` first to auto-fix common Windows issues
+### System Requirements
 
-#### Linux Requirements  
-- **Docker Engine** and **Docker Compose**
-- **bash** shell (pre-installed on most distributions)
-- Port checking tools: `lsof`, `ss`, or `netstat` (usually pre-installed)
+**Windows:**
+- Docker Desktop for Windows (includes Docker Compose)
+- Windows 10/11 Pro, Enterprise, or Education (64-bit)
+- WSL2 backend enabled (recommended)
+- 4GB RAM minimum
 
-#### macOS Requirements
-- **Docker Desktop for Mac** (includes Docker Compose)
-- **Terminal** application (pre-installed)
-- No additional tools required
+**Linux:**
+- Docker Engine 20.10+
+- Docker Compose 2.0+
+- Any modern Linux distribution
+- 2GB RAM minimum
 
-### 🎯 Quick Start - Choose Your Method
+**macOS:**
+- Docker Desktop for Mac
+- macOS 10.15 or newer
+- 4GB RAM minimum
 
-#### Option 1: Use Smart Launcher Scripts (Recommended)
+### Docker Commands Reference
+
+**Windows Users (using launch.bat):**
+```batch
+# Start application
+launch.bat
+
+# Stop application  
+shutdown.bat
+
+# Fix common issues
+fix-windows-issues.bat
+
+# Advanced users can use PowerShell scripts directly:
+powershell -ExecutionPolicy Bypass -File .\docker-start.ps1 [start|stop|restart|status|logs]
+```
+
+**Linux/Mac Users:**
+```bash
+# Start application
+./docker-start.sh
+
+# Stop application
+./docker-start.sh stop
+
+# Restart application
+./docker-start.sh restart
+
+# View status
+./docker-start.sh status
+
+# View logs
+./docker-start.sh logs
+```
+
+### Troubleshooting Docker Issues
+
+**Windows Specific Issues:**
+
+1. **"Docker Desktop is not running"**
+   - Solution: `launch.bat` will attempt to start it automatically
+   - Manual: Start Docker Desktop from Start Menu
+
+2. **"Port 8080 is already in use"**
+   - Solution: The scripts automatically find an available port
+   - Manual: Edit `.env` file and change `WEB_PORT=8080` to another port
+
+3. **"Permission denied" errors**
+   - Solution: Run `fix-windows-issues.bat` first
+   - This fixes file permissions and line endings
+
+4. **"WSL2 not installed"**
+   - Solution: Enable WSL2 in Docker Desktop settings
+   - Or run: `wsl --install` in PowerShell as Administrator
+
+**All Platforms:**
+
+1. **Container won't start:**
+   ```bash
+   # Remove old containers
+   docker-compose down
+   docker-compose up --build --no-cache
+   ```
+
+2. **View container logs:**
+   ```bash
+   docker-compose logs -f
+   ```
+
+3. **Reset everything:**
+   ```bash
+   docker-compose down -v
+   docker-compose build --no-cache
+   docker-compose up
+   ```
 
 **Windows PowerShell:**
 ```powershell
