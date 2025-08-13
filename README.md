@@ -47,36 +47,21 @@ Experience a professional-grade statistics platform featuring:
 
 ### 🚀 Installation Options
 
-#### Option 1: Traditional Web Hosting
+#### Option 1: Docker (Easiest - One Click!)
 
-1. **Download** the latest release and extract
-2. **Upload** the `dcs-stats/` folder to your web server
-3. **Access** `https://yourdomain.com/dcs-stats/`
-4. **Follow the setup wizard** to create your admin account
-5. **Configure** your DCSServerBot API endpoint
+**🎯 For Windows Users - SUPER SIMPLE:**
+1. **Install Docker Desktop** from [docker.com](https://www.docker.com/products/docker-desktop/) (if not installed)
+2. **Extract the downloaded folder**
+3. **Double-click `START-HERE.bat`**
+4. **That's it!** Your browser will open automatically
 
-#### Option 2: Docker Deployment (Zero Configuration!)
-
-**For Windows Users:**
-
-**Easy Method (No PowerShell issues!):**
-```batch
-# Just double-click or run these batch files:
-fix-windows-issues.bat    # Fixes Docker issues (run first)
-docker-start.bat          # Starts the application
-
-# Access at http://localhost:8080
-```
-
-**Alternative PowerShell Method:**
-```powershell
-# Navigate to the extracted folder
-cd DCS-Statistics-Dashboard
-
-# If you prefer PowerShell directly:
-powershell -ExecutionPolicy Bypass -File .\fix-windows-issues.ps1
-powershell -ExecutionPolicy Bypass -File .\docker-start.ps1
-```
+The `START-HERE.bat` file handles EVERYTHING:
+- ✅ Checks if Docker is installed
+- ✅ Starts Docker Desktop if needed
+- ✅ Fixes any Windows issues automatically
+- ✅ Configures everything for you
+- ✅ Opens your browser when ready
+- ✅ No technical knowledge required!
 
 **For Linux/Mac Users:**
 ```bash
@@ -88,6 +73,14 @@ cd DCS-Statistics-Dashboard
 
 # Access at http://localhost:8080
 ```
+
+#### Option 2: Traditional Web Hosting
+
+1. **Download** the latest release and extract
+2. **Upload** the `dcs-stats/` folder to your web server
+3. **Access** `https://yourdomain.com/dcs-stats/`
+4. **Follow the setup wizard** to create your admin account
+5. **Configure** your DCSServerBot API endpoint
 
 The Docker setup automatically:
 - ✅ Creates all required directories
