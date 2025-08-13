@@ -4,7 +4,17 @@
  * Handles all API requests from JavaScript, bypassing CORS issues
  */
 
+// Set CORS headers to allow JavaScript access
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Accept');
 header('Content-Type: application/json');
+
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
 
 // Load API configuration
 $configFile = __DIR__ . '/api_config.json';
@@ -50,6 +60,12 @@ curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_TIMEOUT, $apiConfig['timeout'] ?? 30);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 
+// Handle HTTPS properly - allow self-signed certificates for local/dev environments
+if (strpos($url, 'https://') === 0) {
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+}
+
 // Set method and data
 if ($method === 'POST') {
     curl_setopt($ch, CURLOPT_POST, true);
@@ -72,7 +88,22 @@ curl_close($ch);
 // Handle errors
 if ($error) {
     http_response_code(502);
-    echo json_encode(['error' => 'API request failed: ' . $error]);
+    echo json_encode([
+        'error' => 'API request failed: ' . $error,
+        'url' => $url,
+        'method' => $method
+    ]);
+    exit;
+}
+
+// Handle empty responses
+if (empty($response)) {
+    http_response_code(502);
+    echo json_encode([
+        'error' => 'Empty response from API',
+        'url' => $url,
+        'http_code' => $httpCode
+    ]);
     exit;
 }
 

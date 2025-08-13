@@ -7,14 +7,42 @@ class DCSStatsAPI {
     constructor() {
         this.config = null;
         this.configLoaded = false;
-        this.basePath = window.DCS_CONFIG ? window.DCS_CONFIG.basePath : '';
+        this.basePath = this.detectBasePath();
+    }
+    
+    // Auto-detect the base path from current page location
+    detectBasePath() {
+        // First try the configured path
+        if (window.DCS_CONFIG && window.DCS_CONFIG.basePath) {
+            return window.DCS_CONFIG.basePath;
+        }
+        
+        // Otherwise, detect from current page
+        const currentPath = window.location.pathname;
+        const scriptName = currentPath.split('/').pop();
+        
+        // If we're accessing a PHP file, get the directory
+        if (scriptName.endsWith('.php')) {
+            const dirPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+            return dirPath || '';
+        }
+        
+        // Default to current directory
+        return '';
     }
 
     // Helper to build proper URLs
     buildUrl(path) {
-        if (!path) return this.basePath;
+        if (!path) return this.basePath || '';
         const cleanPath = path.replace(/^\//, '');
-        return this.basePath ? `${this.basePath}/${cleanPath}` : `/${cleanPath}`;
+        
+        // If we have a base path, use it
+        if (this.basePath) {
+            return `${this.basePath}/${cleanPath}`;
+        }
+        
+        // Otherwise, just use root
+        return `/${cleanPath}`;
     }
 
     async loadConfig() {
@@ -35,11 +63,14 @@ class DCSStatsAPI {
     async makeDirectAPICall(endpoint, options = {}) {
         const config = await this.loadConfig();
         
+        // Check if we're on HTTPS and trying to access HTTP
+        const isPageSecure = window.location.protocol === 'https:';
+        
         // Determine API base URL
         let apiUrl = config.api_base_url;
         if (!apiUrl && config.api_host) {
-            // Auto-detect protocol
-            const protocols = ['https', 'http'];
+            // If page is HTTPS, don't even try HTTP to avoid mixed content errors
+            const protocols = isPageSecure ? ['https'] : ['https', 'http'];
             for (const protocol of protocols) {
                 try {
                     const testUrl = `${protocol}://${config.api_host}/servers`;
@@ -60,6 +91,11 @@ class DCSStatsAPI {
             if (!apiUrl) {
                 apiUrl = `https://${config.api_host}`; // Default to HTTPS
             }
+        }
+        
+        // If we're on HTTPS and the API URL is HTTP, throw an error to force proxy usage
+        if (isPageSecure && apiUrl && apiUrl.startsWith('http://')) {
+            throw new Error('Cannot access HTTP API from HTTPS page - use proxy');
         }
         
         const url = apiUrl + endpoint;
@@ -156,11 +192,21 @@ class DCSStatsAPI {
         } catch (error) {
             clearTimeout(timeoutId);
             // API proxy call error
+            console.warn('Proxy call failed:', error.message, 'for URL:', proxyUrl);
             
             // If proxy fails, try direct API call (for sites that block PHP calls)
-            if (config.api_base_url || config.api_host) {
-                // Proxy failed, attempting direct API call
-                return this.makeDirectAPICall(endpoint, options);
+            // But only if we're not on HTTPS trying to access HTTP
+            const isPageSecure = window.location.protocol === 'https:';
+            const apiUrl = config.api_base_url || (config.api_host ? `https://${config.api_host}` : '');
+            
+            if (apiUrl && (!isPageSecure || !apiUrl.startsWith('http://'))) {
+                console.log('Proxy failed, attempting direct API call to:', apiUrl + endpoint);
+                try {
+                    return await this.makeDirectAPICall(endpoint, options);
+                } catch (directError) {
+                    console.error('Direct API call also failed:', directError.message);
+                    throw new Error(`Both proxy and direct API calls failed. Proxy: ${error.message}, Direct: ${directError.message}`);
+                }
             }
             
             throw error;
