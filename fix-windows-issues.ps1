@@ -1,5 +1,18 @@
 # Windows Docker Issues Fix Script
 # This script resolves common Docker issues on Windows
+#
+# EXECUTION POLICY ERROR FIX:
+# If you get "running scripts is disabled on this system" error, use ONE of these methods:
+#
+# Method 1 (Recommended - Bypass for this session only):
+#   powershell -ExecutionPolicy Bypass -File .\fix-windows-issues.ps1
+#
+# Method 2 (Set for current user):
+#   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+#   Then run: .\fix-windows-issues.ps1
+#
+# Method 3 (One-time bypass):
+#   Right-click this file > Properties > Check "Unblock" > Apply
 
 param(
     [switch]$Force
