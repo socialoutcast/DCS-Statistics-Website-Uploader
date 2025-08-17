@@ -683,7 +683,7 @@ $pageTitle = 'Theme Management';
                                 </div>
 
                                 <div class="color-input-group">
-                                    <label for="nav_link_color" title="Navigation link text color">Navigation Link Color:</label>
+                                    <label for="nav_link_color" title="Navigation text color">Navigation Text Color:</label>
                                     <input type="color" id="nav_link_color" name="nav_link_color"
                                            value="<?= htmlspecialchars($customColors['nav_link_color']) ?>">
                                 </div>
