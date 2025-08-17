@@ -1,4 +1,4 @@
-# 🎖️ DCS Statistics Website Dashboard
+# 🎖️ DCS Statistics Dashboard
 
 **Transform your DCS server data into a stunning, interactive web dashboard with real-time API integration!**
 
