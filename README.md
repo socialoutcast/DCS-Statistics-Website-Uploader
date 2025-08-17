@@ -11,9 +11,12 @@
 
 ### 🔄 **Latest Updates**
 - 🌐 **Default Port Changed** - Now uses port 9080 (was 8080) to avoid conflicts
-- 🛠️ **Unified Management Script** - Single `dcs-docker-manager.bat` for all Docker operations
-- 🧹 **Complete Cleanup Option** - New `destroy` command removes all Docker artifacts
-- ✈️ **Pre-Flight Checks** - Automated Windows issue detection and resolution
+- 🛠️ **Unified Management Script** - Single `dcs-docker-manager.bat`/`.sh` for all Docker operations
+- 🧹 **Two Cleanup Options** - `destroy` preserves data, `sanitize` removes everything
+- 🚀 **Force Flags** - Add `-f` to skip confirmation prompts for automation
+- 📜 **Improved Logs** - Shows last 100 lines without requiring Ctrl+C to exit
+- 🔨 **Rebuild Command** - Force fresh Docker image builds when needed
+- ✈️ **Pre-Flight Checks** - Automated Windows/Linux issue detection and resolution
 
 ### 🚀 **Advanced Admin Panel**
 - 🎛️ **Role-Based Access Control** - Multi-tier permission system (Air Boss, Squadron Leader, Pilot)
@@ -78,27 +81,29 @@ Experience a professional-grade statistics platform featuring:
 - **Start:** Run `dcs-docker-manager.bat` or `dcs-docker-manager.bat start`
 - **Stop:** Run `dcs-docker-manager.bat stop`
 - **Restart:** Run `dcs-docker-manager.bat restart`
-- **View Logs:** Run `dcs-docker-manager.bat logs`
+- **View Logs:** Run `dcs-docker-manager.bat logs` (shows last 100 lines)
 - **Check Status:** Run `dcs-docker-manager.bat status`
+- **Rebuild Image:** Run `dcs-docker-manager.bat rebuild` (forces fresh Docker build)
 - **Pre-Flight Check:** Run `dcs-docker-manager.bat pre-flight` (recommended for first-time setup)
-- **Complete Removal:** Run `dcs-docker-manager.bat destroy` (removes everything except your data)
+- **Partial Removal:** Run `dcs-docker-manager.bat destroy` (removes everything except your data)
+- **Complete Wipe:** Run `dcs-docker-manager.bat sanitize` (removes EVERYTHING including all data)
 
-##### **Linux/Mac Users**
+##### **Linux Users**
 
 ```bash
 # Navigate to the extracted folder
 cd DCS-Statistics-Dashboard
 
 # Make scripts executable (first time only)
-chmod +x docker-start.sh
+chmod +x dcs-docker-manager.sh
 
 # Start the application
-./docker-start.sh
+./dcs-docker-manager.sh
 
 # Access at http://localhost:9080
 
 # To stop:
-./docker-start.sh stop
+./dcs-docker-manager.sh stop
 ```
 
 #### Method 2: Traditional Web Hosting
@@ -200,9 +205,6 @@ Our Docker deployment provides enterprise-grade containerization with intelligen
 - Any modern Linux distribution
 - 2GB RAM minimum
 
-**macOS:**
-- Docker Desktop for Mac
-- macOS 10.15 or newer
 - 4GB RAM minimum
 
 ### Docker Commands Reference
@@ -212,26 +214,63 @@ Our Docker deployment provides enterprise-grade containerization with intelligen
 # Run pre-flight checks (recommended for first time)
 dcs-docker-manager.bat pre-flight
 
-# Advanced users can use PowerShell scripts directly:
-dcs-docker-manager.bat [pre-flight|start|stop|restart|status|logs|destroy]
+# Start the application
+dcs-docker-manager.bat start
+
+# Stop the application
+dcs-docker-manager.bat stop
+
+# Restart the application
+dcs-docker-manager.bat restart
+
+# Check status
+dcs-docker-manager.bat status
+
+# View logs (last 100 lines)
+dcs-docker-manager.bat logs
+
+# Force rebuild Docker image
+dcs-docker-manager.bat rebuild
+
+# Remove Docker artifacts (preserves data)
+dcs-docker-manager.bat destroy     # Prompts for confirmation
+dcs-docker-manager.bat destroy -f  # Skip confirmation
+
+# Complete removal including ALL data
+dcs-docker-manager.bat sanitize    # Prompts for confirmation
+dcs-docker-manager.bat sanitize -f # Skip confirmation
 ```
 
-**Linux/Mac Users:**
+**Linux Users:**
 ```bash
+# Run pre-flight checks (recommended for first time)
+./dcs-docker-manager.sh pre-flight
+
 # Start application
-./docker-start.sh
+./dcs-docker-manager.sh start
 
 # Stop application
-./docker-start.sh stop
+./dcs-docker-manager.sh stop
 
 # Restart application
-./docker-start.sh restart
+./dcs-docker-manager.sh restart
 
 # View status
-./docker-start.sh status
+./dcs-docker-manager.sh status
 
-# View logs
-./docker-start.sh logs
+# View logs (last 100 lines)
+./dcs-docker-manager.sh logs
+
+# Force rebuild Docker image
+./dcs-docker-manager.sh rebuild
+
+# Remove Docker artifacts (preserves data)
+./dcs-docker-manager.sh destroy     # Prompts for confirmation
+./dcs-docker-manager.sh destroy -f  # Skip confirmation
+
+# Complete removal including ALL data
+./dcs-docker-manager.sh sanitize    # Prompts for confirmation
+./dcs-docker-manager.sh sanitize -f # Skip confirmation
 ```
 
 ### Troubleshooting Docker Issues
@@ -303,22 +342,22 @@ REM Run the launcher (double-click or run in cmd)
 dcs-docker-manager.bat
 ```
 
-**Linux/macOS (Bash):**
+**Linux (Bash):**
 ```bash
 # Navigate to the extracted folder
 cd DCS-Statistics-Dashboard
 
 # Make script executable (first time only)
-chmod +x docker-start.sh
+chmod +x dcs-docker-manager.sh
 
 # Run the launcher
-./docker-start.sh
+./dcs-docker-manager.sh
 
 # Other commands
-./docker-start.sh stop      # Stop the container
-./docker-start.sh restart   # Restart the container  
-./docker-start.sh status    # Check if running
-./docker-start.sh logs      # View live logs
+./dcs-docker-manager.sh stop      # Stop the container
+./dcs-docker-manager.sh restart   # Restart the container  
+./dcs-docker-manager.sh status    # Check if running
+./dcs-docker-manager.sh logs      # View live logs
 ```
 
 #### Option 2: Manual Docker Commands
@@ -334,23 +373,50 @@ docker compose up -d
 # Access at http://localhost:9080
 ```
 
-### 🗑️ Complete Cleanup with Destroy Command
+### 🗑️ Cleanup Commands
 
-**Windows:**
+#### **Destroy Command (Preserves Data)**
+
 ```batch
-# Remove everything Docker-related for this project
-dcs-docker-manager.bat destroy
+# Windows
+dcs-docker-manager.bat destroy     # With confirmation prompt
+dcs-docker-manager.bat destroy -f  # Skip confirmation
+
+# Linux
+./dcs-docker-manager.sh destroy     # With confirmation prompt
+./dcs-docker-manager.sh destroy -f  # Skip confirmation
 ```
 
-This command will:
+The `destroy` command will:
 - Stop and remove the DCS Statistics container
 - Delete the Docker image
 - Remove all Docker volumes
 - Clean up Docker networks
 - Delete your .env configuration file
-- **Preserve your data in ./dcs-stats directory**
+- **✅ PRESERVE your data in ./dcs-stats directory**
 
-After destroy, run `dcs-docker-manager.bat pre-flight` to start fresh.
+After destroy, run `pre-flight` to start fresh with your data intact.
+
+#### **Sanitize Command (Complete Wipe)**
+
+```batch
+# Windows
+dcs-docker-manager.bat sanitize     # With confirmation prompt
+dcs-docker-manager.bat sanitize -f  # Skip confirmation
+
+# Linux
+./dcs-docker-manager.sh sanitize     # With confirmation prompt
+./dcs-docker-manager.sh sanitize -f  # Skip confirmation
+```
+
+The `sanitize` command will:
+- Everything that `destroy` does, PLUS:
+- **❌ DELETE ./dcs-stats/data directory**
+- **❌ DELETE ./dcs-stats/site-config/data directory**
+- **❌ DELETE ./dcs-stats/backups directory**
+- **⚠️ THIS CANNOT BE UNDONE!**
+
+Use `sanitize` when you need a complete fresh start with no data.
 
 ### 🎨 What the Launcher Scripts Do
 
@@ -408,7 +474,7 @@ The launcher scripts automatically handle port selection, but you can set a pref
 echo "WEB_PORT=8090" > .env
 
 # Run launcher - it will use 8090 or find next available
-./docker-start.sh  # or .\dcs-docker-manager.bat on Windows
+./dcs-docker-manager.sh  # or .\dcs-docker-manager.bat on Windows
 ```
 
 **Method 2: Manual Docker Compose**
@@ -446,7 +512,7 @@ dcs-docker-manager.bat pre-flight
 The launcher scripts automatically find an available port. If running manually:
 ```bash
 # Check what's using port 9080
-# Linux/Mac
+# Linux
 lsof -i :9080
 # Windows PowerShell
 Get-NetTCPConnection -LocalPort 9080
@@ -458,7 +524,6 @@ WEB_PORT=8090 docker compose up -d
 #### Docker Not Found
 - **Windows**: Install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) and enable WSL2 backend
 - **Linux**: Install Docker Engine and Docker Compose
-- **macOS**: Install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
 
 #### Permission Denied (Linux)
 ```bash
@@ -547,7 +612,7 @@ curl http://localhost:8080/ping  # DCSServerBot API endpoint
 Dashboard → API Configuration → Test Connection
 
 # For Docker users
-Use http://host.docker.internal:8080 on Windows/Mac  # For DCSServerBot API
+Use http://host.docker.internal:8080 on Windows  # For DCSServerBot API
 Use http://172.17.0.1:8080 on Linux  # For DCSServerBot API
 ```
 

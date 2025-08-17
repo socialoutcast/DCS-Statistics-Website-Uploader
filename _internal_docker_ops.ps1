@@ -10,8 +10,11 @@
 
 param(
     [Parameter(Position=0)]
-    [ValidateSet("start", "stop", "restart", "status", "logs", "destroy", "pre-flight")]
-    [string]$Action = "start"
+    [ValidateSet("start", "stop", "restart", "status", "logs", "destroy", "sanitize", "pre-flight", "rebuild", "help")]
+    [string]$Action = "start",
+    
+    [Parameter(Position=1)]
+    [string]$Flag = ""
 )
 
 # Default configuration
@@ -238,6 +241,51 @@ function Show-AccessInfo {
     }
 }
 
+
+# Function to rebuild Docker image
+function Rebuild-DockerImage {
+    Write-Host "========================================"
+    Write-Host "Rebuilding DCS Statistics Docker Image"
+    Write-Host "========================================"
+    Write-Host ""
+    
+    # Check Docker installation
+    Write-Info "Checking Docker..."
+    if (-not (Test-DockerInstalled)) {
+        Write-Error "Docker is not available"
+        return
+    }
+    
+    # Stop existing container if running
+    $existingContainer = docker ps -aq -f "name=$ContainerName"
+    if ($existingContainer) {
+        Write-Info "Stopping existing container..."
+        & $ComposeCmd down 2>&1 | Out-Null
+    }
+    
+    # Remove old image
+    Write-Info "Removing old Docker image..."
+    docker rmi dcs-statistics:latest 2>&1 | Out-Null
+    docker rmi $(docker images -q -f "reference=*dcs-statistics*") 2>&1 | Out-Null
+    Write-Success "Old image removed"
+    
+    # Build new image
+    Write-Info "Building new Docker image..."
+    Write-Info "This will take a few minutes..."
+    
+    $buildOutput = & $ComposeCmd build --no-cache 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to rebuild Docker image"
+        Write-Host "Check the full output above for errors"
+        return
+    }
+    
+    Write-Success "Docker image rebuilt successfully!"
+    Write-Host ""
+    Write-Host "You can now start the container with: " -NoNewline
+    Write-Host "dcs-docker-manager.bat start" -ForegroundColor Cyan
+}
+
 # Main execution
 function Start-DCSStatistics {
     Write-Host "========================================"
@@ -313,15 +361,77 @@ function Start-DCSStatistics {
         Write-Success "Using port $selectedPort instead"
     }
     
-    # Update .env file with selected port
-    Update-EnvPort -Port $selectedPort
+    # Check if Docker image exists BEFORE updating .env
+    $imageExists = docker images --format "{{.Repository}}:{{.Tag}}" | Where-Object { $_ -match "dcs-statistics:latest" }
     
-    # Build and start container
-    Write-Info "Building Docker image (this may take a few minutes on first run)..."
-    
-    $buildOutput = & $ComposeCmd build --no-cache 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to build Docker image"
+    if ($imageExists) {
+        # Update .env file with selected port only if image already exists
+        Update-EnvPort -Port $selectedPort
+        Write-Success "Docker image exists, skipping build"
+        Write-Info "Use 'dcs-docker-manager.bat rebuild' to force a rebuild"
+    }
+    else {
+        # If no Docker image exists, this is a first build - prompt the user
+        Write-Host ""
+        Write-Warning "*** FIRST TIME SETUP DETECTED ***"
+        Write-Host ""
+        Write-Host "No Docker image found. This appears to be your first time building DCS Statistics."
+        Write-Host "Pre-flight checks are REQUIRED for first-time setup."
+        Write-Host ""
+        Write-Host "Pre-flight will:"
+        Write-Host "  - Create necessary directories"
+        Write-Host "  - Set up environment files"
+        Write-Host "  - Fix common permission issues"
+        Write-Host "  - Ensure Docker is properly configured"
+        Write-Host ""
+        Write-Host "Type CONTINUE to run pre-flight checks and proceed with setup"
+        Write-Host "Type anything else or press Enter to exit"
+        Write-Host ""
+        $response = Read-Host "Your choice"
+        if ($response -ne "CONTINUE") {
+            Write-Host ""
+            Write-Info "Setup cancelled. To set up DCS Statistics, either:"
+            Write-Host "  1. Run: " -NoNewline
+            Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
+            Write-Host " first, then"
+            Write-Host "     Run: " -NoNewline
+            Write-Host "dcs-docker-manager.bat start" -ForegroundColor Cyan
+            Write-Host "  OR"
+            Write-Host "  2. Run: " -NoNewline
+            Write-Host "dcs-docker-manager.bat start" -ForegroundColor Cyan -NoNewline
+            Write-Host " and type CONTINUE when prompted"
+            return
+        }
+        Write-Host ""
+        Write-Info "Running pre-flight checks before continuing..."
+        Write-Host ""
+        
+        # Run pre-flight checks by calling the script with pre-flight argument
+        # Set environment variable to indicate we're calling from start
+        $env:FROM_START = "true"
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\_internal_docker_ops.ps1" "pre-flight"
+        $env:FROM_START = $null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Pre-flight checks failed. Please fix the issues and try again."
+            return
+        }
+        
+        Write-Host ""
+        Write-Success "Pre-flight checks completed successfully!"
+        Write-Host ""
+        
+        # NOW update .env file with selected port after pre-flight has set up the file
+        Update-EnvPort -Port $selectedPort
+        
+        Write-Info "Continuing with Docker build..."
+        Write-Host ""
+        
+        Write-Info "Docker image not found, building now..."
+        Write-Info "This may take a few minutes on first run..."
+        
+        $buildOutput = & $ComposeCmd build --no-cache 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to build Docker image"
         
         # Check for common issues that fix script would solve
         $buildError = $buildOutput -join " "
@@ -351,11 +461,12 @@ function Start-DCSStatistics {
             Write-Host "   Maybe try " -NoNewline
             Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
             Write-Host " first? It fixes most things"
-            Write-Host "   (Or run $ComposeCmd build --no-cache for the gory details)"
+            Write-Host "   (Or run $ComposeCmd build for the gory details)"
         }
         return
     }
     Write-Success "Docker image built successfully"
+    }
     
     Write-Info "Starting container..."
     
@@ -455,7 +566,14 @@ switch ($Action) {
         }
     }
     "logs" {
-        docker logs -f $ContainerName
+        Write-Info "Showing last 100 lines of logs..."
+        Write-Host ""
+        docker logs --tail 100 $ContainerName
+        Write-Host ""
+        Write-Info "End of logs. Use 'docker logs -f $ContainerName' if you want to follow live logs."
+    }
+    "rebuild" {
+        Rebuild-DockerImage
     }
     "pre-flight" {
         Write-Host "========================================"
@@ -557,13 +675,17 @@ switch ($Action) {
             Write-Success "Docker networks cleaned"
             Write-Host ""
             
-            Write-Success "Pre-flight check complete!"
+            Write-Success "Pre-flight checks completed successfully!"
             Write-Host ""
-            Write-Host "You can now run:" -ForegroundColor Cyan
-            Write-Host "  dcs-docker-manager.bat start" -ForegroundColor Cyan
+            # Only show the "run start" message if we're not already in the start process
+            if ($env:FROM_START -ne "true") {
+                Write-Host "You can now run: " -NoNewline
+                Write-Host "dcs-docker-manager.bat start" -ForegroundColor Cyan
+                Write-Host "to launch the DCS Statistics website."
+            }
         }
         else {
-            Write-Error "Pre-flight check failed. Please fix the issues above."
+            Write-Error "Pre-flight checks failed. Please fix the issues above and try again."
         }
     }
     "destroy" {
@@ -576,10 +698,18 @@ switch ($Action) {
         Write-Host "  - The Docker network (if created)" -ForegroundColor Yellow
         Write-Host "  - Your .env configuration file" -ForegroundColor Yellow
         Write-Host ""
-        Write-Warning "Your data in ./dcs-stats will be preserved"
+        # Display preserved data message in cyan (blinking not supported in PowerShell)
+        Write-Host "[INFO] Your data in ./dcs-stats will be preserved" -ForegroundColor Cyan
         Write-Host ""
         
-        $confirmation = Read-Host "Type 'DESTROY' to confirm (or anything else to cancel)"
+        # Check if force flag is provided
+        if ($Flag -eq "-f" -or $Flag -eq "--force") {
+            Write-Info "Force mode enabled - skipping confirmation"
+            $confirmation = "DESTROY"
+        }
+        else {
+            $confirmation = Read-Host "Type 'DESTROY' to confirm (or anything else to cancel)"
+        }
         
         if ($confirmation -eq "DESTROY") {
             Write-Info "Starting destruction process..."
@@ -624,5 +754,117 @@ switch ($Action) {
         else {
             Write-Info "Destruction cancelled"
         }
+    }
+    "sanitize" {
+        Write-Warning "*** COMPLETE SANITIZATION WARNING ***"
+        Write-Host ""
+        Write-Host "This will PERMANENTLY DELETE:" -ForegroundColor Red
+        Write-Host "  - The DCS Statistics container" -ForegroundColor Red
+        Write-Host "  - The DCS Statistics Docker image" -ForegroundColor Red
+        Write-Host "  - All Docker volumes and networks" -ForegroundColor Red
+        Write-Host "  - Your .env configuration file" -ForegroundColor Red
+        Write-Host "  - ALL DATA in ./dcs-stats/data directory" -ForegroundColor Red
+        Write-Host "  - ALL DATA in ./dcs-stats/site-config/data directory" -ForegroundColor Red
+        Write-Host "  - ALL BACKUPS in ./dcs-stats/backups directory" -ForegroundColor Red
+        Write-Host ""
+        Write-Warning "*** THIS CANNOT BE UNDONE! ***"
+        Write-Host ""
+        
+        # Check if force flag is provided
+        if ($Flag -eq "-f" -or $Flag -eq "--force") {
+            Write-Info "Force mode enabled - skipping confirmation"
+            $confirmation = "SANITIZE"
+        }
+        else {
+            $confirmation = Read-Host "Type 'SANITIZE' to confirm complete data wipe (or anything else to cancel)"
+        }
+        
+        if ($confirmation -eq "SANITIZE") {
+            Write-Info "Starting complete sanitization..."
+            
+            # Stop and remove container
+            Write-Info "Stopping and removing container..."
+            & $ComposeCmd down -v 2>&1 | Out-Null
+            
+            # Remove the image
+            Write-Info "Removing Docker image..."
+            docker rmi dcs-statistics:latest 2>&1 | Out-Null
+            docker rmi $(docker images -q -f "reference=dcs-statistics") 2>&1 | Out-Null
+            
+            # Clean up any dangling images
+            Write-Info "Cleaning up dangling images..."
+            docker image prune -f 2>&1 | Out-Null
+            
+            # Remove any project-specific volumes
+            Write-Info "Removing volumes..."
+            docker volume rm $(docker volume ls -q -f "name=dcs-statistics") 2>&1 | Out-Null
+            
+            # Clean up networks
+            Write-Info "Cleaning up networks..."
+            docker network prune -f 2>&1 | Out-Null
+            
+            # Remove .env file
+            Write-Info "Removing .env configuration file..."
+            if (Test-Path "./.env") {
+                Remove-Item "./.env" -Force
+                Write-Success "Removed .env file"
+            }
+            
+            # DELETE ALL DATA
+            Write-Warning "Deleting ALL user data..."
+            
+            # Remove data directories
+            if (Test-Path "./dcs-stats/data") {
+                Write-Info "Removing ./dcs-stats/data directory..."
+                Remove-Item "./dcs-stats/data" -Recurse -Force
+                Write-Success "Removed data directory"
+            }
+            
+            if (Test-Path "./dcs-stats/site-config/data") {
+                Write-Info "Removing ./dcs-stats/site-config/data directory..."
+                Remove-Item "./dcs-stats/site-config/data" -Recurse -Force
+                Write-Success "Removed site-config data directory"
+            }
+            
+            # Remove backups
+            if (Test-Path "./dcs-stats/backups") {
+                Write-Info "Removing ./dcs-stats/backups directory..."
+                Remove-Item "./dcs-stats/backups" -Recurse -Force
+                Write-Success "Removed backups directory"
+            }
+            
+            Write-Success "Complete sanitization finished!"
+            Write-Host ""
+            Write-Warning "ALL DATA HAS BEEN PERMANENTLY DELETED"
+            Write-Host ""
+            Write-Host "To start completely fresh:" -ForegroundColor Cyan
+            Write-Host "  1. Run: dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan
+            Write-Host "  2. Run: dcs-docker-manager.bat start" -ForegroundColor Cyan
+            Write-Host "  3. Complete setup at http://localhost:9080/site-config/install.php" -ForegroundColor Cyan
+        }
+        else {
+            Write-Info "Sanitization cancelled"
+        }
+    }
+    "help" {
+        # Help is handled by the BAT file, but if called directly show basic help
+        Write-Host "========================================"
+        Write-Host "DCS Statistics Docker Manager" -ForegroundColor Cyan
+        Write-Host "========================================"
+        Write-Host ""
+        Write-Host "This script should be called via dcs-docker-manager.bat"
+        Write-Host ""
+        Write-Host "Usage: dcs-docker-manager.bat [COMMAND]"
+        Write-Host ""
+        Write-Host "Available Commands:"
+        Write-Host "  pre-flight  - Run pre-flight checks"
+        Write-Host "  start       - Start container"
+        Write-Host "  stop        - Stop container" 
+        Write-Host "  restart     - Restart container"
+        Write-Host "  status      - Check status"
+        Write-Host "  logs        - Show logs"
+        Write-Host "  destroy     - Remove everything except data"
+        Write-Host "  sanitize    - Remove EVERYTHING including all data"
+        Write-Host "  help        - Show help"
     }
 }
