@@ -3,27 +3,27 @@
 #
 # EXECUTION POLICY ERROR FIX:
 # If you get "running scripts is disabled on this system" error, run:
-#   powershell -ExecutionPolicy Bypass -File .\docker-start.ps1
+#   powershell -ExecutionPolicy Bypass -File .\_internal_docker_ops.ps1
 #
 # Or permanently allow scripts for current user:
 #   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 param(
     [Parameter(Position=0)]
-    [ValidateSet("start", "stop", "restart", "status", "logs")]
+    [ValidateSet("start", "stop", "restart", "status", "logs", "destroy", "pre-flight")]
     [string]$Action = "start"
 )
 
 # Default configuration
-$DefaultPort = 8080
+$DefaultPort = 9080
 $ContainerName = "dcs-statistics"
 $EnvFile = ".env"
 
 # Color functions
-function Write-Info { Write-Host "ℹ $($args[0])" -ForegroundColor Blue }
-function Write-Success { Write-Host "✓ $($args[0])" -ForegroundColor Green }
-function Write-Warning { Write-Host "⚠ $($args[0])" -ForegroundColor Yellow }
-function Write-Error { Write-Host "✗ $($args[0])" -ForegroundColor Red }
+function Write-Info { Write-Host "[INFO] $($args[0])" -ForegroundColor Blue }
+function Write-Success { Write-Host "[OK] $($args[0])" -ForegroundColor Green }
+function Write-Warning { Write-Host "[WARN] $($args[0])" -ForegroundColor Yellow }
+function Write-Error { Write-Host "[ERROR] $($args[0])" -ForegroundColor Red }
 
 # Function to check if a port is available
 function Test-PortAvailable {
@@ -48,7 +48,7 @@ function Test-PortAvailable {
 # Function to find an available port
 function Find-AvailablePort {
     param(
-        [int]$StartPort = 8080,
+        [int]$StartPort = 9080,
         [int]$MaxAttempts = 100
     )
     
@@ -69,11 +69,11 @@ function Get-CurrentPort {
             return [int]($content -replace "WEB_PORT=", "")
         }
     } else {
-        # .env file doesn't exist
+        # .env file does not exist
         if (Test-Path ".env.example") {
             Write-Warning "No .env file? Bold choice..."
-            Write-Host "🤓 BTW, " -NoNewline
-            Write-Host "fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host "BTW, " -NoNewline
+            Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
             Write-Host " creates one for you"
             Write-Host "   (Just a thought, no pressure...)"
             Write-Host ""
@@ -118,11 +118,12 @@ function Test-DockerInstalled {
         # Check if Docker daemon is running
         $dockerInfo = docker info 2>&1
         if ($LASTEXITCODE -ne 0) {
-            # Check if it's a permission issue on Windows
+            # Check if this is a permission issue on Windows
             if ($dockerInfo -match "permission denied" -or $dockerInfo -match "Access is denied") {
-                throw "Docker daemon is playing hard to get. Is Docker Desktop actually running? 🤔"
-            } else {
-                throw "Docker daemon is having a nap. Wake up Docker Desktop first! ☕"
+                throw "Docker daemon is playing hard to get. Is Docker Desktop actually running?"
+            }
+            else {
+                throw "Docker daemon is having a nap. Wake up Docker Desktop first!"
             }
         }
         
@@ -130,11 +131,13 @@ function Test-DockerInstalled {
         $null = docker-compose version 2>&1
         if ($LASTEXITCODE -eq 0) {
             $global:ComposeCmd = "docker-compose"
-        } else {
+        }
+        else {
             $null = docker compose version 2>&1
             if ($LASTEXITCODE -eq 0) {
                 $global:ComposeCmd = "docker compose"
-            } else {
+            }
+            else {
                 throw "Docker Compose not found"
             }
         }
@@ -214,7 +217,7 @@ function Show-AccessInfo {
     Write-Host "http://localhost:$Port/site-config/install.php" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "To stop the server, run:"
-    Write-Host "  .\docker-start.ps1 stop" -ForegroundColor Gray
+    Write-Host '  dcs-docker-manager.bat stop' -ForegroundColor Gray
     Write-Host "  or"
     Write-Host "  $ComposeCmd down" -ForegroundColor Gray
     Write-Host ""
@@ -247,16 +250,16 @@ function Start-DCSStatistics {
     if (-not (Test-Path $EnvFile) -and (Test-Path ".env.example")) {
         $needsFix = $true
     }
-    if (-not (Test-Path ".\dcs-stats\data")) {
+    if (-not (Test-Path './dcs-stats/data')) {
         $needsFix = $true
     }
     
     if ($needsFix) {
         Write-Warning "Hold up! Looks like this is your first rodeo..."
-        Write-Host "💅 Just FYI: " -NoNewline
-        Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+        Write-Host "Just FYI: " -NoNewline
+        Write-Host './dcs-docker-manager.bat pre-flight' -ForegroundColor Cyan -NoNewline
         Write-Host " exists for a reason"
-        Write-Host "   (It's like a pre-flight check, but cooler)"
+        Write-Host "   (It is like a pre-flight check, but cooler)"
         Write-Host ""
     }
     
@@ -269,16 +272,16 @@ function Start-DCSStatistics {
     # Check Docker installation
     Write-Info "Checking Docker installation..."
     if (-not (Test-DockerInstalled)) {
-        Write-Error "Docker's not home right now..."
-        Write-Host "🫠 Once you get Docker Desktop installed, there's " -NoNewline
-        Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan
-        Write-Host "   (It'll make sure everything's perfect for Windows)"
+        Write-Error "Docker is not home right now..."
+        Write-Host "Once you get Docker Desktop installed, there is " -NoNewline
+        Write-Host './dcs-docker-manager.bat pre-flight' -ForegroundColor Cyan
+        Write-Host "   (It will make sure everything is perfect for Windows)"
         return
     }
     Write-Success "Docker is installed and running"
     
     # Stop existing container if running
-    $existingContainer = docker ps -a --format "{{.Names}}" | Where-Object { $_ -eq $ContainerName }
+    $existingContainer = docker ps -aq -f "name=$ContainerName"
     if ($existingContainer) {
         Write-Info "Stopping existing container..."
         & $ComposeCmd down 2>&1 | Out-Null
@@ -300,9 +303,9 @@ function Start-DCSStatistics {
         $selectedPort = Find-AvailablePort -StartPort $desiredPort
         if (-not $selectedPort) {
             Write-Error "No available ports found in range $desiredPort-$($desiredPort + 100)"
-            Write-Host "😤 Wow, ALL those ports are taken? That's... impressive"
+            Write-Host "Wow, ALL those ports are taken? That is... impressive"
             Write-Host "   Maybe " -NoNewline
-            Write-Host "fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
             Write-Host " can help clear things up?"
             return
         }
@@ -324,31 +327,31 @@ function Start-DCSStatistics {
         $buildError = $buildOutput -join " "
         if ($buildError -match "invalid pool" -or $buildError -match "pool request") {
             Write-Warning "Oh snap! Network configuration went sideways!"
-            Write-Host "🙄 There's a script for that: " -NoNewline
-            Write-Host "fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host "There is a script for that: " -NoNewline
+            Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
             Write-Host ""
             Write-Host "   (It literally fixes this in 2 seconds, just saying...)"
         }
         elseif ($buildError -match "no such file" -or $buildError -match "not found") {
             Write-Warning "Uh-oh! Missing some directories here!"
-            Write-Host "🤔 Fun fact: " -NoNewline
-            Write-Host "fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host "Fun fact: " -NoNewline
+            Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
             Write-Host " creates these for you"
             Write-Host "   (But hey, who reads documentation, right?)"
         }
         elseif ($buildError -match "/bin/sh" -or $buildError -match "exec format") {
             Write-Warning "Classic Windows vs Linux line endings drama!"
-            Write-Host "😏 Psst... " -NoNewline
-            Write-Host "fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host "Psst... " -NoNewline
+            Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
             Write-Host " sorts this out automatically"
             Write-Host "   (Windows being Windows, as usual...)"
         }
         else {
-            Write-Host "🤯 Well, that's a new one! Haven't seen this error before..."
+            Write-Host "Well, that is a new one! Have not seen this error before..."
             Write-Host "   Maybe try " -NoNewline
-            Write-Host "fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
             Write-Host " first? It fixes most things"
-            Write-Host "   (Or run '$ComposeCmd build --no-cache' for the gory details)"
+            Write-Host "   (Or run $ComposeCmd build --no-cache for the gory details)"
         }
         return
     }
@@ -364,28 +367,28 @@ function Start-DCSStatistics {
         $startError = $startOutput -join " "
         if ($startError -match "permission denied" -or $startError -match "access denied") {
             Write-Warning "Permission denied! The Docker gods are angry!"
-            Write-Host "🎭 Plot twist: " -NoNewline
-            Write-Host "fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host "Plot twist: " -NoNewline
+            Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
             Write-Host " handles permissions"
-            Write-Host "   (I know, I know... should've mentioned it earlier)"
+            Write-Host "   (I know, I know... should have mentioned it earlier)"
         }
-        elseif ($startError -match "network .* not found") {
+        elseif ($startError -match "network.*not found") {
             Write-Warning "Docker networks playing hide and seek again!"
-            Write-Host "🎯 Pro tip: " -NoNewline
-            Write-Host "fix-windows-issues.ps1" -ForegroundColor Cyan -NoNewline
+            Write-Host "Pro tip: " -NoNewline
+            Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
             Write-Host " cleans these up"
-            Write-Host "   (It's like a spa day for your Docker networks)"
+            Write-Host "   (It is like a spa day for your Docker networks)"
         }
-        elseif ($startError -match "port is already allocated" -or $startError -match "bind: address already in use") {
-            Write-Warning "Port $selectedPort is being a diva - says it's already taken!"
-            Write-Host "🤷 That's awkward... I usually catch this. Try running again?"
+        elseif ($startError -match "port is already allocated" -or $startError -match "bind.*address already in use") {
+            Write-Warning "Port $selectedPort is being a diva - says it is already taken!"
+            Write-Host "That is awkward... I usually catch this. Try running again?"
             Write-Host "   (Sometimes ports are just moody like that)"
         }
         else {
-            Write-Host "🫨 Something weird happened... and not the good kind of weird"
+            Write-Host "Something weird happened... and not the good kind of weird"
             Write-Host "   First aid kit: " -NoNewline
-            Write-Host ".\fix-windows-issues.ps1" -ForegroundColor Cyan
-            Write-Host "   (If that doesn't help, run '$ComposeCmd up' for the full drama)"
+            Write-Host './dcs-docker-manager.bat pre-flight' -ForegroundColor Cyan
+            Write-Host "   (If that does not help, run $ComposeCmd up for the full drama)"
         }
         return
     }
@@ -404,12 +407,26 @@ function Start-DCSStatistics {
     }
     catch {
         Write-Warning "Service is being shy... might still be waking up"
-        Write-Host "🔍 Check the logs with: " -NoNewline
-        Write-Host ".\docker-start.ps1 logs" -ForegroundColor Cyan
+        Write-Host "Check the logs with: " -NoNewline
+        Write-Host 'dcs-docker-manager.bat logs' -ForegroundColor Cyan
         Write-Host "   (Or just wait a sec and refresh the browser)"
     }
     
     Show-AccessInfo -Port $selectedPort
+}
+
+# Detect docker-compose command
+$null = docker-compose version 2>&1
+if ($LASTEXITCODE -eq 0) {
+    $ComposeCmd = "docker-compose"
+} else {
+    $null = docker compose version 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        $ComposeCmd = "docker compose"
+    } else {
+        Write-Error "Docker Compose not found"
+        exit 1
+    }
 }
 
 # Handle script actions
@@ -428,7 +445,7 @@ switch ($Action) {
         Start-DCSStatistics
     }
     "status" {
-        $running = docker ps --format "{{.Names}}" | Where-Object { $_ -eq $ContainerName }
+        $running = docker ps -q -f "name=$ContainerName"
         if ($running) {
             $port = Get-CurrentPort
             Write-Success "DCS Statistics is running on port $port"
@@ -439,5 +456,173 @@ switch ($Action) {
     }
     "logs" {
         docker logs -f $ContainerName
+    }
+    "pre-flight" {
+        Write-Host "========================================"
+        Write-Host "Pre-Flight Check for DCS Statistics"
+        Write-Host "========================================"
+        Write-Host ""
+        Write-Info "Running pre-flight checks and fixes..."
+        Write-Host ""
+        
+        # Check Docker installation
+        Write-Info "Checking Docker installation..."
+        $dockerOk = $false
+        try {
+            $null = docker --version 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Success "Docker is installed"
+                
+                $dockerInfo = docker info 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Success "Docker daemon is running"
+                    $dockerOk = $true
+                }
+                else {
+                    Write-Warning "Docker daemon is not running"
+                    Write-Host "Please start Docker Desktop and try again"
+                }
+            }
+            else {
+                Write-Error "Docker is not installed"
+                Write-Host "Please install Docker Desktop from: https://www.docker.com/products/docker-desktop/"
+            }
+        }
+        catch {
+            Write-Error "Error checking Docker: $_"
+        }
+        Write-Host ""
+        
+        if ($dockerOk) {
+            # Fix line endings
+            Write-Info "Fixing line endings for Docker files..."
+            $filesToFix = @("*.sh", "Dockerfile*", "docker-compose*.yml", ".dockerignore", ".env*")
+            foreach ($pattern in $filesToFix) {
+                $files = Get-ChildItem -Path . -Filter $pattern -ErrorAction SilentlyContinue
+                foreach ($file in $files) {
+                    if (Test-Path $file.FullName -PathType Leaf) {
+                        $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
+                        if ($content) {
+                            $fixed = $content -replace "`r`n", "`n"
+                            [System.IO.File]::WriteAllText($file.FullName, $fixed, [System.Text.Encoding]::UTF8)
+                            Write-Host "  Fixed: $($file.Name)" -ForegroundColor Green
+                        }
+                    }
+                }
+            }
+            Write-Host ""
+            
+            # Create required directories
+            Write-Info "Ensuring required directories exist..."
+            $dirs = @("./dcs-stats/data", "./dcs-stats/site-config/data", "./dcs-stats/backups")
+            foreach ($dir in $dirs) {
+                if (-not (Test-Path $dir)) {
+                    New-Item -ItemType Directory -Path $dir -Force | Out-Null
+                    Write-Success "Created directory: $dir"
+                }
+                else {
+                    Write-Host "  Directory exists: $dir" -ForegroundColor Gray
+                }
+            }
+            Write-Host ""
+            
+            # Create or update .env file
+            Write-Info "Checking .env file..."
+            if (-not (Test-Path "./.env")) {
+                if (Test-Path "./.env.example") {
+                    Copy-Item "./.env.example" "./.env"
+                    Write-Success "Created .env file from .env.example"
+                }
+                else {
+                    Write-Warning "No .env.example file found"
+                }
+            }
+            else {
+                Write-Success ".env file exists"
+                
+                # Check if using old port 8080 and update to 9080
+                $envContent = Get-Content "./.env" -Raw
+                if ($envContent -match "WEB_PORT=8080") {
+                    $envContent = $envContent -replace "WEB_PORT=8080", "WEB_PORT=9080"
+                    $envContent = $envContent -replace "SITE_URL=http://localhost:8080", "SITE_URL=http://localhost:9080"
+                    Set-Content "./.env" $envContent
+                    Write-Success "Updated .env file from port 8080 to 9080"
+                }
+            }
+            Write-Host ""
+            
+            # Clean up Docker networks
+            Write-Info "Cleaning up Docker networks..."
+            docker network prune -f 2>&1 | Out-Null
+            Write-Success "Docker networks cleaned"
+            Write-Host ""
+            
+            Write-Success "Pre-flight check complete!"
+            Write-Host ""
+            Write-Host "You can now run:" -ForegroundColor Cyan
+            Write-Host "  dcs-docker-manager.bat start" -ForegroundColor Cyan
+        }
+        else {
+            Write-Error "Pre-flight check failed. Please fix the issues above."
+        }
+    }
+    "destroy" {
+        Write-Warning "This will DESTROY everything related to DCS Statistics Docker setup!"
+        Write-Host ""
+        Write-Host "This action will remove:" -ForegroundColor Yellow
+        Write-Host "  - The DCS Statistics container" -ForegroundColor Yellow
+        Write-Host "  - The DCS Statistics Docker image" -ForegroundColor Yellow
+        Write-Host "  - All Docker volumes created by this project" -ForegroundColor Yellow
+        Write-Host "  - The Docker network (if created)" -ForegroundColor Yellow
+        Write-Host "  - Your .env configuration file" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Warning "Your data in ./dcs-stats will be preserved"
+        Write-Host ""
+        
+        $confirmation = Read-Host "Type 'DESTROY' to confirm (or anything else to cancel)"
+        
+        if ($confirmation -eq "DESTROY") {
+            Write-Info "Starting destruction process..."
+            
+            # Stop and remove container
+            Write-Info "Stopping and removing container..."
+            & $ComposeCmd down -v 2>&1 | Out-Null
+            
+            # Remove the image
+            Write-Info "Removing Docker image..."
+            docker rmi dcs-statistics:latest 2>&1 | Out-Null
+            docker rmi $(docker images -q -f "reference=dcs-statistics") 2>&1 | Out-Null
+            
+            # Clean up any dangling images
+            Write-Info "Cleaning up dangling images..."
+            docker image prune -f 2>&1 | Out-Null
+            
+            # Remove any project-specific volumes
+            Write-Info "Removing volumes..."
+            docker volume rm $(docker volume ls -q -f "name=dcs-statistics") 2>&1 | Out-Null
+            
+            # Clean up networks
+            Write-Info "Cleaning up networks..."
+            docker network prune -f 2>&1 | Out-Null
+            
+            # Remove .env file
+            Write-Info "Removing .env configuration file..."
+            if (Test-Path "./.env") {
+                Remove-Item "./.env" -Force
+                Write-Success "Removed .env file"
+            }
+            
+            Write-Success "Destruction complete!"
+            Write-Host ""
+            Write-Host "The following items were preserved:" -ForegroundColor Green
+            Write-Host "  - Your data in ./dcs-stats directory" -ForegroundColor Green
+            Write-Host ""
+            Write-Host "To completely start fresh, run:" -ForegroundColor Cyan
+            Write-Host "  dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan
+            Write-Host "  dcs-docker-manager.bat start" -ForegroundColor Cyan
+        }
+        else {
+            Write-Info "Destruction cancelled"
+        }
     }
 }
