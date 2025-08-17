@@ -15,6 +15,7 @@ html {
     --text_color: #ffffff;
     --link_color: #4a9eff;
     --border_color: #556b2f;
+    --nav_link_color: #c2d4c9;
 }
 
 body {
@@ -420,7 +421,7 @@ h2 {
 .nav-link {
     display: block;
     padding: 14px 20px;
-    color: #c2d4c9;
+    color: var(--nav_link_color);
     text-decoration: none;
     font-weight: bold;
     text-transform: uppercase;

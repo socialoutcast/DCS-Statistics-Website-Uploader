@@ -71,6 +71,7 @@ if (isset($_GET['preview']) && $_GET['preview'] === '1') {
         'text_color' => isset($_GET['text']) ? '#' . $_GET['text'] : null,
         'link_color' => isset($_GET['link']) ? '#' . $_GET['link'] : null,
         'border_color' => isset($_GET['border']) ? '#' . $_GET['border'] : null,
+        'nav_link_color' => isset($_GET['navlink']) ? '#' . $_GET['navlink'] : null,
     ];
 }
 

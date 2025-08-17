@@ -219,7 +219,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'background_color' => $_POST['background_color'] ?? '',
                     'text_color' => $_POST['text_color'] ?? '',
                     'link_color' => $_POST['link_color'] ?? '',
-                    'border_color' => $_POST['border_color'] ?? ''
+                    'border_color' => $_POST['border_color'] ?? '',
+                    'nav_link_color' => $_POST['nav_link_color'] ?? ''
                 ];
                 
                 // Generate CSS variables
@@ -296,7 +297,8 @@ $customColors = [
     'background_color' => '#0f0f0f',
     'text_color' => '#e0e0e0',
     'link_color' => '#4a9eff',
-    'border_color' => '#333333'
+    'border_color' => '#333333',
+    'nav_link_color' => '#c2d4c9'
 ];
 
 $customCSS = __DIR__ . '/../custom_theme.css';
@@ -604,6 +606,7 @@ $pageTitle = 'Theme Management';
                         'text' => substr($customColors['text_color'], 1),
                         'link' => substr($customColors['link_color'], 1),
                         'border' => substr($customColors['border_color'], 1),
+                        'navlink' => substr($customColors['nav_link_color'], 1),
                     ];
                     // Build URL to parent directory
                     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
@@ -675,8 +678,14 @@ $pageTitle = 'Theme Management';
                                 
                                 <div class="color-input-group">
                                     <label for="border_color" title="Border and accent color">Border/Accent Color:</label>
-                                    <input type="color" id="border_color" name="border_color" 
+                                    <input type="color" id="border_color" name="border_color"
                                            value="<?= htmlspecialchars($customColors['border_color']) ?>">
+                                </div>
+
+                                <div class="color-input-group">
+                                    <label for="nav_link_color" title="Navigation link text color">Navigation Link Color:</label>
+                                    <input type="color" id="nav_link_color" name="nav_link_color"
+                                           value="<?= htmlspecialchars($customColors['nav_link_color']) ?>">
                                 </div>
                             </div>
                             
@@ -845,7 +854,8 @@ $pageTitle = 'Theme Management';
                 'background': document.getElementById('background_color').value.replace('#', ''),
                 'text': document.getElementById('text_color').value.replace('#', ''),
                 'link': document.getElementById('link_color').value.replace('#', ''),
-                'border': document.getElementById('border_color').value.replace('#', '')
+                'border': document.getElementById('border_color').value.replace('#', ''),
+                'navlink': document.getElementById('nav_link_color').value.replace('#', '')
             };
             
             // Build URL with preview parameters
@@ -1018,7 +1028,8 @@ $pageTitle = 'Theme Management';
                 'background_color': '#121212',
                 'text_color': '#ffffff',
                 'link_color': '#4a9eff',
-                'border_color': '#556b2f'
+                'border_color': '#556b2f',
+                'nav_link_color': '#c2d4c9'
             };
             
             // Set the color inputs to default values
