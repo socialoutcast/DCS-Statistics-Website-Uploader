@@ -37,12 +37,11 @@ function Fix-LineEndings {
     # Files that need LF endings
     $lfFiles = @(
         "*.sh",
-        "Dockerfile*",
-        "docker-compose*.yml",
+        "docker/*.yml",
+        "docker/*.conf",
+        "docker/*.ini",
         ".dockerignore",
-        ".env*",
-        "*.conf",
-        "*.ini"
+        ".env*"
     )
     
     foreach ($pattern in $lfFiles) {
@@ -172,9 +171,9 @@ function Test-WSL2Backend {
 function Ensure-EnvFile {
     Write-Host "Checking .env file..." -ForegroundColor Yellow
     
-    if (-not (Test-Path ".\.env")) {
-        if (Test-Path ".\.env.example") {
-            Copy-Item ".\.env.example" ".\.env"
+    if (-not (Test-Path ".\docker\.env")) {
+        if (Test-Path ".\docker\.env.example") {
+            Copy-Item ".\docker\.env.example" ".\docker\.env"
             Write-Host "  Created .env file from .env.example" -ForegroundColor Green
             
             # Update default port if 9080 is in use
@@ -204,9 +203,9 @@ function Ensure-EnvFile {
                 }
                 
                 # Update .env with new port
-                $envContent = Get-Content ".\.env"
+                $envContent = Get-Content ".\docker\.env"
                 $envContent = $envContent -replace "WEB_PORT=9080", "WEB_PORT=$port"
-                Set-Content ".\.env" $envContent
+                Set-Content ".\docker\.env" $envContent
                 Write-Host "  Updated WEB_PORT to $port (9080 was in use)" -ForegroundColor Yellow
             }
             finally {
@@ -215,10 +214,10 @@ function Ensure-EnvFile {
                 }
             }
         } else {
-            Write-Host "  Warning: No .env or .env.example file found" -ForegroundColor Red
+            Write-Host "  Warning: No .env or .env.example file found in docker directory" -ForegroundColor Red
         }
     } else {
-        Write-Host "  .env file exists" -ForegroundColor Green
+        Write-Host "  .env file exists in docker directory" -ForegroundColor Green
     }
 }
 

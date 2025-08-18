@@ -20,7 +20,7 @@ param(
 # Default configuration
 $DefaultPort = 9080
 $ContainerName = "dcs-statistics"
-$EnvFile = ".env"
+$EnvFile = "docker/.env"
 
 # Color functions
 function Write-Info { Write-Host "[INFO] $($args[0])" -ForegroundColor Blue }
@@ -73,7 +73,7 @@ function Get-CurrentPort {
         }
     } else {
         # .env file does not exist
-        if (Test-Path ".env.example") {
+        if (Test-Path "docker/.env.example") {
             Write-Warning "No .env file? Bold choice..."
             Write-Host "BTW, " -NoNewline
             Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
@@ -222,7 +222,7 @@ function Show-AccessInfo {
     Write-Host "To stop the server, run:"
     Write-Host '  dcs-docker-manager.bat stop' -ForegroundColor Gray
     Write-Host "  or"
-    Write-Host "  $ComposeCmd down" -ForegroundColor Gray
+    Write-Host "  cd docker && $ComposeCmd down" -ForegroundColor Gray
     Write-Host ""
     
     if ($externalIP) {
@@ -260,7 +260,7 @@ function Rebuild-DockerImage {
     $existingContainer = docker ps -aq -f "name=$ContainerName"
     if ($existingContainer) {
         Write-Info "Stopping existing container..."
-        & $ComposeCmd down 2>&1 | Out-Null
+        Push-Location docker; & $ComposeCmd down 2>&1 | Out-Null; Pop-Location
     }
     
     # Remove old image
@@ -269,18 +269,18 @@ function Rebuild-DockerImage {
     docker rmi $(docker images -q -f "reference=*dcs-statistics*") 2>&1 | Out-Null
     Write-Success "Old image removed"
     
-    # Build new image
-    Write-Info "Building new Docker image..."
+    # Pull fresh images
+    Write-Info "Pulling fresh Docker images..."
     Write-Info "This will take a few minutes..."
     
-    $buildOutput = & $ComposeCmd build --no-cache 2>&1
+    Push-Location docker; $buildOutput = & $ComposeCmd pull 2>&1; Pop-Location
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to rebuild Docker image"
+        Write-Error "Failed to pull Docker images"
         Write-Host "Check the full output above for errors"
         return
     }
     
-    Write-Success "Docker image rebuilt successfully!"
+    Write-Success "Docker images pulled successfully!"
     Write-Host ""
     Write-Host "You can now start the container with: " -NoNewline
     Write-Host "dcs-docker-manager.bat start" -ForegroundColor Cyan
@@ -295,7 +295,7 @@ function Start-DCSStatistics {
     
     # Quick check for common issues
     $needsFix = $false
-    if (-not (Test-Path $EnvFile) -and (Test-Path ".env.example")) {
+    if (-not (Test-Path $EnvFile) -and (Test-Path "docker/.env.example")) {
         $needsFix = $true
     }
     if (-not (Test-Path './dcs-stats/data')) {
@@ -332,7 +332,7 @@ function Start-DCSStatistics {
     $existingContainer = docker ps -aq -f "name=$ContainerName"
     if ($existingContainer) {
         Write-Info "Stopping existing container..."
-        & $ComposeCmd down 2>&1 | Out-Null
+        Push-Location docker; & $ComposeCmd down 2>&1 | Out-Null; Pop-Location
     }
     
     # Get desired port
@@ -426,12 +426,13 @@ function Start-DCSStatistics {
         Write-Info "Continuing with Docker build..."
         Write-Host ""
         
-        Write-Info "Docker image not found, building now..."
+        Write-Info "Docker images not found, pulling now..."
         Write-Info "This may take a few minutes on first run..."
         
-        $buildOutput = & $ComposeCmd build --no-cache 2>&1
+        # Since we use pre-built images, we just need to pull them
+        Push-Location docker; $buildOutput = & $ComposeCmd pull 2>&1; Pop-Location
         if ($LASTEXITCODE -ne 0) {
-            Write-Error "Failed to build Docker image"
+            Write-Error "Failed to pull Docker images"
         
         # Check for common issues that fix script would solve
         $buildError = $buildOutput -join " "
@@ -461,16 +462,16 @@ function Start-DCSStatistics {
             Write-Host "   Maybe try " -NoNewline
             Write-Host "dcs-docker-manager.bat pre-flight" -ForegroundColor Cyan -NoNewline
             Write-Host " first? It fixes most things"
-            Write-Host "   (Or run $ComposeCmd build for the gory details)"
+            Write-Host "   (Or run 'cd docker && $ComposeCmd pull' for the gory details)"
         }
         return
     }
-    Write-Success "Docker image built successfully"
+    Write-Success "Docker images pulled successfully"
     }
     
     Write-Info "Starting container..."
     
-    $startOutput = & $ComposeCmd up -d 2>&1
+    Push-Location docker; $startOutput = & $ComposeCmd up -d 2>&1; Pop-Location
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to start container"
         
@@ -499,7 +500,7 @@ function Start-DCSStatistics {
             Write-Host "Something weird happened... and not the good kind of weird"
             Write-Host "   First aid kit: " -NoNewline
             Write-Host './dcs-docker-manager.bat pre-flight' -ForegroundColor Cyan
-            Write-Host "   (If that does not help, run $ComposeCmd up for the full drama)"
+            Write-Host "   (If that does not help, run 'cd docker && $ComposeCmd up' for the full drama)"
         }
         return
     }
@@ -547,12 +548,12 @@ switch ($Action) {
     }
     "stop" {
         Write-Info "Stopping DCS Statistics..."
-        & $ComposeCmd down
+        Push-Location docker; & $ComposeCmd down; Pop-Location
         Write-Success "Stopped"
     }
     "restart" {
         Write-Info "Restarting DCS Statistics..."
-        & $ComposeCmd down
+        Push-Location docker; & $ComposeCmd down; Pop-Location
         Start-DCSStatistics
     }
     "status" {
@@ -614,7 +615,7 @@ switch ($Action) {
         if ($dockerOk) {
             # Fix line endings
             Write-Info "Fixing line endings for Docker files..."
-            $filesToFix = @("*.sh", "Dockerfile*", "docker-compose*.yml", ".dockerignore", ".env*")
+            $filesToFix = @("*.sh", "docker/*.yml", "docker/*.conf", "docker/*.ini", ".dockerignore", ".env*")
             foreach ($pattern in $filesToFix) {
                 $files = Get-ChildItem -Path . -Filter $pattern -ErrorAction SilentlyContinue
                 foreach ($file in $files) {
@@ -646,9 +647,9 @@ switch ($Action) {
             
             # Create or update .env file
             Write-Info "Checking .env file..."
-            if (-not (Test-Path "./.env")) {
-                if (Test-Path "./.env.example") {
-                    Copy-Item "./.env.example" "./.env"
+            if (-not (Test-Path "./docker/.env")) {
+                if (Test-Path "./docker/.env.example") {
+                    Copy-Item "./docker/.env.example" "./docker/.env"
                     Write-Success "Created .env file from .env.example"
                 }
                 else {
@@ -659,11 +660,11 @@ switch ($Action) {
                 Write-Success ".env file exists"
                 
                 # Check if using old port 8080 and update to 9080
-                $envContent = Get-Content "./.env" -Raw
+                $envContent = Get-Content "./docker/.env" -Raw
                 if ($envContent -match "WEB_PORT=8080") {
                     $envContent = $envContent -replace "WEB_PORT=8080", "WEB_PORT=9080"
                     $envContent = $envContent -replace "SITE_URL=http://localhost:8080", "SITE_URL=http://localhost:9080"
-                    Set-Content "./.env" $envContent
+                    Set-Content "./docker/.env" $envContent
                     Write-Success "Updated .env file from port 8080 to 9080"
                 }
             }
@@ -716,7 +717,7 @@ switch ($Action) {
             
             # Stop and remove container
             Write-Info "Stopping and removing container..."
-            & $ComposeCmd down -v 2>&1 | Out-Null
+            Push-Location docker; & $ComposeCmd down -v 2>&1 | Out-Null; Pop-Location
             
             # Remove the image
             Write-Info "Removing Docker image..."
@@ -737,8 +738,8 @@ switch ($Action) {
             
             # Remove .env file
             Write-Info "Removing .env configuration file..."
-            if (Test-Path "./.env") {
-                Remove-Item "./.env" -Force
+            if (Test-Path "./docker/.env") {
+                Remove-Item "./docker/.env" -Force
                 Write-Success "Removed .env file"
             }
             
@@ -759,8 +760,8 @@ switch ($Action) {
         Write-Warning "*** COMPLETE SANITIZATION WARNING ***"
         Write-Host ""
         Write-Host "This will PERMANENTLY DELETE:" -ForegroundColor Red
-        Write-Host "  - The DCS Statistics container" -ForegroundColor Red
-        Write-Host "  - The DCS Statistics Docker image" -ForegroundColor Red
+        Write-Host "  - The DCS Statistics containers" -ForegroundColor Red
+        Write-Host "  - ALL Docker images (nginx, php, redis)" -ForegroundColor Red
         Write-Host "  - All Docker volumes and networks" -ForegroundColor Red
         Write-Host "  - Your .env configuration file" -ForegroundColor Red
         Write-Host "  - ALL DATA in ./dcs-stats/data directory" -ForegroundColor Red
@@ -784,16 +785,26 @@ switch ($Action) {
             
             # Stop and remove container
             Write-Info "Stopping and removing container..."
-            & $ComposeCmd down -v 2>&1 | Out-Null
+            Push-Location docker; & $ComposeCmd down -v 2>&1 | Out-Null; Pop-Location
             
-            # Remove the image
-            Write-Info "Removing Docker image..."
+            # Remove ALL Docker images used by this installation
+            Write-Info "Removing ALL Docker images from this installation..."
+            
+            # Remove the pre-built images we use
+            docker rmi nginx:alpine 2>&1 | Out-Null
+            docker rmi php:8.2-fpm-alpine 2>&1 | Out-Null
+            docker rmi redis:7-alpine 2>&1 | Out-Null
+            
+            # Remove any custom built images
             docker rmi dcs-statistics:latest 2>&1 | Out-Null
             docker rmi $(docker images -q -f "reference=dcs-statistics") 2>&1 | Out-Null
+            docker rmi $(docker images -q -f "reference=*dcs-*") 2>&1 | Out-Null
             
             # Clean up any dangling images
             Write-Info "Cleaning up dangling images..."
             docker image prune -f 2>&1 | Out-Null
+            
+            Write-Success "Removed all Docker images from this installation"
             
             # Remove any project-specific volumes
             Write-Info "Removing volumes..."
@@ -805,8 +816,8 @@ switch ($Action) {
             
             # Remove .env file
             Write-Info "Removing .env configuration file..."
-            if (Test-Path "./.env") {
-                Remove-Item "./.env" -Force
+            if (Test-Path "./docker/.env") {
+                Remove-Item "./docker/.env" -Force
                 Write-Success "Removed .env file"
             }
             

@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Nginx reverse proxy with security
+  nginx:
+    image: nginx:alpine
+    container_name: dcs-nginx-secure
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-9080}:80"
+    volumes:
+      - ./nginx-secure.conf:/etc/nginx/nginx.conf:ro
+      - ../dcs-stats:/var/www/html:ro
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      - php
+    networks:
+      - dcs_network
+
+  # PHP-FPM with security hardening
+  php:
+    image: php:8.2-fpm-alpine
+    container_name: dcs-php-secure
+    restart: unless-stopped
+    volumes:
+      - ../dcs-stats:/var/www/html
+      - ./php-security.ini:/usr/local/etc/php/conf.d/99-security.ini:ro
+      - ./php-fpm-security.conf:/usr/local/etc/php-fpm.d/zz-security.conf:ro
+    environment:
+      - REDIS_HOST=redis
+      - PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT:-256M}
+    depends_on:
+      - redis
+    networks:
+      - dcs_network
+
+  # Redis with security
+  redis:
+    image: redis:7-alpine
+    container_name: dcs-redis-secure
+    restart: unless-stopped
+    command: redis-server --maxmemory ${REDIS_MEMORY_LIMIT:-256mb} --maxmemory-policy allkeys-lru
+    networks:
+      - dcs_network
+
+networks:
+  dcs_network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: dcs_br0
+
+volumes:
+  nginx_cache:
+    driver: local

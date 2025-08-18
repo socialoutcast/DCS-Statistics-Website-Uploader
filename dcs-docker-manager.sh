@@ -17,23 +17,23 @@ NC='\033[0m' # No Color
 # Default configuration
 DEFAULT_PORT=9080
 CONTAINER_NAME="dcs-statistics"
-ENV_FILE=".env"
+ENV_FILE="docker/.env"
 
 # Function to print colored output
 print_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    echo -e "${BLUE}[INFO]${NC} $1" >&2
 }
 
 print_success() {
-    echo -e "${GREEN}[OK]${NC} $1"
+    echo -e "${GREEN}[OK]${NC} $1" >&2
 }
 
 print_warning() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
+    echo -e "${YELLOW}[WARN]${NC} $1" >&2
 }
 
 print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    echo -e "${RED}[ERROR]${NC} $1" >&2
 }
 
 # Function to check if a port is available
@@ -77,11 +77,11 @@ get_current_port() {
         grep "^WEB_PORT=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2 || echo "$DEFAULT_PORT"
     else
         # .env file does not exist
-        if [ -f ".env.example" ]; then
+        if [ -f "docker/.env.example" ]; then
             print_warning "No .env file? Bold choice..."
-            echo -e "BTW, ${CYAN}./dcs-docker-manager.sh pre-flight${NC} creates one for you"
-            echo "   (Just a thought, no pressure...)"
-            echo ""
+            echo -e "BTW, ${CYAN}./dcs-docker-manager.sh pre-flight${NC} creates one for you" >&2
+            echo "   (Just a thought, no pressure...)" >&2
+            echo "" >&2
         fi
         echo "$DEFAULT_PORT"
     fi
@@ -135,7 +135,7 @@ check_docker() {
 stop_existing_container() {
     if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         print_info "Stopping existing container..."
-        $COMPOSE_CMD down >/dev/null 2>&1 || true
+        (cd docker 2>/dev/null && $COMPOSE_CMD down >/dev/null 2>&1) || true
     fi
 }
 
@@ -622,7 +622,7 @@ run_preflight() {
     # Fix line endings (if dos2unix is available)
     if command -v dos2unix >/dev/null 2>&1; then
         print_info "Fixing line endings for Docker files..."
-        for file in *.sh Dockerfile* docker-compose*.yml .dockerignore .env*; do
+        for file in *.sh docker/*.yml docker/*.conf docker/*.ini .dockerignore .env*; do
             if [ -f "$file" ]; then
                 dos2unix -q "$file" 2>/dev/null && echo "  Fixed: $file" || true
             fi
@@ -645,9 +645,9 @@ run_preflight() {
     
     # Create or update .env file
     print_info "Checking .env file..."
-    if [ ! -f "./.env" ]; then
-        if [ -f "./.env.example" ]; then
-            cp "./.env.example" "./.env"
+    if [ ! -f "./docker/.env" ]; then
+        if [ -f "./docker/.env.example" ]; then
+            cp "./docker/.env.example" "./docker/.env"
             print_success "Created .env file from .env.example"
         else
             print_warning "No .env.example file found"
@@ -656,9 +656,9 @@ run_preflight() {
         print_success ".env file exists"
         
         # Check if using old port 8080 and update to 9080
-        if grep -q "WEB_PORT=8080" "./.env"; then
-            sed -i "s/WEB_PORT=8080/WEB_PORT=9080/" "./.env"
-            sed -i "s|SITE_URL=http://localhost:8080|SITE_URL=http://localhost:9080|" "./.env"
+        if grep -q "WEB_PORT=8080" "./docker/.env"; then
+            sed -i "s/WEB_PORT=8080/WEB_PORT=9080/" "./docker/.env"
+            sed -i "s|SITE_URL=http://localhost:8080|SITE_URL=http://localhost:9080|" "./docker/.env"
             print_success "Updated .env file from port 8080 to 9080"
         fi
     fi
@@ -714,7 +714,7 @@ run_destroy() {
         
         # Stop and remove container
         print_info "Stopping and removing container..."
-        $COMPOSE_CMD down -v >/dev/null 2>&1 || true
+        (cd docker 2>/dev/null && $COMPOSE_CMD down -v >/dev/null 2>&1) || true
         
         # Remove the image
         print_info "Removing Docker image..."
@@ -735,8 +735,8 @@ run_destroy() {
         
         # Remove .env file
         print_info "Removing .env configuration file..."
-        if [ -f "./.env" ]; then
-            rm -f "./.env"
+        if [ -f "./docker/.env" ]; then
+            rm -f "./docker/.env"
             print_success "Removed .env file"
         fi
         
@@ -765,8 +765,8 @@ run_sanitize() {
     print_warning "*** COMPLETE SANITIZATION WARNING ***"
     echo ""
     echo -e "${RED}This will PERMANENTLY DELETE:"
-    echo "  - The DCS Statistics container"
-    echo "  - The DCS Statistics Docker image"
+    echo "  - The DCS Statistics containers"
+    echo "  - ALL Docker images (nginx, php, redis)"
     echo "  - All Docker volumes and networks"
     echo "  - Your .env configuration file"
     echo "  - ALL DATA in ./dcs-stats/data directory"
@@ -790,16 +790,26 @@ run_sanitize() {
         
         # Stop and remove container
         print_info "Stopping and removing container..."
-        $COMPOSE_CMD down -v >/dev/null 2>&1 || true
+        (cd docker 2>/dev/null && $COMPOSE_CMD down -v >/dev/null 2>&1) || true
         
-        # Remove the image
-        print_info "Removing Docker image..."
+        # Remove ALL Docker images used by this installation
+        print_info "Removing ALL Docker images from this installation..."
+        
+        # Remove the pre-built images we use
+        docker rmi nginx:alpine >/dev/null 2>&1 || true
+        docker rmi php:8.2-fpm-alpine >/dev/null 2>&1 || true
+        docker rmi redis:7-alpine >/dev/null 2>&1 || true
+        
+        # Remove any custom built images
         docker rmi dcs-statistics:latest >/dev/null 2>&1 || true
         docker rmi $(docker images -q -f "reference=dcs-statistics") >/dev/null 2>&1 || true
+        docker rmi $(docker images -q -f "reference=*dcs-*") >/dev/null 2>&1 || true
         
         # Clean up any dangling images
         print_info "Cleaning up dangling images..."
         docker image prune -f >/dev/null 2>&1
+        
+        print_success "Removed all Docker images from this installation"
         
         # Remove any project-specific volumes
         print_info "Removing volumes..."
@@ -811,8 +821,8 @@ run_sanitize() {
         
         # Remove .env file
         print_info "Removing .env configuration file..."
-        if [ -f "./.env" ]; then
-            rm -f "./.env"
+        if [ -f "./docker/.env" ]; then
+            rm -f "./docker/.env"
             print_success "Removed .env file"
         fi
         
@@ -861,7 +871,7 @@ start_dcs_statistics() {
     
     # Quick check for common issues
     needs_fix=false
-    if [ ! -f "./.env" ] && [ -f "./.env.example" ]; then
+    if [ ! -f "./docker/.env" ] && [ -f "./docker/.env.example" ]; then
         needs_fix=true
     fi
     if [ ! -d "./dcs-stats/data" ]; then
@@ -970,13 +980,14 @@ start_dcs_statistics() {
         print_info "Continuing with Docker build..."
         echo ""
         
-        print_info "Docker image not found, building now..."
+        print_info "Docker images not found, pulling now..."
         print_info "This may take a few minutes on first run..."
         
-        if $COMPOSE_CMD build --no-cache 2>&1 | tee /tmp/docker_build.log | grep -E "^#[0-9]+" ; then
-            print_success "Docker image built successfully"
+        # Since we use pre-built images, we just need to pull them
+        if (cd docker && $COMPOSE_CMD pull 2>&1) | tee /tmp/docker_build.log; then
+            print_success "Docker images pulled successfully"
         else
-            print_error "Failed to build Docker image"
+            print_error "Failed to pull Docker images"
             
             # Check for common issues
             if grep -q "invalid pool\|pool request" /tmp/docker_build.log 2>/dev/null; then
@@ -1004,7 +1015,7 @@ start_dcs_statistics() {
     
     print_info "Starting container..."
     
-    if $COMPOSE_CMD up -d 2>&1 | tee /tmp/docker_start.log | grep -v "^$" ; then
+    if (cd docker && $COMPOSE_CMD up -d 2>&1) | tee /tmp/docker_start.log | grep -v "^$" ; then
         print_success "Container started successfully"
     else
         print_error "Failed to start container"
@@ -1081,12 +1092,12 @@ rebuild_image() {
     docker rmi $(docker images -q -f "reference=*dcs-statistics*") 2>/dev/null || true
     print_success "Old image removed"
     
-    # Build new image
-    print_info "Building new Docker image..."
+    # Pull fresh images
+    print_info "Pulling fresh Docker images..."
     print_info "This will take a few minutes..."
     
-    if $COMPOSE_CMD build --no-cache 2>&1 | tee /tmp/docker_build.log | grep -E "^#[0-9]+" ; then
-        print_success "Docker image rebuilt successfully!"
+    if (cd docker && $COMPOSE_CMD pull 2>&1) | tee /tmp/docker_build.log; then
+        print_success "Docker images pulled successfully!"
         rm -f /tmp/docker_build.log
         echo ""
         echo -e "You can now start the container with: ${CYAN}./dcs-docker-manager.sh start${NC}"
@@ -1148,12 +1159,12 @@ case "$ACTION" in
         ;;
     stop)
         print_info "Stopping DCS Statistics..."
-        $COMPOSE_CMD down
+        (cd docker && $COMPOSE_CMD down)
         print_success "Stopped"
         ;;
     restart)
         print_info "Restarting DCS Statistics..."
-        $COMPOSE_CMD down
+        (cd docker && $COMPOSE_CMD down)
         start_dcs_statistics
         ;;
     rebuild)

@@ -1,5 +1,6 @@
 # Environment variables
 .env
+docker/.env
 
 # Python
 __pycache__/
@@ -42,6 +43,10 @@ docker-compose.override.yml
 .docker/
 data/
 !data/.gitkeep
+
+# Penetration testing reports
+docker/pentest_report_*.txt
+pentest_report_*.txt
 
 # Claude AI related
 .claude/
