@@ -205,9 +205,12 @@ function Show-AccessInfo {
     # Get local network IPs
     $localIPs = Get-LocalIPAddresses
     if ($localIPs.Count -gt 0) {
-        Write-Host "  Network:"
-        foreach ($ip in $localIPs) {
-            Write-Host "              http://${ip}:$Port" -ForegroundColor Cyan
+        # Show first IP aligned with Local and External
+        Write-Host "  Network:    " -NoNewline
+        Write-Host "http://$($localIPs[0]):$Port" -ForegroundColor Cyan
+        # Show additional IPs indented if there are more than one
+        for ($i = 1; $i -lt $localIPs.Count; $i++) {
+            Write-Host "              http://$($localIPs[$i]):$Port" -ForegroundColor Cyan
         }
     }
     

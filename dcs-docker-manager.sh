@@ -203,9 +203,11 @@ display_access_info() {
     # Get local network IPs
     local_ips=$(get_local_ips)
     if [ -n "$local_ips" ]; then
-        echo "  Network:"
-        for ip in $local_ips; do
-            echo -e "              ${CYAN}http://$ip:$port${NC}"
+        local first_ip=$(echo "$local_ips" | head -n1)
+        echo -e "  Network:    ${CYAN}http://$first_ip:$port${NC}"
+        # Show additional IPs if there are more than one
+        echo "$local_ips" | tail -n +2 | while read ip; do
+            [ -n "$ip" ] && echo -e "              ${CYAN}http://$ip:$port${NC}"
         done
     fi
     
