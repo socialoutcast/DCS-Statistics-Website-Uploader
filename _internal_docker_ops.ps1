@@ -163,7 +163,12 @@ function Get-LocalIPAddresses {
     $adapters = Get-NetIPAddress -AddressFamily IPv4 | Where-Object {
         $_.IPAddress -ne "127.0.0.1" -and 
         $_.PrefixOrigin -ne "WellKnown" -and
-        $_.InterfaceAlias -notmatch "Loopback"
+        $_.InterfaceAlias -notmatch "Loopback" -and
+        # Filter out Docker bridge networks (172.17.0.0/12 - 172.31.0.0/12)
+        -not ($_.IPAddress -match "^172\.(1[7-9]|2[0-9]|3[0-1])\.") -and
+        # Also filter out common Docker/WSL interfaces
+        $_.InterfaceAlias -notmatch "vEthernet \(WSL" -and
+        $_.InterfaceAlias -notmatch "Docker"
     }
     
     foreach ($adapter in $adapters) {

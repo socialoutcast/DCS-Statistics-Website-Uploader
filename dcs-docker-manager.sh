@@ -164,14 +164,25 @@ get_external_ip() {
 # Function to get local IP addresses
 get_local_ips() {
     if command -v ip >/dev/null 2>&1; then
-        # Linux
-        ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1'
+        # Linux - filter out loopback and Docker bridge networks
+        ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | \
+            grep -v '127.0.0.1' | \
+            grep -v '^172\.1[7-9]\.' | \
+            grep -v '^172\.2[0-9]\.' | \
+            grep -v '^172\.3[0-1]\.'
     elif command -v ifconfig >/dev/null 2>&1; then
-        # Linux/BSD
-        ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | sed 's/addr://'
+        # Linux/BSD - filter out loopback and Docker bridge networks
+        ifconfig | grep "inet " | grep -v 127.0.0.1 | awk '{print $2}' | \
+            sed 's/addr://' | \
+            grep -v '^172\.1[7-9]\.' | \
+            grep -v '^172\.2[0-9]\.' | \
+            grep -v '^172\.3[0-1]\.'
     elif command -v hostname >/dev/null 2>&1; then
-        # Alternative for some systems
-        hostname -I 2>/dev/null | tr ' ' '\n' | grep -v '^$'
+        # Alternative for some systems - filter out Docker bridge networks
+        hostname -I 2>/dev/null | tr ' ' '\n' | grep -v '^$' | \
+            grep -v '^172\.1[7-9]\.' | \
+            grep -v '^172\.2[0-9]\.' | \
+            grep -v '^172\.3[0-1]\.'
     else
         echo ""
     fi
