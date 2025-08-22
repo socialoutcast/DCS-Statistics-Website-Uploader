@@ -6,6 +6,26 @@
 
 set -e
 
+# Enable debug logging if DEBUG environment variable is set
+# Usage: DEBUG=1 ./dcs-docker-manager.sh start
+DEBUG_LOG="/tmp/dcs-docker-manager-$(date +%Y%m%d-%H%M%S).log"
+if [ -n "$DEBUG" ]; then
+    exec 2> >(tee -a "$DEBUG_LOG" >&2)
+    set -x
+    echo "[$(date)] Starting DCS Docker Manager - Debug Mode" >> "$DEBUG_LOG"
+    echo "Debug log: $DEBUG_LOG"
+fi
+
+# Function to log debug messages
+debug_log() {
+    if [ -n "$DEBUG" ]; then
+        echo "[$(date)] DEBUG: $1" >> "$DEBUG_LOG"
+    fi
+}
+
+# Save stdin to file descriptor 3 for later use
+exec 3<&0
+
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -18,22 +38,71 @@ NC='\033[0m' # No Color
 DEFAULT_PORT=9080
 CONTAINER_NAME="dcs-statistics"
 ENV_FILE="docker/.env"
+DEFAULT_PROXY_TYPE="nginx-proxy-manager"
 
 # Function to print colored output
 print_info() {
     echo -e "${BLUE}[INFO]${NC} $1" >&2
+    debug_log "INFO: $1"
 }
 
 print_success() {
     echo -e "${GREEN}[OK]${NC} $1" >&2
+    debug_log "SUCCESS: $1"
 }
 
 print_warning() {
     echo -e "${YELLOW}[WARN]${NC} $1" >&2
+    debug_log "WARNING: $1"
 }
 
 print_error() {
     echo -e "${RED}[ERROR]${NC} $1" >&2
+    debug_log "ERROR: $1"
+}
+
+# Function to safely read user input
+safe_read() {
+    local var_name="$1"
+    local prompt="$2"
+    local default_value="$3"
+    local is_password="${4:-false}"
+    
+    debug_log "safe_read: prompting for $var_name"
+    
+    # Print the prompt
+    echo -n "$prompt"
+    
+    # Read from the saved stdin (file descriptor 3)
+    local read_opts="-r"
+    if [ "$is_password" = "true" ]; then
+        read_opts="-rs"
+    fi
+    
+    if [ -t 3 ]; then
+        debug_log "Reading from FD 3"
+        IFS= read $read_opts -u 3 input_value
+    elif [ -t 0 ]; then
+        debug_log "Reading from stdin"
+        IFS= read $read_opts input_value
+    else
+        debug_log "Reading from /dev/tty"
+        IFS= read $read_opts input_value < /dev/tty
+    fi
+    
+    if [ "$is_password" = "true" ]; then
+        echo  # New line after password input
+    fi
+    
+    # Use default if empty
+    if [ -z "$input_value" ] && [ -n "$default_value" ]; then
+        input_value="$default_value"
+        debug_log "Using default value: $default_value"
+    fi
+    
+    # Set the variable
+    eval "$var_name='$input_value'"
+    debug_log "safe_read: $var_name set (length: ${#input_value})"
 }
 
 # Function to check if a port is available
@@ -192,24 +261,77 @@ get_local_ips() {
 display_access_info() {
     local port=$1
     
+    # Get proxy type from .env
+    local proxy_type=""
+    if [ -f "$ENV_FILE" ]; then
+        proxy_type=$(grep "^PROXY_TYPE=" "$ENV_FILE" 2>/dev/null | cut -d'=' -f2)
+    fi
+    
     echo ""
     echo -e "${GREEN}========================================"
     echo "DCS Statistics Website is running!"
     echo -e "========================================${NC}"
     echo ""
-    echo "Access your site at:"
-    echo -e "  Local:      ${CYAN}http://localhost:$port${NC}"
     
     # Get local network IPs
     local_ips=$(get_local_ips)
+    local first_ip=""
     if [ -n "$local_ips" ]; then
-        local first_ip=$(echo "$local_ips" | head -n1)
-        echo -e "  Network:    ${CYAN}http://$first_ip:$port${NC}"
-        # Show additional IPs if there are more than one
-        echo "$local_ips" | tail -n +2 | while read ip; do
-            [ -n "$ip" ] && echo -e "              ${CYAN}http://$ip:$port${NC}"
-        done
+        first_ip=$(echo "$local_ips" | head -n1)
     fi
+    
+    case "$proxy_type" in
+        "nginx-proxy-manager")
+            echo "Access your services at:"
+            echo ""
+            echo -e "  ${YELLOW}Nginx Proxy Manager Admin:${NC}"
+            echo -e "    Local:      ${CYAN}http://localhost:81${NC}"
+            if [ -n "$first_ip" ]; then
+                echo -e "    Network:    ${CYAN}http://$first_ip:81${NC}"
+            fi
+            echo ""
+            echo -e "  ${YELLOW}Default Admin Login:${NC}"
+            echo "    Email:      admin@example.com"
+            echo "    Password:   changeme"
+            echo ""
+            echo -e "  ${YELLOW}DCS Statistics (after proxy config):${NC}"
+            echo -e "    HTTP:       ${CYAN}http://localhost${NC}"
+            echo -e "    HTTPS:      ${CYAN}https://localhost${NC}"
+            if [ -n "$first_ip" ]; then
+                echo -e "    Network:    ${CYAN}http://$first_ip${NC}"
+            fi
+            echo ""
+            echo -e "${YELLOW}IMPORTANT:${NC} Configure your proxy host in NPM admin panel!"
+            echo "  1. Login to NPM at http://localhost:81"
+            echo "  2. Add Proxy Host pointing to: dcs-nginx-backend"
+            echo "  3. Set Scheme: http, Port: 80"
+            echo "  4. Enable WebSocket support if needed"
+            ;;
+        "none")
+            echo -e "${YELLOW}No proxy installed - Manual configuration required${NC}"
+            echo ""
+            echo "PHP-FPM service is available at:"
+            echo "  Container:  dcs-php-secure:9000"
+            echo ""
+            echo "Configure your existing proxy to forward to the PHP-FPM container."
+            echo "Example nginx upstream:"
+            echo "  upstream php {"
+            echo "    server dcs-php-secure:9000;"
+            echo "  }"
+            ;;
+        *)
+            # Simple nginx or default
+            echo "Access your site at:"
+            echo -e "  Local:      ${CYAN}http://localhost:$port${NC}"
+            if [ -n "$first_ip" ]; then
+                echo -e "  Network:    ${CYAN}http://$first_ip:$port${NC}"
+                # Show additional IPs if there are more than one
+                echo "$local_ips" | tail -n +2 | while read ip; do
+                    [ -n "$ip" ] && echo -e "              ${CYAN}http://$ip:$port${NC}"
+                done
+            fi
+            ;;
+    esac
     
     # Get external IP
     external_ip=$(get_external_ip)
@@ -488,14 +610,17 @@ install_docker() {
     echo ""
 }
 
+
 # Pre-flight check function
 run_preflight() {
+    debug_log "Starting run_preflight function"
     echo "========================================"
     echo "Pre-Flight Check for DCS Statistics"
     echo "========================================"
     echo ""
     print_info "Running pre-flight checks and fixes..."
     echo ""
+    debug_log "About to detect OS"
     
     # Detect OS
     detect_distro
@@ -505,8 +630,7 @@ run_preflight() {
     if ! command -v docker >/dev/null 2>&1; then
         print_warning "Docker is not installed"
         echo ""
-        echo -n "Would you like to install Docker automatically? (y/N): "
-        read -r response
+        safe_read response "Would you like to install Docker automatically? (y/N): " "N"
         if [[ "$response" =~ ^[Yy]$ ]]; then
             install_docker "$OS"
             
@@ -560,8 +684,7 @@ run_preflight() {
         print_warning "Docker Compose not found"
         
         # Install docker-compose based on distro
-        echo -n "Would you like to install Docker Compose? (y/N): "
-        read -r response
+        safe_read response "Would you like to install Docker Compose? (y/N): " "N"
         if [[ "$response" =~ ^[Yy]$ ]]; then
             print_info "Installing Docker Compose..."
             
@@ -601,8 +724,7 @@ run_preflight() {
     # Check and install dos2unix if needed
     if ! command -v dos2unix >/dev/null 2>&1; then
         print_warning "dos2unix not found (needed to fix line endings)"
-        echo -n "Would you like to install dos2unix? (y/N): "
-        read -r response
+        safe_read response "Would you like to install dos2unix? (y/N): " "N"
         if [[ "$response" =~ ^[Yy]$ ]]; then
             print_info "Installing dos2unix..."
             case "$OS" in
@@ -658,15 +780,31 @@ run_preflight() {
     
     # Create or update .env file
     print_info "Checking .env file..."
+    debug_log "Checking if .env exists: ./docker/.env"
     if [ ! -f "./docker/.env" ]; then
+        debug_log ".env does not exist, checking for .env.example"
         if [ -f "./docker/.env.example" ]; then
+            debug_log "Copying .env.example to .env"
             cp "./docker/.env.example" "./docker/.env"
             print_success "Created .env file from .env.example"
+            
+            # Run proxy configuration in a separate script to avoid stdin issues
+            debug_log "Running proxy configuration script"
+            chmod +x ./docker/_internal_proxy_config_7a8b9c.sh
+            bash ./docker/_internal_proxy_config_7a8b9c.sh
+            debug_log "Proxy configuration completed"
         else
             print_warning "No .env.example file found"
         fi
     else
         print_success ".env file exists"
+        
+        # Check if PROXY_TYPE is set, if not ask for it
+        if ! grep -q "^PROXY_TYPE=" "./docker/.env"; then
+            print_info "Proxy configuration needed..."
+            chmod +x ./docker/_internal_proxy_config_7a8b9c.sh
+            bash ./docker/_internal_proxy_config_7a8b9c.sh
+        fi
         
         # Check if using old port 8080 and update to 9080
         if grep -q "WEB_PORT=8080" "./docker/.env"; then
@@ -703,8 +841,8 @@ run_destroy() {
     print_warning "This will DESTROY everything related to DCS Statistics Docker setup!"
     echo ""
     echo -e "${YELLOW}This action will remove:"
-    echo "  - The DCS Statistics container"
-    echo "  - The DCS Statistics Docker image"
+    echo "  - All DCS Statistics containers"
+    echo "  - All Docker images (nginx, php, redis, nginx-proxy-manager)"
     echo "  - All Docker volumes created by this project"
     echo "  - The Docker network (if created)"
     echo -e "  - Your .env configuration file${NC}"
@@ -729,10 +867,15 @@ run_destroy() {
         print_info "Stopping and removing container..."
         (cd docker 2>/dev/null && $COMPOSE_CMD down -v >/dev/null 2>&1) || true
         
-        # Remove the image
-        print_info "Removing Docker image..."
+        # Remove all project Docker images
+        print_info "Removing Docker images..."
         docker rmi dcs-statistics:latest >/dev/null 2>&1 || true
+        docker rmi jc21/nginx-proxy-manager:latest >/dev/null 2>&1 || true
+        docker rmi nginx:alpine >/dev/null 2>&1 || true
+        docker rmi php:8.2-fpm-alpine >/dev/null 2>&1 || true
+        docker rmi redis:7-alpine >/dev/null 2>&1 || true
         docker rmi $(docker images -q -f "reference=dcs-statistics") >/dev/null 2>&1 || true
+        docker rmi $(docker images -q -f "reference=*dcs-*") >/dev/null 2>&1 || true
         
         # Clean up any dangling images
         print_info "Cleaning up dangling images..."
@@ -741,6 +884,7 @@ run_destroy() {
         # Remove any project-specific volumes
         print_info "Removing volumes..."
         docker volume rm $(docker volume ls -q -f "name=dcs-statistics") >/dev/null 2>&1 || true
+        docker volume rm $(docker volume ls -q | grep -E "npm_data|npm_letsencrypt|nginx_cache") >/dev/null 2>&1 || true
         
         # Clean up networks
         print_info "Cleaning up networks..."
@@ -778,8 +922,8 @@ run_sanitize() {
     print_warning "*** COMPLETE SANITIZATION WARNING ***"
     echo ""
     echo -e "${RED}This will PERMANENTLY DELETE:"
-    echo "  - The DCS Statistics containers"
-    echo "  - ALL Docker images (nginx, php, redis)"
+    echo "  - All DCS Statistics containers"
+    echo "  - ALL Docker images (nginx, php, redis, nginx-proxy-manager)"
     echo "  - All Docker volumes and networks"
     echo "  - Your .env configuration file"
     echo "  - ALL DATA in ./dcs-stats/data directory"
@@ -808,15 +952,17 @@ run_sanitize() {
         # Remove ALL Docker images used by this installation
         print_info "Removing ALL Docker images from this installation..."
         
-        # Remove the pre-built images we use
+        # Remove all the images we use
         docker rmi nginx:alpine >/dev/null 2>&1 || true
         docker rmi php:8.2-fpm-alpine >/dev/null 2>&1 || true
         docker rmi redis:7-alpine >/dev/null 2>&1 || true
+        docker rmi jc21/nginx-proxy-manager:latest >/dev/null 2>&1 || true
         
         # Remove any custom built images
         docker rmi dcs-statistics:latest >/dev/null 2>&1 || true
         docker rmi $(docker images -q -f "reference=dcs-statistics") >/dev/null 2>&1 || true
         docker rmi $(docker images -q -f "reference=*dcs-*") >/dev/null 2>&1 || true
+        docker rmi $(docker images -q -f "reference=*nginx-proxy-manager*") >/dev/null 2>&1 || true
         
         # Clean up any dangling images
         print_info "Cleaning up dangling images..."
@@ -827,6 +973,7 @@ run_sanitize() {
         # Remove any project-specific volumes
         print_info "Removing volumes..."
         docker volume rm $(docker volume ls -q -f "name=dcs-statistics") >/dev/null 2>&1 || true
+        docker volume rm $(docker volume ls -q | grep -E "npm_data|npm_letsencrypt|nginx_cache") >/dev/null 2>&1 || true
         
         # Clean up networks
         print_info "Cleaning up networks..."
@@ -961,7 +1108,7 @@ start_dcs_statistics() {
         echo "Type anything else or press Enter to exit"
         echo ""
         echo -n "Your choice: "
-        read -r response
+        read response
         if [[ "$response" != "CONTINUE" ]]; then
             echo ""
             print_info "Setup cancelled. To set up DCS Statistics, either:"
@@ -976,9 +1123,11 @@ start_dcs_statistics() {
         echo ""
         
         # Run pre-flight checks (set flag to suppress the "run start" message)
-        FROM_START=true
+        export FROM_START=true
         run_preflight
-        if [ $? -ne 0 ]; then
+        preflight_result=$?
+        unset FROM_START
+        if [ $preflight_result -ne 0 ]; then
             print_error "Pre-flight checks failed. Please fix the issues and try again."
             exit 1
         fi

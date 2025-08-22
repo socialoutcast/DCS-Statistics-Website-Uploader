@@ -21,6 +21,7 @@ param(
 $DefaultPort = 9080
 $ContainerName = "dcs-statistics"
 $EnvFile = "docker/.env"
+$DefaultProxyType = "nginx-proxy-manager"
 
 # Color functions
 function Write-Info { Write-Host "[INFO] $($args[0])" -ForegroundColor Blue }
@@ -193,30 +194,89 @@ function Get-ExternalIP {
 function Show-AccessInfo {
     param([int]$Port)
     
+    # Get proxy type from .env
+    $proxyType = ""
+    if (Test-Path $EnvFile) {
+        $envContent = Get-Content $EnvFile -Raw
+        if ($envContent -match "PROXY_TYPE=(.*)") {
+            $proxyType = $matches[1].Trim()
+        }
+    }
+    
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Green
     Write-Host "DCS Statistics Website is running!" -ForegroundColor Green
     Write-Host "========================================" -ForegroundColor Green
     Write-Host ""
-    Write-Host "Access your site at:"
-    Write-Host "  Local:      " -NoNewline
-    Write-Host "http://localhost:$Port" -ForegroundColor Cyan
     
     # Get local network IPs
     $localIPs = Get-LocalIPAddresses
-    if ($localIPs.Count -gt 0) {
-        # Show first IP aligned with Local and External
-        Write-Host "  Network:    " -NoNewline
-        Write-Host "http://$($localIPs[0]):$Port" -ForegroundColor Cyan
-        # Show additional IPs indented if there are more than one
-        for ($i = 1; $i -lt $localIPs.Count; $i++) {
-            Write-Host "              http://$($localIPs[$i]):$Port" -ForegroundColor Cyan
+    $firstIP = if ($localIPs.Count -gt 0) { $localIPs[0] } else { $null }
+    
+    switch ($proxyType) {
+        "nginx-proxy-manager" {
+            Write-Host "Access your services at:"
+            Write-Host ""
+            Write-Host "  Nginx Proxy Manager Admin:" -ForegroundColor Yellow
+            Write-Host "    Local:      " -NoNewline
+            Write-Host "http://localhost:81" -ForegroundColor Cyan
+            if ($firstIP) {
+                Write-Host "    Network:    " -NoNewline
+                Write-Host "http://${firstIP}:81" -ForegroundColor Cyan
+            }
+            Write-Host ""
+            Write-Host "  Default Admin Login:" -ForegroundColor Yellow
+            Write-Host "    Email:      admin@example.com"
+            Write-Host "    Password:   changeme"
+            Write-Host ""
+            Write-Host "  DCS Statistics (after proxy config):" -ForegroundColor Yellow
+            Write-Host "    HTTP:       " -NoNewline
+            Write-Host "http://localhost" -ForegroundColor Cyan
+            Write-Host "    HTTPS:      " -NoNewline
+            Write-Host "https://localhost" -ForegroundColor Cyan
+            if ($firstIP) {
+                Write-Host "    Network:    " -NoNewline
+                Write-Host "http://$firstIP" -ForegroundColor Cyan
+            }
+            Write-Host ""
+            Write-Warning "IMPORTANT: Configure your proxy host in NPM admin panel!"
+            Write-Host "  1. Login to NPM at http://localhost:81"
+            Write-Host "  2. Add Proxy Host pointing to: dcs-nginx-backend"
+            Write-Host "  3. Set Scheme: http, Port: 80"
+            Write-Host "  4. Enable WebSocket support if needed"
+        }
+        "none" {
+            Write-Warning "No proxy installed - Manual configuration required"
+            Write-Host ""
+            Write-Host "PHP-FPM service is available at:"
+            Write-Host "  Container:  dcs-php-secure:9000"
+            Write-Host ""
+            Write-Host "Configure your existing proxy to forward to the PHP-FPM container."
+            Write-Host "Example nginx upstream:"
+            Write-Host "  upstream php {"
+            Write-Host "    server dcs-php-secure:9000;"
+            Write-Host "  }"
+        }
+        default {
+            # Simple nginx or default
+            Write-Host "Access your site at:"
+            Write-Host "  Local:      " -NoNewline
+            Write-Host "http://localhost:$Port" -ForegroundColor Cyan
+            if ($firstIP) {
+                Write-Host "  Network:    " -NoNewline
+                Write-Host "http://${firstIP}:$Port" -ForegroundColor Cyan
+                # Show additional IPs if there are more than one
+                for ($i = 1; $i -lt $localIPs.Count; $i++) {
+                    Write-Host "              http://$($localIPs[$i]):$Port" -ForegroundColor Cyan
+                }
+            }
         }
     }
     
-    # Get external IP
+    # Get external IP for all proxy types
     $externalIP = Get-ExternalIP
-    if ($externalIP) {
+    if ($externalIP -and $proxyType -ne "none") {
+        Write-Host ""
         Write-Host "  External:   " -NoNewline
         Write-Host "http://${externalIP}:$Port" -ForegroundColor Cyan
         Write-Host ""
@@ -414,12 +474,12 @@ function Start-DCSStatistics {
         Write-Info "Running pre-flight checks before continuing..."
         Write-Host ""
         
-        # Run pre-flight checks by calling the script with pre-flight argument
+        # Run pre-flight checks directly as a function call
         # Set environment variable to indicate we're calling from start
         $env:FROM_START = "true"
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\_internal_docker_ops.ps1" "pre-flight"
+        $preflightResult = Run-PreFlight
         $env:FROM_START = $null
-        if ($LASTEXITCODE -ne 0) {
+        if (-not $preflightResult) {
             Write-Error "Pre-flight checks failed. Please fix the issues and try again."
             return
         }
@@ -535,6 +595,119 @@ function Start-DCSStatistics {
     Show-AccessInfo -Port $selectedPort
 }
 
+# Function to run pre-flight checks
+function Run-PreFlight {
+    Write-Host "========================================"
+    Write-Host "Pre-Flight Check for DCS Statistics"
+    Write-Host "========================================"
+    Write-Host ""
+    Write-Info "Running pre-flight checks and fixes..."
+    Write-Host ""
+    
+    
+    
+    # Check Docker installation
+    Write-Info "Checking Docker installation..."
+    $dockerOk = $false
+    try {
+        $null = docker --version 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Success "Docker is installed"
+            
+            $dockerInfo = docker info 2>&1
+            if ($LASTEXITCODE -eq 0) {
+                Write-Success "Docker daemon is running"
+                $dockerOk = $true
+            }
+            else {
+                Write-Warning "Docker daemon is not running"
+                Write-Host "Please start Docker Desktop and try again"
+            }
+        }
+        else {
+            Write-Error "Docker is not installed"
+            Write-Host "Please install Docker Desktop from: https://www.docker.com/products/docker-desktop/"
+        }
+    }
+    catch {
+        Write-Error "Docker is not installed"
+        Write-Host "Please install Docker Desktop from: https://www.docker.com/products/docker-desktop/"
+    }
+    
+    if ($dockerOk) {
+        Write-Host ""
+        
+        # Create required directories
+        Write-Info "Ensuring required directories exist..."
+        $dirs = @("./dcs-stats/data", "./dcs-stats/site-config/data", "./dcs-stats/backups")
+        foreach ($dir in $dirs) {
+            if (-not (Test-Path $dir)) {
+                New-Item -ItemType Directory -Path $dir -Force | Out-Null
+                Write-Success "Created directory: $dir"
+            }
+            else {
+                Write-Host "  Directory exists: $dir" -ForegroundColor Gray
+            }
+        }
+        Write-Host ""
+        
+        # Create or update .env file
+        Write-Info "Checking .env file..."
+        if (-not (Test-Path "./docker/.env")) {
+            if (Test-Path "./docker/.env.example") {
+                Copy-Item "./docker/.env.example" "./docker/.env"
+                Write-Success "Created .env file from .env.example"
+                
+                # Run proxy configuration in a separate script
+                Write-Info "Running proxy configuration..."
+                & powershell -File ./docker/_internal_proxy_config_7a8b9c.ps1
+            }
+            else {
+                Write-Warning "No .env.example file found"
+            }
+        }
+        else {
+            Write-Success ".env file exists"
+            
+            # Check if PROXY_TYPE is set, if not ask for it
+            $envContent = Get-Content "./docker/.env" -Raw
+            if ($envContent -notmatch "PROXY_TYPE=") {
+                Write-Info "Proxy configuration needed..."
+                & powershell -File ./docker/_internal_proxy_config_7a8b9c.ps1
+            }
+            
+            # Check if using old port 8080 and update to 9080
+            if ($envContent -match "WEB_PORT=8080") {
+                $envContent = $envContent -replace "WEB_PORT=8080", "WEB_PORT=9080"
+                $envContent = $envContent -replace "SITE_URL=http://localhost:8080", "SITE_URL=http://localhost:9080"
+                Set-Content "./docker/.env" $envContent
+                Write-Success "Updated .env file from port 8080 to 9080"
+            }
+        }
+        Write-Host ""
+        
+        # Clean up Docker networks
+        Write-Info "Cleaning up Docker networks..."
+        docker network prune -f 2>&1 | Out-Null
+        Write-Success "Docker networks cleaned"
+        Write-Host ""
+        
+        Write-Success "Pre-flight checks completed successfully!"
+        Write-Host ""
+        # Only show the "run start" message if we're not already in the start process
+        if ($env:FROM_START -ne "true") {
+            Write-Host "You can now run: " -NoNewline
+            Write-Host "dcs-docker-manager.bat start" -ForegroundColor Cyan
+            Write-Host "to launch the DCS Statistics website."
+        }
+        return $true
+    }
+    else {
+        Write-Error "Pre-flight checks failed. Please fix the issues above and try again."
+        return $false
+    }
+}
+
 # Detect docker-compose command
 $null = docker-compose version 2>&1
 if ($LASTEXITCODE -eq 0) {
@@ -585,126 +758,22 @@ switch ($Action) {
         Rebuild-DockerImage
     }
     "pre-flight" {
-        Write-Host "========================================"
-        Write-Host "Pre-Flight Check for DCS Statistics"
-        Write-Host "========================================"
-        Write-Host ""
-        Write-Info "Running pre-flight checks and fixes..."
-        Write-Host ""
-        
-        # Check Docker installation
-        Write-Info "Checking Docker installation..."
-        $dockerOk = $false
-        try {
-            $null = docker --version 2>&1
-            if ($LASTEXITCODE -eq 0) {
-                Write-Success "Docker is installed"
-                
-                $dockerInfo = docker info 2>&1
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Success "Docker daemon is running"
-                    $dockerOk = $true
-                }
-                else {
-                    Write-Warning "Docker daemon is not running"
-                    Write-Host "Please start Docker Desktop and try again"
-                }
-            }
-            else {
-                Write-Error "Docker is not installed"
-                Write-Host "Please install Docker Desktop from: https://www.docker.com/products/docker-desktop/"
-            }
-        }
-        catch {
-            Write-Error "Error checking Docker: $_"
-        }
-        Write-Host ""
-        
-        if ($dockerOk) {
-            # Fix line endings
-            Write-Info "Fixing line endings for Docker files..."
-            $filesToFix = @("*.sh", "docker/*.yml", "docker/*.conf", "docker/*.ini", ".dockerignore", ".env*")
-            foreach ($pattern in $filesToFix) {
-                $files = Get-ChildItem -Path . -Filter $pattern -ErrorAction SilentlyContinue
-                foreach ($file in $files) {
-                    if (Test-Path $file.FullName -PathType Leaf) {
-                        $content = Get-Content $file.FullName -Raw -ErrorAction SilentlyContinue
-                        if ($content) {
-                            $fixed = $content -replace "`r`n", "`n"
-                            [System.IO.File]::WriteAllText($file.FullName, $fixed, [System.Text.Encoding]::UTF8)
-                            Write-Host "  Fixed: $($file.Name)" -ForegroundColor Green
-                        }
-                    }
-                }
-            }
-            Write-Host ""
-            
-            # Create required directories
-            Write-Info "Ensuring required directories exist..."
-            $dirs = @("./dcs-stats/data", "./dcs-stats/site-config/data", "./dcs-stats/backups")
-            foreach ($dir in $dirs) {
-                if (-not (Test-Path $dir)) {
-                    New-Item -ItemType Directory -Path $dir -Force | Out-Null
-                    Write-Success "Created directory: $dir"
-                }
-                else {
-                    Write-Host "  Directory exists: $dir" -ForegroundColor Gray
-                }
-            }
-            Write-Host ""
-            
-            # Create or update .env file
-            Write-Info "Checking .env file..."
-            if (-not (Test-Path "./docker/.env")) {
-                if (Test-Path "./docker/.env.example") {
-                    Copy-Item "./docker/.env.example" "./docker/.env"
-                    Write-Success "Created .env file from .env.example"
-                }
-                else {
-                    Write-Warning "No .env.example file found"
-                }
-            }
-            else {
-                Write-Success ".env file exists"
-                
-                # Check if using old port 8080 and update to 9080
-                $envContent = Get-Content "./docker/.env" -Raw
-                if ($envContent -match "WEB_PORT=8080") {
-                    $envContent = $envContent -replace "WEB_PORT=8080", "WEB_PORT=9080"
-                    $envContent = $envContent -replace "SITE_URL=http://localhost:8080", "SITE_URL=http://localhost:9080"
-                    Set-Content "./docker/.env" $envContent
-                    Write-Success "Updated .env file from port 8080 to 9080"
-                }
-            }
-            Write-Host ""
-            
-            # Clean up Docker networks
-            Write-Info "Cleaning up Docker networks..."
-            docker network prune -f 2>&1 | Out-Null
-            Write-Success "Docker networks cleaned"
-            Write-Host ""
-            
-            Write-Success "Pre-flight checks completed successfully!"
-            Write-Host ""
-            # Only show the "run start" message if we're not already in the start process
-            if ($env:FROM_START -ne "true") {
-                Write-Host "You can now run: " -NoNewline
-                Write-Host "dcs-docker-manager.bat start" -ForegroundColor Cyan
-                Write-Host "to launch the DCS Statistics website."
-            }
-        }
-        else {
-            Write-Error "Pre-flight checks failed. Please fix the issues above and try again."
+        $result = Run-PreFlight
+        if (-not $result) {
+            exit 1
         }
     }
     "destroy" {
         Write-Warning "This will DESTROY everything related to DCS Statistics Docker setup!"
         Write-Host ""
         Write-Host "This action will remove:" -ForegroundColor Yellow
-        Write-Host "  - The DCS Statistics container" -ForegroundColor Yellow
-        Write-Host "  - The DCS Statistics Docker image" -ForegroundColor Yellow
-        Write-Host "  - All Docker volumes created by this project" -ForegroundColor Yellow
-        Write-Host "  - The Docker network (if created)" -ForegroundColor Yellow
+        Write-Host "  - All DCS Statistics containers" -ForegroundColor Yellow
+        Write-Host "  - ALL Docker images:" -ForegroundColor Yellow
+        Write-Host "    • nginx:alpine" -ForegroundColor Yellow
+        Write-Host "    • php:8.2-fpm-alpine" -ForegroundColor Yellow
+        Write-Host "    • redis:7-alpine" -ForegroundColor Yellow
+        Write-Host "    • jc21/nginx-proxy-manager (if installed)" -ForegroundColor Yellow
+        Write-Host "  - All Docker volumes and networks" -ForegroundColor Yellow
         Write-Host "  - Your .env configuration file" -ForegroundColor Yellow
         Write-Host ""
         # Display preserved data message in cyan (blinking not supported in PowerShell)
@@ -723,25 +792,38 @@ switch ($Action) {
         if ($confirmation -eq "DESTROY") {
             Write-Info "Starting destruction process..."
             
-            # Stop and remove container
-            Write-Info "Stopping and removing container..."
+            # Stop and remove containers
+            Write-Info "Stopping and removing containers..."
             Push-Location docker; & $ComposeCmd down -v 2>&1 | Out-Null; Pop-Location
             
-            # Remove the image
-            Write-Info "Removing Docker image..."
+            # Remove ALL Docker images used by this installation
+            Write-Info "Removing ALL Docker images..."
+            
+            # Remove standard images
+            docker rmi nginx:alpine 2>&1 | Out-Null
+            docker rmi php:8.2-fpm-alpine 2>&1 | Out-Null
+            docker rmi redis:7-alpine 2>&1 | Out-Null
+            
+            # Remove Nginx Proxy Manager if installed
+            docker rmi jc21/nginx-proxy-manager:latest 2>&1 | Out-Null
+            
+            # Remove any custom built images
             docker rmi dcs-statistics:latest 2>&1 | Out-Null
-            docker rmi $(docker images -q -f "reference=dcs-statistics") 2>&1 | Out-Null
+            docker rmi $(docker images -q -f "reference=dcs-*") 2>&1 | Out-Null
             
             # Clean up any dangling images
             Write-Info "Cleaning up dangling images..."
             docker image prune -f 2>&1 | Out-Null
             
-            # Remove any project-specific volumes
+            # Remove any project-specific volumes including NPM volumes
             Write-Info "Removing volumes..."
-            docker volume rm $(docker volume ls -q -f "name=dcs-statistics") 2>&1 | Out-Null
+            docker volume rm $(docker volume ls -q -f "name=dcs-*") 2>&1 | Out-Null
+            docker volume rm $(docker volume ls -q -f "name=npm_*") 2>&1 | Out-Null
+            docker volume rm $(docker volume ls -q -f "name=nginx_cache") 2>&1 | Out-Null
             
             # Clean up networks
             Write-Info "Cleaning up networks..."
+            docker network rm dcs_network 2>&1 | Out-Null
             docker network prune -f 2>&1 | Out-Null
             
             # Remove .env file
@@ -749,6 +831,12 @@ switch ($Action) {
             if (Test-Path "./docker/.env") {
                 Remove-Item "./docker/.env" -Force
                 Write-Success "Removed .env file"
+            }
+            
+            # Remove docker-compose symlink
+            if (Test-Path "./docker/docker-compose.yml") {
+                Remove-Item "./docker/docker-compose.yml" -Force
+                Write-Success "Removed docker-compose.yml symlink"
             }
             
             Write-Success "Destruction complete!"
@@ -768,8 +856,12 @@ switch ($Action) {
         Write-Warning "*** COMPLETE SANITIZATION WARNING ***"
         Write-Host ""
         Write-Host "This will PERMANENTLY DELETE:" -ForegroundColor Red
-        Write-Host "  - The DCS Statistics containers" -ForegroundColor Red
-        Write-Host "  - ALL Docker images (nginx, php, redis)" -ForegroundColor Red
+        Write-Host "  - All DCS Statistics containers" -ForegroundColor Red
+        Write-Host "  - ALL Docker images:" -ForegroundColor Red
+        Write-Host "    • nginx:alpine" -ForegroundColor Red
+        Write-Host "    • php:8.2-fpm-alpine" -ForegroundColor Red
+        Write-Host "    • redis:7-alpine" -ForegroundColor Red
+        Write-Host "    • jc21/nginx-proxy-manager (if installed)" -ForegroundColor Red
         Write-Host "  - All Docker volumes and networks" -ForegroundColor Red
         Write-Host "  - Your .env configuration file" -ForegroundColor Red
         Write-Host "  - ALL DATA in ./dcs-stats/data directory" -ForegroundColor Red
@@ -791,8 +883,8 @@ switch ($Action) {
         if ($confirmation -eq "SANITIZE") {
             Write-Info "Starting complete sanitization..."
             
-            # Stop and remove container
-            Write-Info "Stopping and removing container..."
+            # Stop and remove containers
+            Write-Info "Stopping and removing containers..."
             Push-Location docker; & $ComposeCmd down -v 2>&1 | Out-Null; Pop-Location
             
             # Remove ALL Docker images used by this installation
@@ -803,10 +895,12 @@ switch ($Action) {
             docker rmi php:8.2-fpm-alpine 2>&1 | Out-Null
             docker rmi redis:7-alpine 2>&1 | Out-Null
             
+            # Remove Nginx Proxy Manager if installed
+            docker rmi jc21/nginx-proxy-manager:latest 2>&1 | Out-Null
+            
             # Remove any custom built images
             docker rmi dcs-statistics:latest 2>&1 | Out-Null
-            docker rmi $(docker images -q -f "reference=dcs-statistics") 2>&1 | Out-Null
-            docker rmi $(docker images -q -f "reference=*dcs-*") 2>&1 | Out-Null
+            docker rmi $(docker images -q -f "reference=dcs-*") 2>&1 | Out-Null
             
             # Clean up any dangling images
             Write-Info "Cleaning up dangling images..."
@@ -814,12 +908,15 @@ switch ($Action) {
             
             Write-Success "Removed all Docker images from this installation"
             
-            # Remove any project-specific volumes
+            # Remove any project-specific volumes including NPM volumes
             Write-Info "Removing volumes..."
-            docker volume rm $(docker volume ls -q -f "name=dcs-statistics") 2>&1 | Out-Null
+            docker volume rm $(docker volume ls -q -f "name=dcs-*") 2>&1 | Out-Null
+            docker volume rm $(docker volume ls -q -f "name=npm_*") 2>&1 | Out-Null
+            docker volume rm $(docker volume ls -q -f "name=nginx_cache") 2>&1 | Out-Null
             
             # Clean up networks
             Write-Info "Cleaning up networks..."
+            docker network rm dcs_network 2>&1 | Out-Null
             docker network prune -f 2>&1 | Out-Null
             
             # Remove .env file
@@ -827,6 +924,12 @@ switch ($Action) {
             if (Test-Path "./docker/.env") {
                 Remove-Item "./docker/.env" -Force
                 Write-Success "Removed .env file"
+            }
+            
+            # Remove docker-compose symlink
+            if (Test-Path "./docker/docker-compose.yml") {
+                Remove-Item "./docker/docker-compose.yml" -Force
+                Write-Success "Removed docker-compose.yml symlink"
             }
             
             # DELETE ALL DATA

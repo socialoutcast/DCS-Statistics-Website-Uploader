@@ -17,6 +17,8 @@
 - 📜 **Improved Logs** - Shows last 100 lines without requiring Ctrl+C to exit
 - 🔨 **Rebuild Command** - Force fresh Docker image builds when needed
 - ✈️ **Pre-Flight Checks** - Automated Windows/Linux issue detection and resolution
+- 🔄 **Nginx Proxy Manager** - Professional reverse proxy with web UI (optional)
+- 🎛️ **Flexible Proxy Options** - Choose between Nginx Proxy Manager, simple nginx, or no proxy
 
 ### 🚀 **Advanced Admin Panel**
 - 🎛️ **Role-Based Access Control** - Multi-tier permission system (Air Boss, Squadron Leader, Pilot)
@@ -63,17 +65,22 @@ Experience a professional-grade statistics platform featuring:
 **Quick Start:**
 1. **Install Docker Desktop** from [docker.com](https://www.docker.com/products/docker-desktop/)
 2. **Extract the downloaded folder** to your preferred location
-3. **Run `dcs-docker-manager.bat`** - Double-click or run from command prompt
-4. **Access at `http://localhost:9080`** when ready
-5. **Complete setup** at `http://localhost:9080/site-config/install.php`
+3. **Run `dcs-docker-manager.bat pre-flight`** - First-time setup (recommended)
+4. **Run `dcs-docker-manager.bat start`** - Launch the application
+5. **Access at `http://localhost:9080`** when ready
+6. **Complete setup** at `http://localhost:9080/site-config/install.php`
 
 **What happens automatically:**
 - ✅ Docker Desktop detection and startup assistance
 - ✅ Windows-specific issue resolution (line endings, permissions)
 - ✅ Environment configuration (.env file creation)
+- ✅ **Proxy Configuration** - Choose your web server setup:
+  - **Nginx Proxy Manager** - Full reverse proxy with web UI (port 81)
+  - **Simple Nginx** - Basic web server for local development
+  - **No Proxy** - Skip if you have existing nginx/haproxy
 - ✅ Port availability checking (auto-selects if 9080 is busy)
 - ✅ Container build and initialization
-- ✅ PHP and nginx server configuration
+- ✅ PHP, Redis, and nginx/proxy server configuration
 - ✅ Health check verification
 - ✅ Network IP discovery and display
 
@@ -97,10 +104,14 @@ cd DCS-Statistics-Dashboard
 # Make scripts executable (first time only)
 chmod +x dcs-docker-manager.sh
 
+# Run pre-flight checks (recommended for first time)
+./dcs-docker-manager.sh pre-flight
+
 # Start the application
-./dcs-docker-manager.sh
+./dcs-docker-manager.sh start
 
 # Access at http://localhost:9080
+# If using Nginx Proxy Manager, admin panel at http://localhost:81
 
 # To stop:
 ./dcs-docker-manager.sh stop
@@ -190,6 +201,33 @@ Our Docker deployment provides enterprise-grade containerization with intelligen
 - 🛡️ **Container Isolation** - Secure, isolated environment
 - 📊 **Resource Optimization** - Minimal resource usage
 - 🔐 **Security Best Practices** - Non-root containers, network isolation
+- 🌐 **Professional Proxy Options** - Choose your preferred setup:
+  - **Nginx Proxy Manager** - Full GUI for SSL, proxy hosts, redirects
+  - **Simple Nginx** - Lightweight option for basic serving
+  - **No Proxy** - Integrate with your existing infrastructure
+
+### 🔄 Proxy Configuration Options
+
+#### **Option 1: Nginx Proxy Manager (Recommended)**
+- **Web-based administration panel** on port 81
+- **SSL certificate management** with Let's Encrypt
+- **Multiple proxy hosts** support
+- **Access lists and authentication**
+- **Custom locations and redirects**
+- **WebSocket support**
+- **Default credentials**: admin@example.com / changeme
+
+#### **Option 2: Simple Nginx**
+- **Lightweight web server**
+- **No configuration UI**
+- **Perfect for local development**
+- **Direct access on port 9080**
+
+#### **Option 3: No Proxy (BYO)**
+- **Skip proxy installation**
+- **Use your existing nginx/haproxy/Apache**
+- **PHP-FPM available on port 9000**
+- **Configure your proxy to forward to the PHP container**
 
 ### System Requirements
 
@@ -198,14 +236,14 @@ Our Docker deployment provides enterprise-grade containerization with intelligen
 - Windows 10/11 Pro, Enterprise, or Education (64-bit)
 - WSL2 backend enabled (recommended)
 - 4GB RAM minimum
+- Ports: 9080 (web), 81 (NPM admin if selected)
 
 **Linux:**
 - Docker Engine 20.10+
 - Docker Compose 2.0+
 - Any modern Linux distribution
 - 2GB RAM minimum
-
-- 4GB RAM minimum
+- Ports: 9080 (web), 81 (NPM admin if selected)
 
 ### Docker Commands Reference
 
@@ -213,9 +251,16 @@ Our Docker deployment provides enterprise-grade containerization with intelligen
 ```batch
 # Run pre-flight checks (recommended for first time)
 dcs-docker-manager.bat pre-flight
+  - Checks Docker installation
+  - Creates required directories
+  - Configures proxy settings
+  - Sets up environment
 
 # Start the application
 dcs-docker-manager.bat start
+  - Runs pre-flight if first time
+  - Starts all containers
+  - Shows access URLs
 
 # Stop the application
 dcs-docker-manager.bat stop
@@ -235,19 +280,34 @@ dcs-docker-manager.bat rebuild
 # Remove Docker artifacts (preserves data)
 dcs-docker-manager.bat destroy     # Prompts for confirmation
 dcs-docker-manager.bat destroy -f  # Skip confirmation
+  - Removes ALL Docker images (nginx, php, redis, npm)
+  - Removes all volumes and networks
+  - Deletes .env configuration
+  - PRESERVES your data in ./dcs-stats
 
 # Complete removal including ALL data
 dcs-docker-manager.bat sanitize    # Prompts for confirmation
 dcs-docker-manager.bat sanitize -f # Skip confirmation
+  - Everything destroy does PLUS
+  - DELETES all data directories
+  - DELETES all backups
+  - Complete fresh start
 ```
 
 **Linux Users:**
 ```bash
 # Run pre-flight checks (recommended for first time)
 ./dcs-docker-manager.sh pre-flight
+  - Checks Docker installation
+  - Creates required directories  
+  - Configures proxy settings
+  - Sets up environment
 
 # Start application
 ./dcs-docker-manager.sh start
+  - Runs pre-flight if first time
+  - Starts all containers
+  - Shows access URLs
 
 # Stop application
 ./dcs-docker-manager.sh stop
@@ -267,10 +327,18 @@ dcs-docker-manager.bat sanitize -f # Skip confirmation
 # Remove Docker artifacts (preserves data)
 ./dcs-docker-manager.sh destroy     # Prompts for confirmation
 ./dcs-docker-manager.sh destroy -f  # Skip confirmation
+  - Removes ALL Docker images (nginx, php, redis, npm)
+  - Removes all volumes and networks
+  - Deletes .env configuration
+  - PRESERVES your data in ./dcs-stats
 
 # Complete removal including ALL data
 ./dcs-docker-manager.sh sanitize    # Prompts for confirmation
 ./dcs-docker-manager.sh sanitize -f # Skip confirmation
+  - Everything destroy does PLUS
+  - DELETES all data directories
+  - DELETES all backups
+  - Complete fresh start
 ```
 
 ### Troubleshooting Docker Issues
@@ -464,24 +532,33 @@ docker compose exec dcs-stats-web bash
 docker ps -a | grep dcs-statistics
 ```
 
-### 🔧 Custom Port Configuration
+### 🔧 Environment Configuration
 
-The launcher scripts automatically handle port selection, but you can set a preferred port:
+The Docker setup uses a `.env` file for configuration. This is created automatically during pre-flight.
 
-**Method 1: Edit `.env` file**
+**Configuration Options:**
 ```bash
-# Create or edit .env file
-echo "WEB_PORT=8090" > .env
+# docker/.env file
+WEB_PORT=9080                        # Web server port
+SITE_URL=http://localhost:9080       # Your site URL
+PROXY_TYPE=nginx-proxy-manager       # Options: nginx-proxy-manager, simple, none
 
-# Run launcher - it will use 8090 or find next available
-./dcs-docker-manager.sh  # or .\dcs-docker-manager.bat on Windows
+# NPM Database (if using MySQL instead of SQLite)
+NPM_DB_MYSQL_HOST=                   # MySQL host (empty for SQLite)
+NPM_DB_MYSQL_PORT=3306               # MySQL port
+NPM_DB_MYSQL_USER=                   # MySQL username
+NPM_DB_MYSQL_PASSWORD=               # MySQL password
+NPM_DB_MYSQL_NAME=                   # MySQL database name
+NPM_DISABLE_IPV6=                    # Set to 'true' to disable IPv6
 ```
 
-**Method 2: Manual Docker Compose**
+**Custom Port Configuration:**
 ```bash
-# Set port and start
-export WEB_PORT=8090
-docker compose up -d
+# Edit docker/.env file
+WEB_PORT=8090
+
+# Run launcher - it will use 8090 or find next available
+./dcs-docker-manager.sh start  # or dcs-docker-manager.bat start on Windows
 ```
 
 ### 🔍 Troubleshooting Docker Deployment
@@ -611,9 +688,14 @@ curl http://localhost:8080/ping  # DCSServerBot API endpoint
 # Check admin panel
 Dashboard → API Configuration → Test Connection
 
-# For Docker users
-Use http://host.docker.internal:8080 on Windows  # For DCSServerBot API
-Use http://172.17.0.1:8080 on Linux  # For DCSServerBot API
+# For Docker users with different proxy setups:
+# Nginx Proxy Manager:
+  Use http://host.docker.internal:8080 on Windows
+  Use http://172.17.0.1:8080 on Linux
+
+# No Proxy (using your own):
+  Configure your proxy to forward to dcs-php-secure:9000
+  Use FastCGI pass for PHP-FPM
 ```
 
 ### 🎨 **Theme Not Applying**
